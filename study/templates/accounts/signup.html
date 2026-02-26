@@ -1,0 +1,410 @@
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>stud-y — sign up</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital@1&family=Geist+Mono:wght@300;400&display=swap"
+    rel="stylesheet">
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #1c1c1c;
+      --line: #2e2e2e;
+      --text: #e2e2e0;
+      --muted: #666662;
+      --dim: #3a3a38;
+      --error: #c0392b;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Geist Mono', monospace;
+      font-weight: 300;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .wrap {
+      width: 100%;
+      max-width: 340px;
+      animation: up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    @keyframes up {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 32px;
+    }
+
+    .logo {
+      font-family: 'Libre Baskerville', serif;
+      font-style: italic;
+      font-size: 17px;
+      color: var(--text);
+      letter-spacing: -0.2px;
+    }
+
+    .badge {
+      font-size: 9px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .heading {
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    h1 {
+      font-family: 'Libre Baskerville', serif;
+      font-style: italic;
+      font-size: 26px;
+      font-weight: 400;
+      color: var(--text);
+      letter-spacing: -0.4px;
+      margin-bottom: 4px;
+    }
+
+    .sub {
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+    }
+
+    .msg {
+      font-size: 11px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 24px;
+      color: var(--error);
+      letter-spacing: 0.03em;
+    }
+
+    .field+.field {
+      border-top: 1px solid var(--line);
+    }
+
+    .field-inner {
+      padding: 16px 0;
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+    }
+
+    .field-row .field:first-child .field-inner {
+      padding-right: 16px;
+    }
+
+    .field-row .field+.field {
+      border-top: none;
+      border-left: 1px solid var(--line);
+    }
+
+    .field-row .field+.field .field-inner {
+      padding-left: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 9px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    input[type="email"],
+    input[type="password"],
+    input[type="text"] {
+      width: 100%;
+      background: transparent;
+      border: none;
+      padding: 0;
+      font-family: 'Geist Mono', monospace;
+      font-weight: 300;
+      font-size: 14px;
+      color: var(--text);
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    input::placeholder {
+      color: var(--dim);
+    }
+
+    .field-err {
+      font-size: 10px;
+      color: var(--error);
+      margin-top: 6px;
+    }
+
+    /* Password strength */
+    .strength {
+      display: flex;
+      gap: 3px;
+      margin-top: 10px;
+    }
+
+    .strength-seg {
+      flex: 1;
+      height: 2px;
+      background: var(--line);
+      border-radius: 1px;
+      transition: background 0.3s;
+    }
+
+    .strength-seg.weak {
+      background: var(--error);
+    }
+
+    .strength-seg.medium {
+      background: #8a7a50;
+    }
+
+    .strength-seg.strong {
+      background: #4a7a5a;
+    }
+
+    .actions {
+      border-top: 1px solid var(--line);
+      padding-top: 20px;
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .terms {
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: 0.03em;
+      max-width: 160px;
+      line-height: 1.6;
+    }
+
+    .btn {
+      padding: 9px 20px;
+      background: var(--text);
+      color: var(--bg);
+      border: none;
+      border-radius: 3px;
+      font-family: 'Geist Mono', monospace;
+      font-size: 10px;
+      font-weight: 400;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      opacity: 0.78;
+    }
+
+    .btn:active {
+      opacity: 0.6;
+    }
+
+    .footer {
+      border-top: 1px solid var(--line);
+      padding-top: 20px;
+      margin-top: 24px;
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer a {
+      color: var(--text);
+      text-decoration: none;
+      transition: opacity 0.15s;
+    }
+
+    .footer a:hover {
+      opacity: 0.6;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <div class="topbar">
+      <span class="logo">stud-y</span>
+      <span class="badge">sign up</span>
+    </div>
+
+    <div class="heading">
+      <h1>let's get started.</h1>
+      <p class="sub">create your account</p>
+    </div>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="msg">{{ message }}</div>
+    {% endfor %}
+    {% endif %}
+
+    <form method="POST" action="{% url 'signup' %}">
+      {% csrf_token %}
+
+      <!-- First + Last name row -->
+      <div class="field-row">
+        <div class="field">
+          <div class="field-inner">
+            <label for="id_first_name">First</label>
+            <input type="text" id="id_first_name" name="first_name" placeholder="ada" autocomplete="given-name"
+              value="{{ form.first_name.value|default:'' }}" />
+            {% if form.first_name.errors %}
+            {% for err in form.first_name.errors %}
+            <div class="field-err">{{ err }}</div>
+            {% endfor %}
+            {% endif %}
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-inner">
+            <label for="id_last_name">Last</label>
+            <input type="text" id="id_last_name" name="last_name" placeholder="lovelace" autocomplete="family-name"
+              value="{{ form.last_name.value|default:'' }}" />
+            {% if form.last_name.errors %}
+            {% for err in form.last_name.errors %}
+            <div class="field-err">{{ err }}</div>
+            {% endfor %}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Username -->
+      <div class="field">
+        <div class="field-inner">
+          <label for="id_username">Username</label>
+          <input type="text" id="id_username" name="username" placeholder="ada_codes" autocomplete="username"
+            value="{{ form.username.value|default:'' }}" />
+          {% if form.username.errors %}
+          {% for err in form.username.errors %}
+          <div class="field-err">{{ err }}</div>
+          {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div class="field">
+        <div class="field-inner">
+          <label for="id_email">Email</label>
+          <input type="email" id="id_email" name="email" placeholder="you@example.com" autocomplete="email"
+            value="{{ form.email.value|default:'' }}" />
+          {% if form.email.errors %}
+          {% for err in form.email.errors %}
+          <div class="field-err">{{ err }}</div>
+          {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="field">
+        <div class="field-inner">
+          <label for="id_password1">Password</label>
+          <input type="password" id="id_password1" name="password1" placeholder="min. 8 characters"
+            autocomplete="new-password" oninput="checkStrength(this.value)" />
+          <div class="strength">
+            <div class="strength-seg" id="s1"></div>
+            <div class="strength-seg" id="s2"></div>
+            <div class="strength-seg" id="s3"></div>
+            <div class="strength-seg" id="s4"></div>
+          </div>
+          {% if form.password1.errors %}
+          {% for err in form.password1.errors %}
+          <div class="field-err">{{ err }}</div>
+          {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Confirm password -->
+      <div class="field">
+        <div class="field-inner">
+          <label for="id_password2">Confirm</label>
+          <input type="password" id="id_password2" name="password2" placeholder="repeat password"
+            autocomplete="new-password" />
+          {% if form.password2.errors %}
+          {% for err in form.password2.errors %}
+          <div class="field-err">{{ err }}</div>
+          {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="actions">
+        <p class="terms">by signing up you agree to our terms</p>
+        <button type="submit" class="btn">Create →</button>
+      </div>
+
+    </form>
+
+    <div class="footer">
+      <span>have an account?</span>
+      <a href="{% url 'login' %}">sign in →</a>
+    </div>
+
+  </div>
+
+  <script>
+    function checkStrength(val) {
+      const segs = ['s1', 's2', 's3', 's4'].map(id => document.getElementById(id));
+      segs.forEach(s => s.className = 'strength-seg');
+      if (!val) return;
+      let score = 0;
+      if (val.length >= 8) score++;
+      if (/[A-Z]/.test(val)) score++;
+      if (/[0-9]/.test(val)) score++;
+      if (/[^A-Za-z0-9]/.test(val)) score++;
+      const cls = score <= 1 ? 'weak' : score <= 3 ? 'medium' : 'strong';
+      for (let i = 0; i < score; i++) segs[i].classList.add(cls);
+    }
+  </script>
+</body>
+
+</html>

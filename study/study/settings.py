@@ -133,7 +133,18 @@ STATICFILES_DIRS = [
 
 AUTH_USER_MODEL = 'accounts.User'
 
-AUTHENTICATION_BACKEND = (
+AUTHENTICATION_BACKENDS = (
     'allauth.account.auth_backends.AuthenticationBackend',
     'django.contrib.auth.backends.ModelBackend',
 )
+
+ACCOUNT_ADAPTER = 'allauth.account.adapter.DefaultAccountAdapter'
+SOCIALACCOUNT_ADAPTER = 'allauth.socialaccount.adapter.DefaultSocialAccountAdapter'
+ACCOUNT_USER_MODEL_USERNAME_FIELD = 'username'
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = True          # you have username in REQUIRED_FIELDS
+ACCOUNT_AUTHENTICATION_METHOD = 'email'   # already have this
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'  # set to 'mandatory' later with email backend
+
