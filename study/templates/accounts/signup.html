@@ -8,7 +8,7 @@
   <title>stud-y — sign up</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link
-    href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital@1&family=Geist+Mono:wght@300;400&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital@1&family=Geist+Mono:wght@300;400;500&display=swap"
     rel="stylesheet">
   <style>
     *,
@@ -20,12 +20,18 @@
     }
 
     :root {
-      --bg: #1c1c1c;
-      --line: #2e2e2e;
-      --text: #e2e2e0;
-      --muted: #666662;
-      --dim: #3a3a38;
-      --error: #c0392b;
+      --bg: #09100e;
+      --surface: #0f1a17;
+      --card: #121f1b;
+      --line: #1c2d28;
+      --line-hi: #26403a;
+      --text: #f0faf5;
+      --muted: #4d7066;
+      --sub: #7aaa96;
+      --green: #4dffaa;
+      --green-dim: #1a4d38;
+      --error: #ff6b6b;
+      --input-bg: #0d1a16;
     }
 
     body {
@@ -37,18 +43,56 @@
       display: grid;
       place-items: center;
       padding: 24px;
+      position: relative;
+    }
+
+    /* square mesh */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--line) 1px, transparent 1px);
+      background-size: 36px 36px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* green glow */
+    body::after {
+      content: '';
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -52%);
+      width: 600px;
+      height: 500px;
+      background: radial-gradient(ellipse, rgba(77, 255, 170, .06) 0%, transparent 65%);
+      pointer-events: none;
+      z-index: 0;
     }
 
     .wrap {
+      position: relative;
+      z-index: 1;
       width: 100%;
-      max-width: 340px;
-      animation: up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+      max-width: 380px;
+      background: var(--card);
+      border: 1px solid var(--line-hi);
+      border-radius: 6px;
+      padding: 2.25rem 2rem;
+      box-shadow:
+        0 0 0 1px rgba(77, 255, 170, .05) inset,
+        0 0 40px rgba(0, 0, 0, .6),
+        0 1px 0 rgba(77, 255, 170, .1) inset;
+      animation: up 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
     }
 
     @keyframes up {
       from {
         opacity: 0;
-        transform: translateY(12px);
+        transform: translateY(14px);
       }
 
       to {
@@ -62,90 +106,112 @@
       align-items: center;
       justify-content: space-between;
       padding-bottom: 20px;
-      border-bottom: 1px solid var(--line);
-      margin-bottom: 32px;
+      border-bottom: 1px solid var(--line-hi);
+      margin-bottom: 28px;
     }
 
     .logo {
       font-family: 'Libre Baskerville', serif;
       font-style: italic;
-      font-size: 17px;
+      font-size: 50px;
       color: var(--text);
       letter-spacing: -0.2px;
+      font-weight: bold;
     }
 
     .badge {
       font-size: 9px;
-      letter-spacing: 0.14em;
+      letter-spacing: 0.16em;
       text-transform: uppercase;
       color: var(--muted);
     }
 
     .heading {
-      margin-bottom: 32px;
-      padding-bottom: 24px;
-      border-bottom: 1px solid var(--line);
+      margin-bottom: 28px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--line-hi);
     }
 
     h1 {
       font-family: 'Libre Baskerville', serif;
       font-style: italic;
-      font-size: 26px;
-      font-weight: 400;
+      font-size: 35px;
+      font-weight: bold;
       color: var(--text);
       letter-spacing: -0.4px;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
     }
 
     .sub {
       font-size: 10px;
-      color: var(--muted);
-      letter-spacing: 0.06em;
+      color: var(--sub);
+      letter-spacing: 0.07em;
     }
 
     .msg {
-      font-size: 11px;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--line);
-      margin-bottom: 24px;
+      font-size: 15px;
+      padding: 11px 13px;
+      border: 1px solid rgba(255, 107, 107, .25);
+      background: rgba(255, 107, 107, .06);
+      border-radius: 4px;
+      margin-bottom: 20px;
       color: var(--error);
       letter-spacing: 0.03em;
     }
 
     .field+.field {
-      border-top: 1px solid var(--line);
+      border-top: 1px solid var(--line-hi);
     }
 
     .field-inner {
-      padding: 16px 0;
+      padding: 18px 0 16px;
     }
 
+    /* side-by-side name row */
     .field-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 0;
-    }
-
-    .field-row .field:first-child .field-inner {
-      padding-right: 16px;
     }
 
     .field-row .field+.field {
       border-top: none;
-      border-left: 1px solid var(--line);
+      border-left: 1px solid var(--line-hi);
+    }
+
+    .field-row .field:first-child .field-inner {
+      padding-right: 14px;
     }
 
     .field-row .field+.field .field-inner {
-      padding-left: 16px;
+      padding-left: 14px;
     }
 
     label {
       display: block;
-      font-size: 9px;
-      letter-spacing: 0.16em;
+      font-size: 15px;
+      letter-spacing: 0.18em;
       text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 8px;
+      color: var(--sub);
+      font-weight: 500;
+      margin-bottom: 10px;
+    }
+
+    .input-box {
+      background: var(--input-bg);
+      border: 1px solid var(--line-hi);
+      border-radius: 4px;
+      padding: 13px 14px;
+      transition: border-color .15s, box-shadow .15s;
+    }
+
+    .field:focus-within .input-box {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(77, 255, 170, .09);
+    }
+
+    .field-row .field:focus-within .input-box {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(77, 255, 170, .09);
     }
 
     input[type="email"],
@@ -157,23 +223,27 @@
       padding: 0;
       font-family: 'Geist Mono', monospace;
       font-weight: 300;
-      font-size: 14px;
+      font-size: 15px;
       color: var(--text);
       outline: none;
       -webkit-appearance: none;
+      caret-color: var(--green);
+      letter-spacing: 0.02em;
     }
 
     input::placeholder {
-      color: var(--dim);
+      color: var(--muted);
+      font-size: 15px;
     }
 
     .field-err {
       font-size: 10px;
       color: var(--error);
-      margin-top: 6px;
+      margin-top: 8px;
+      letter-spacing: 0.03em;
     }
 
-    /* Password strength */
+    /* password strength */
     .strength {
       display: flex;
       gap: 3px;
@@ -183,9 +253,9 @@
     .strength-seg {
       flex: 1;
       height: 2px;
-      background: var(--line);
+      background: var(--line-hi);
       border-radius: 1px;
-      transition: background 0.3s;
+      transition: background 0.25s;
     }
 
     .strength-seg.weak {
@@ -193,74 +263,81 @@
     }
 
     .strength-seg.medium {
-      background: #8a7a50;
+      background: #8a9a50;
     }
 
     .strength-seg.strong {
-      background: #4a7a5a;
+      background: var(--green);
+      box-shadow: 0 0 6px rgba(77, 255, 170, .4);
     }
 
     .actions {
-      border-top: 1px solid var(--line);
-      padding-top: 20px;
-      margin-top: 4px;
+      border-top: 1px solid var(--line-hi);
+      padding-top: 22px;
+      margin-top: 6px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 1rem;
     }
 
     .terms {
       font-size: 9px;
       color: var(--muted);
       letter-spacing: 0.03em;
+      line-height: 1.7;
       max-width: 160px;
-      line-height: 1.6;
     }
 
     .btn {
-      padding: 9px 20px;
-      background: var(--text);
-      color: var(--bg);
+      padding: 11px 24px;
+      background: var(--green);
+      color: #060f0b;
       border: none;
-      border-radius: 3px;
+      border-radius: 4px;
       font-family: 'Geist Mono', monospace;
-      font-size: 10px;
-      font-weight: 400;
+      font-size: 15px;
+      font-weight: 500;
       letter-spacing: 0.12em;
       text-transform: uppercase;
       cursor: pointer;
-      transition: opacity 0.15s;
       white-space: nowrap;
+      box-shadow: 0 0 22px rgba(77, 255, 170, .22);
+      transition: opacity .15s, box-shadow .15s, transform .1s;
     }
 
     .btn:hover {
-      opacity: 0.78;
+      opacity: .9;
+      box-shadow: 0 0 32px rgba(77, 255, 170, .35);
     }
 
     .btn:active {
-      opacity: 0.6;
+      opacity: .7;
+      transform: scale(.98);
+      box-shadow: none;
     }
 
     .footer {
-      border-top: 1px solid var(--line);
+      border-top: 1px solid var(--line-hi);
       padding-top: 20px;
       margin-top: 24px;
-      font-size: 10px;
+      font-size: 15px;
       color: var(--muted);
-      letter-spacing: 0.04em;
+      letter-spacing: 0.05em;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
 
     .footer a {
-      color: var(--text);
+      color: var(--green);
       text-decoration: none;
-      transition: opacity 0.15s;
+      font-weight: 400;
+      transition: opacity .15s;
     }
 
     .footer a:hover {
-      opacity: 0.6;
+      opacity: .7;
     }
   </style>
 </head>
@@ -287,13 +364,15 @@
     <form method="POST" action="{% url 'signup' %}">
       {% csrf_token %}
 
-      <!-- First + Last name row -->
+      <!-- First + Last -->
       <div class="field-row">
         <div class="field">
           <div class="field-inner">
             <label for="id_first_name">First</label>
-            <input type="text" id="id_first_name" name="first_name" placeholder="ada" autocomplete="given-name"
-              value="{{ form.first_name.value|default:'' }}" />
+            <div class="input-box">
+              <input type="text" id="id_first_name" name="first_name" placeholder="Abdumalik" autocomplete="given-name"
+                value="{{ form.first_name.value|default:'' }}" />
+            </div>
             {% if form.first_name.errors %}
             {% for err in form.first_name.errors %}
             <div class="field-err">{{ err }}</div>
@@ -304,8 +383,10 @@
         <div class="field">
           <div class="field-inner">
             <label for="id_last_name">Last</label>
-            <input type="text" id="id_last_name" name="last_name" placeholder="lovelace" autocomplete="family-name"
-              value="{{ form.last_name.value|default:'' }}" />
+            <div class="input-box">
+              <input type="text" id="id_last_name" name="last_name" placeholder="Berdimurodov"
+                autocomplete="family-name" value="{{ form.last_name.value|default:'' }}" />
+            </div>
             {% if form.last_name.errors %}
             {% for err in form.last_name.errors %}
             <div class="field-err">{{ err }}</div>
@@ -319,8 +400,10 @@
       <div class="field">
         <div class="field-inner">
           <label for="id_username">Username</label>
-          <input type="text" id="id_username" name="username" placeholder="ada_codes" autocomplete="username"
-            value="{{ form.username.value|default:'' }}" />
+          <div class="input-box">
+            <input type="text" id="id_username" name="username" placeholder="trigo" autocomplete="username"
+              value="{{ form.username.value|default:'' }}" />
+          </div>
           {% if form.username.errors %}
           {% for err in form.username.errors %}
           <div class="field-err">{{ err }}</div>
@@ -333,8 +416,10 @@
       <div class="field">
         <div class="field-inner">
           <label for="id_email">Email</label>
-          <input type="email" id="id_email" name="email" placeholder="you@example.com" autocomplete="email"
-            value="{{ form.email.value|default:'' }}" />
+          <div class="input-box">
+            <input type="email" id="id_email" name="email" placeholder="you@example.com" autocomplete="email"
+              value="{{ form.email.value|default:'' }}" />
+          </div>
           {% if form.email.errors %}
           {% for err in form.email.errors %}
           <div class="field-err">{{ err }}</div>
@@ -347,8 +432,10 @@
       <div class="field">
         <div class="field-inner">
           <label for="id_password1">Password</label>
-          <input type="password" id="id_password1" name="password1" placeholder="min. 8 characters"
-            autocomplete="new-password" oninput="checkStrength(this.value)" />
+          <div class="input-box">
+            <input type="password" id="id_password1" name="password1" placeholder="min. 8 characters"
+              autocomplete="new-password" oninput="checkStrength(this.value)" />
+          </div>
           <div class="strength">
             <div class="strength-seg" id="s1"></div>
             <div class="strength-seg" id="s2"></div>
@@ -363,12 +450,14 @@
         </div>
       </div>
 
-      <!-- Confirm password -->
+      <!-- Confirm -->
       <div class="field">
         <div class="field-inner">
           <label for="id_password2">Confirm</label>
-          <input type="password" id="id_password2" name="password2" placeholder="repeat password"
-            autocomplete="new-password" />
+          <div class="input-box">
+            <input type="password" id="id_password2" name="password2" placeholder="repeat password"
+              autocomplete="new-password" />
+          </div>
           {% if form.password2.errors %}
           {% for err in form.password2.errors %}
           <div class="field-err">{{ err }}</div>
@@ -379,14 +468,14 @@
 
       <div class="actions">
         <p class="terms">by signing up you agree to our terms</p>
-        <button type="submit" class="btn">Create →</button>
+        <button type="submit" class="btn">Create -></button>
       </div>
 
     </form>
 
     <div class="footer">
       <span>have an account?</span>
-      <a href="{% url 'login' %}">sign in →</a>
+      <a href="{% url 'login' %}">sign in -></a>
     </div>
 
   </div>
