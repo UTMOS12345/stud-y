@@ -1,0 +1,76 @@
+{% load static %}
+<header class="h-[52px] min-h-[52px] bg-base-300 border-b border-neutral
+               flex items-center justify-between px-5 z-10 relative">
+
+    <!-- clock + date -->
+    <div class="flex items-end gap-3">
+        <span id="clock" class="text-[28px] font-bold text-base-content leading-none tracking-tight"
+            style="font-family: 'Share Tech Mono', monospace;">
+            00:00:00
+        </span>
+        <span id="datestamp" class="text-[10px] text-neutral-content tracking-[0.08em] uppercase mb-[3px]">
+            — —
+        </span>
+    </div>
+
+    <!-- profile -->
+    <div class="relative flex items-center gap-3">
+
+        <div class="w-1.5 h-1.5 rounded-full bg-primary" style="box-shadow: 0 0 6px rgba(77,255,170,0.6);"></div>
+
+        <button id="profile-btn" class="flex items-center gap-2 px-2 py-1 rounded border border-neutral
+                   hover:border-neutral-content/40 transition-colors group">
+            <div class="w-6 h-6 rounded-full bg-neutral flex items-center justify-center
+                  text-[10px] font-medium text-neutral-content
+                  group-hover:text-primary transition-colors">
+                {% if user.is_authenticated %}{{ user.username|first|upper }}{% else %}?{% endif %}
+            </div>
+            <span class="text-[11px] tracking-[0.06em] text-neutral-content
+                   group-hover:text-base-content transition-colors max-w-[100px] truncate">
+                {% if user.is_authenticated %}{{ user.username }}{% else %}guest{% endif %}
+            </span>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round"
+                class="text-neutral-content group-hover:text-primary transition-colors">
+                <polyline points="6 9 12 15 18 9" />
+            </svg>
+        </button>
+
+        <!-- dropdown -->
+        <div id="profile-menu" class="absolute top-[calc(100%+8px)] right-0 min-w-[180px]
+                bg-base-300 border border-neutral rounded
+                shadow-[0_8px_32px_rgba(0,0,0,0.5)] overflow-hidden z-50" style="display:none;">
+
+            {% if user.is_authenticated %}
+            <div class="px-4 py-3 border-b border-neutral">
+                <p class="text-[12px] text-base-content font-medium">{{ user.username }}</p>
+                <p class="text-[10px] text-neutral-content mt-0.5">{{ user.email }}</p>
+            </div>
+            <div class="py-1">
+                <a href="#" class="flex items-center gap-3 px-4 py-2 text-[11px] text-neutral-content
+                  tracking-[0.05em] hover:bg-neutral/30 hover:text-base-content transition-colors">
+                    Profile
+                </a>
+                <a href="#" class="flex items-center gap-3 px-4 py-2 text-[11px] text-neutral-content
+                  tracking-[0.05em] hover:bg-neutral/30 hover:text-base-content transition-colors">
+                    Settings
+                </a>
+            </div>
+            <div class="border-t border-neutral py-1">
+                <a href="{% url 'logout' %}" class="flex items-center gap-3 px-4 py-2 text-[11px] text-error/80
+                  tracking-[0.05em] hover:bg-error/10 hover:text-error transition-colors">
+                    Sign out
+                </a>
+            </div>
+            {% else %}
+            <div class="py-1">
+                <a href="{% url 'login' %}" class="flex items-center gap-3 px-4 py-2 text-[11px] text-neutral-content
+                  tracking-[0.05em] hover:bg-neutral/30 hover:text-primary transition-colors">
+                    Sign in ->
+                </a>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</header>

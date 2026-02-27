@@ -4,8 +4,10 @@ from django.contrib import admin
 
 urlpatterns = [
     path('accounts/', include('accounts.urls')),
-    path('login/', RedirectView.as_view(url='/accounts/login/', permanent=False)),
-    path('signup/', RedirectView.as_view(url='/accounts/signup/', permanent=False)),
-    path('', RedirectView.as_view(url='/accounts/login/', permanent=False)),
+    path('login/', RedirectView.as_view(url='/accounts/login/')),
+    path('signup/', RedirectView.as_view(url='/accounts/signup/')),
+    
+    path('', include('dashboard.urls')),
+    path('dashboard/', RedirectView.as_view(url='/')),
     path('admin/', admin.site.urls),
 ]

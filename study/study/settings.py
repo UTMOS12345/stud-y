@@ -148,3 +148,6 @@ ACCOUNT_USERNAME_REQUIRED = True          # you have username in REQUIRED_FIELDS
 ACCOUNT_AUTHENTICATION_METHOD = 'email'   # already have this
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'  # set to 'mandatory' later with email backend
 
+LOGIN_URL = 'accounts:login'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = 'accounts:login'
