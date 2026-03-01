@@ -1,1 +1,68 @@
 @import "tailwindcss";
+@plugin "daisyui";
+
+/* ─── DaisyUI custom theme ─── */
+@plugin "daisyui/theme" {
+  name: "studyTheme";
+  default: true;
+  color-scheme: dark;
+
+  --color-primary: #4dffaa;
+  --color-primary-content: #060f0b;
+  --color-base-100: #09100e;
+  --color-base-200: #0f1a17;
+  --color-base-300: #121f1b;
+  --color-base-content: #f0faf5;
+  --color-neutral: #26403a;
+  --color-neutral-content: #7aaa96;
+  --color-error: #ff6b6b;
+  --color-error-content: #ffffff;
+}
+
+/* ─── Custom fonts ─── */
+@theme {
+  --font-mono: "Geist Mono", monospace;
+  --font-serif: "Libre Baskerville", serif;
+}
+
+/* ─── Mesh + glow + animation (can't be done with classes) ─── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(#1c2d28 1px, transparent 1px),
+    linear-gradient(90deg, #1c2d28 1px, transparent 1px);
+  background-size: 36px 36px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -52%);
+  width: 600px;
+  height: 420px;
+  background: radial-gradient(ellipse, rgba(77, 255, 170, .06) 0%, transparent 65%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-up {
+  animation: up 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+}

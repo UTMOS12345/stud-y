@@ -10,6 +10,9 @@ class User(AbstractUser):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
 
+    def __str__(self):
+        return self.email
+
 class Profile(models.Model):
     """User profile with timezone and pomodoro settings"""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')

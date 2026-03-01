@@ -16,7 +16,7 @@ def signup_view(request):
         user.save()
         login(request, user, backend='django.contrib.auth.backends.ModelBackend')
         messages.success(request, f"Welcome, {user.username}!")
-        return redirect('home')
+        return redirect('dashboard')
 
     return render(request, 'accounts/signup.html', {'form': form})
 
@@ -32,7 +32,7 @@ def login_view(request):
             )
             if user:
                 login(request, user)
-                return redirect('signup')  # change this to wherever you want after login
+                return redirect('dashboard')
             else:
                 messages.error(request, "Invalid email or password.")
     else:
