@@ -27,9 +27,9 @@
         <main id="main-content" class="flex-1 overflow-y-auto overflow-x-hidden relative">
 
             {# mesh only on main area #}
-            <div class="absolute inset-0 pointer-events-none z-0" style="background-image: linear-gradient(#1c2d28 1px, transparent 1px),
+            <!-- <div class="fixed inset-0 pointer-events-none z-0" style="background-image: linear-gradient(#1c2d28 1px, transparent 1px),
                   linear-gradient(90deg, #1c2d28 1px, transparent 1px);
-                  background-size: 36px 36px;"></div>
+                  background-size: 50px 50px;"></div> -->
 
             {# green glow #}
             <div class="absolute pointer-events-none z-0" style="top:30%;left:50%;transform:translate(-50%,-50%);
@@ -48,7 +48,6 @@
     {% block scripts %}{% endblock %}
 
     {# global scripts shared by all pages #}
-    {% include "includes/scripts.html" %}
 
 </body>
 

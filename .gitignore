@@ -1,0 +1,4 @@
+
+node_modules/
+.venv/
+study/static/css/src/output.css

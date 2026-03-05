@@ -5,5 +5,5 @@ urlpatterns = [
     path('signup/', signup_view, name='signup'),
     path('login/',  login_view,  name='login'),
     path('logout/', logout_view, name='logout'),
-    path('',        login_view,  name='home'),   # temporary home until dashboard exists
+    # path('',        login_view,  name='home'),   # temporary home until dashboard exists
 ]

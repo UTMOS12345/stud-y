@@ -1,72 +1,121 @@
 {% load static %}
-<aside id="sidebar" class="h-screen bg-base-300 border-r border-neutral flex flex-col
-              relative z-20 select-none overflow-hidden flex-shrink-0"
-    style="width:52px; transition: width 0.28s cubic-bezier(0.16,1,0.3,1);">
+<aside id="sidebar"
+    class="h-screen bg-base-300 border-r border-neutral flex flex-col relative z-20 select-none flex-shrink-0"
+    style="width:76px; transition: width 0.3s cubic-bezier(0.16,1,0.3,1); overflow:hidden;">
 
-    <!-- logo + toggle -->
-    <div class="flex items-center justify-between px-3 border-b border-neutral" style="height:52px; min-height:52px;">
+    <!-- logo — clicking it toggles the sidebar -->
+    <div class="border-b border-neutral flex items-center justify-center cursor-pointer" id="toggle-btn"
+        style="height:80px; min-height:80px;">
 
-        <a href="/" class="flex items-center gap-2 overflow-hidden">
-            <span class="font-serif italic font-bold text-base-content leading-none flex-shrink-0"
-                style="font-size:22px;">s</span>
-            <span class="sidebar-label font-serif italic font-bold text-base-content" style="font-size:18px; opacity:0; white-space:nowrap;
-                   transition:opacity 0.18s ease; pointer-events:none;">
-                tud-y
-            </span>
-        </a>
+        <!-- collapsed: just the S centered -->
+        <span id="logo-s" class="font-serif italic font-bold text-base-content" style="font-size:32px; line-height:1; letter-spacing:-0.5px;
+                     transition: opacity 0.2s ease;">s</span>
 
-        <button id="toggle-btn" class="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded
-                   text-neutral-content hover:text-primary hover:bg-neutral/30 transition-colors">
-            <svg id="toggle-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                style="transition: transform 0.28s cubic-bezier(0.16,1,0.3,1);">
-                <polyline points="9 18 15 12 9 6" />
-            </svg>
-        </button>
+        <!-- expanded: full stud-y, hidden by default -->
+        <span id="logo-full" class="font-serif italic font-bold text-base-content absolute" style="font-size:32px; line-height:1; letter-spacing:-0.5px;
+                     opacity:0; white-space:nowrap; pointer-events:none;
+                     transition: opacity 0.25s ease;">stud-y</span>
     </div>
 
-    <!-- nav links -->
-    <nav class="flex-1 flex flex-col gap-0.5 pt-3 px-2 overflow-y-auto overflow-x-hidden">
+    <!-- main nav -->
+    <nav class="flex-1 flex flex-col overflow-y-auto overflow-x-hidden px-3" "
+        style=" padding-top:24px; padding-bottom:16px; gap:8px;">
 
-        {# ── Add nav items here as you build pages ── #}
-        {# Example:
-        <a href="{% url 'dashboard' %}" class="flex items-center gap-3 px-2 py-2 rounded text-neutral-content
-              hover:text-primary hover:bg-neutral/20 transition-colors">
-            <svg class="flex-shrink-0 w-4 h-4" ... />
-            <span class="sidebar-label text-[12px] tracking-[0.08em] uppercase"
-                style="opacity:0; white-space:nowrap; transition:opacity 0.18s ease;">
+        <!-- Dashboard — active, icon always centered -->
+        <a href="{% url 'dashboard' %}" class="flex items-center justify-center rounded-xl
+                  bg-primary/15 border border-primary/25 text-primary transition-all"
+            style="padding: 15px 0; gap:0; min-height:54px;">
+            <svg id="nav-icon-0" class="flex-shrink-0" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                <rect x="14" y="14" width="7" height="7" rx="1.5" />
+            </svg>
+            <span class="nav-text text-[15px] font-semibold tracking-wide whitespace-nowrap" style="opacity:0; max-width:0; overflow:hidden; margin-left:0;
+                         transition: max-width 0.3s cubic-bezier(0.16,1,0.3,1),
+                                     opacity 0.2s ease, margin-left 0.3s ease;">
                 Dashboard
             </span>
         </a>
-        #}
-
-        <div class="sidebar-label px-2 pt-1" style="opacity:0; white-space:nowrap; transition:opacity 0.18s ease;">
-            <p class="text-[9px] tracking-[0.16em] uppercase text-neutral-content/40 mb-1">
-                Navigation
-            </p>
-            <p class="text-[11px] text-neutral-content/30 leading-relaxed">
-                Empty for now.
-            </p>
-        </div>
 
     </nav>
 
-    <!-- bottom settings -->
-    <div class="border-t border-neutral px-2 py-3">
-        <a href="#" class="flex items-center gap-3 px-2 py-2 rounded text-neutral-content
-              hover:text-primary hover:bg-neutral/20 transition-colors">
-            <svg class="flex-shrink-0 w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-                stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3" />
-                <path d="M12 2v2M12 20v2M2 12h2M20 12h2
-                 M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41
-                 M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+    <!-- divider -->
+    <div class="mx-3 border-t border-neutral/50" style="margin-bottom:16px;"></div>
+
+    <!-- bottom -->
+    <div class="flex flex-col px-3" style="padding-bottom:28px; gap:8px;">
+
+        <!-- help -->
+        <a href="#" class="flex items-center justify-center rounded-xl
+                  text-neutral-content hover:text-base-content hover:bg-neutral/30 transition-all"
+            style="padding: 15px 0; gap:0; min-height:54px;">
+            <svg class="flex-shrink-0" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                <circle cx="12" cy="17" r="0.5" fill="currentColor" />
             </svg>
-            <span class="sidebar-label text-[12px] tracking-[0.08em] uppercase"
-                style="opacity:0; white-space:nowrap; transition:opacity 0.18s ease;">
-                Settings
+            <span class="nav-text text-[15px] font-medium tracking-wide whitespace-nowrap" style="opacity:0; max-width:0; overflow:hidden; margin-left:0;
+                         transition: max-width 0.3s cubic-bezier(0.16,1,0.3,1),
+                                     opacity 0.2s ease, margin-left 0.3s ease;">
+                Help
             </span>
         </a>
+
+        <!-- log out -->
+        <a href="{% url 'logout' %}" class="flex items-center justify-center rounded-xl
+                  text-error/50 hover:text-error hover:bg-error/10 transition-all"
+            style="padding: 15px 0; gap:0; min-height:54px;">
+            <svg class="flex-shrink-0" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            <span class="nav-text text-[15px] font-medium tracking-wide whitespace-nowrap" style="opacity:0; max-width:0; overflow:hidden; margin-left:0;
+                         transition: max-width 0.3s cubic-bezier(0.16,1,0.3,1),
+                                     opacity 0.2s ease, margin-left 0.3s ease;">
+                Log Out
+            </span>
+        </a>
+
     </div>
 
 </aside>
+
+<script>
+    const sidebar = document.getElementById('sidebar');
+    const logoS = document.getElementById('logo-s');
+    const logoFull = document.getElementById('logo-full');
+    const navTexts = document.querySelectorAll('.nav-text');
+    let expanded = false;
+
+    function toggle() {
+        expanded = !expanded;
+
+        sidebar.style.width = expanded ? '232px' : '76px';
+        logoS.style.opacity = expanded ? '0' : '1';
+        logoFull.style.opacity = expanded ? '1' : '0';
+
+        navTexts.forEach((el, i) => {
+            setTimeout(() => {
+                el.style.maxWidth = expanded ? '180px' : '0';
+                el.style.opacity = expanded ? '1' : '0';
+                el.style.marginLeft = expanded ? '14px' : '0';
+            }, expanded ? i * 40 : 0);
+        });
+
+        document.querySelectorAll('nav a, aside > div:last-child a').forEach(row => {
+            row.style.justifyContent = expanded ? 'flex-start' : 'center';
+            row.style.paddingLeft = expanded ? '14px' : '0';
+            row.style.paddingRight = expanded ? '14px' : '0';
+        });
+    }
+
+    // whole sidebar toggles except links and buttons
+    sidebar.addEventListener('click', (e) => {
+        if (!e.target.closest('a, button')) toggle();
+    });
+</script>

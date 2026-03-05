@@ -10,11 +10,9 @@
   "author": "",
   "license": "ISC",
   "description": "",
-  "dependencies": {
-    "@tailwindcss/cli": "^4.2.0",
-    "tailwindcss": "^4.2.0"
-  },
   "devDependencies": {
-    "daisyui": "^5.5.19"
+    "@tailwindcss/cli": "^4.2.1",
+    "daisyui": "^5.5.19",
+    "tailwindcss": "^4.2.1"
   }
 }

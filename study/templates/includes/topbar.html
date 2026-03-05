@@ -1,76 +1,166 @@
 {% load static %}
-<header class="h-[52px] min-h-[52px] bg-base-300 border-b border-neutral
-               flex items-center justify-between px-5 z-10 relative">
+<header class="bg-base-300 border-b border-neutral flex items-center justify-between px-10 z-10 relative flex-shrink-0"
+    style="height:80px; min-height:80px;">
 
     <!-- clock + date -->
-    <div class="flex items-end gap-3">
-        <span id="clock" class="text-[28px] font-bold text-base-content leading-none tracking-tight"
-            style="font-family: 'Share Tech Mono', monospace;">
+    <div class="flex items-end gap-4" style="padding-left: 12px;">
+        <span id="clock" class="font-bold text-base-content leading-none tracking-tight"
+            style="font-family:'Share Tech Mono', monospace; font-size:32px;">
             00:00:00
         </span>
-        <span id="datestamp" class="text-[10px] text-neutral-content tracking-[0.08em] uppercase mb-[3px]">
+        <span id="datestamp" class="text-[12px] text-neutral-content tracking-[0.1em] uppercase"
+            style="margin-bottom:4px;">
             — —
         </span>
     </div>
 
     <!-- profile -->
-    <div class="relative flex items-center gap-3">
+    <div class="relative flex items-center gap-3 ">
 
-        <div class="w-1.5 h-1.5 rounded-full bg-primary" style="box-shadow: 0 0 6px rgba(77,255,170,0.6);"></div>
+        <!-- live dot -->
+        <div class="w-2 h-2 rounded-full bg-primary flex-shrink-0" style="box-shadow: 0 0 8px rgba(77,255,170,0.65);">
+        </div>
 
-        <button id="profile-btn" class="flex items-center gap-2 px-2 py-1 rounded border border-neutral
-                   hover:border-neutral-content/40 transition-colors group">
-            <div class="w-6 h-6 rounded-full bg-neutral flex items-center justify-center
-                  text-[10px] font-medium text-neutral-content
-                  group-hover:text-primary transition-colors">
-                {% if user.is_authenticated %}{{ user.username|first|upper }}{% else %}?{% endif %}
+        <!-- profile button -->
+        <button id="profile-btn" class="flex items-center gap-2.5 px-4 py-3 rounded-lg
+                       border border-neutral hover:border-neutral-content/40
+                       transition-all group" style="margin: 24px;">
+            <div class="w-7 h-7 rounded-full bg-neutral flex items-center justify-center
+                        text-[11px] font-semibold text-neutral-content
+                        group-hover:text-primary transition-colors flex-shrink-0" style="margin-right: 4px;">
+                {% if user.is_authenticated %} {{ user.username|first|upper }}{% else %}?{% endif %}
             </div>
-            <span class="text-[11px] tracking-[0.06em] text-neutral-content
-                   group-hover:text-base-content transition-colors max-w-[100px] truncate">
+            <span class="text-[12px] tracking-[0.04em] text-neutral-content
+                         group-hover:text-base-content transition-colors max-w-[120px] truncate">
                 {% if user.is_authenticated %}{{ user.username }}{% else %}guest{% endif %}
             </span>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                stroke-linecap="round" stroke-linejoin="round"
-                class="text-neutral-content group-hover:text-primary transition-colors">
+            <svg id="profile-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                class="text-neutral-content group-hover:text-primary flex-shrink-0"
+                style="transition: transform 0.2s ease;">
                 <polyline points="6 9 12 15 18 9" />
             </svg>
         </button>
 
         <!-- dropdown -->
-        <div id="profile-menu" class="absolute top-[calc(100%+8px)] right-0 min-w-[180px]
-                bg-base-300 border border-neutral rounded
-                shadow-[0_8px_32px_rgba(0,0,0,0.5)] overflow-hidden z-50" style="display:none;">
+        <div id="profile-menu" class="absolute right-0 rounded-xl overflow-hidden z-50" style="top:calc(100% + 12px); display:none; width:320px;
+                    background-color: #0f1a17;
+                    border: 1px solid #26403a;
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.85), 0 0 0 1px rgba(77,255,170,0.05);">
 
             {% if user.is_authenticated %}
-            <div class="px-4 py-3 border-b border-neutral">
-                <p class="text-[12px] text-base-content font-medium">{{ user.username }}</p>
-                <p class="text-[10px] text-neutral-content mt-0.5">{{ user.email }}</p>
+
+            <!-- user header — centered -->
+            <div style="display:flex; flex-direction:column; align-items:center; text-align:center;
+                        padding: 28px 24px 24px; border-bottom: 1px solid #26403a;">
+                <div style="width:64px; height:64px; border-radius:50%; flex-shrink:0;
+                            background-color:#1c2d28; border: 2px solid #26403a;
+                            display:flex; align-items:center; justify-content:center;
+                            margin-bottom:14px;">
+                    <span style="font-size:24px; font-weight:700; color:#4dffaa;
+                                 font-family:'Geist Mono',monospace; line-height:1;">
+                        {{ user.username|first|upper }}
+                    </span>
+                </div>
+                <p style="font-size:16px; font-weight:600; color:#f0faf5; margin:0 0 6px;">{{ user.username }}</p>
+                <p style="font-size:12px; color:#7aaa96; margin:0;">{{ user.email }}</p>
             </div>
-            <div class="py-1">
-                <a href="#" class="flex items-center gap-3 px-4 py-2 text-[11px] text-neutral-content
-                  tracking-[0.05em] hover:bg-neutral/30 hover:text-base-content transition-colors">
+
+            <!-- links -->
+            <div style="padding: 10px 0;">
+                <a href="#" class="flex items-center justify-center gap-3 transition-colors"
+                    style="padding: 16px 28px; font-size:14px; color:#7aaa96; text-decoration:none;"
+                    onmouseover="this.style.backgroundColor='#1c2d28'; this.style.color='#f0faf5';"
+                    onmouseout="this.style.backgroundColor='transparent'; this.style.color='#7aaa96';">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
                     Profile
                 </a>
-                <a href="#" class="flex items-center gap-3 px-4 py-2 text-[11px] text-neutral-content
-                  tracking-[0.05em] hover:bg-neutral/30 hover:text-base-content transition-colors">
+                <a href="#" class="flex items-center justify-center gap-3 transition-colors"
+                    style="padding: 16px 28px; font-size:14px; color:#7aaa96; text-decoration:none;"
+                    onmouseover="this.style.backgroundColor='#1c2d28'; this.style.color='#f0faf5';"
+                    onmouseout="this.style.backgroundColor='transparent'; this.style.color='#7aaa96';">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                            d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+                    </svg>
                     Settings
                 </a>
             </div>
-            <div class="border-t border-neutral py-1">
-                <a href="{% url 'logout' %}" class="flex items-center gap-3 px-4 py-2 text-[11px] text-error/80
-                  tracking-[0.05em] hover:bg-error/10 hover:text-error transition-colors">
+
+            <!-- sign out -->
+            <div style="border-top: 1px solid #26403a; padding: 10px 0;">
+                <a href="{% url 'logout' %}" class="flex items-center justify-center gap-3 transition-colors"
+                    style="padding: 16px 28px; font-size:14px; color:#ff6b6b; opacity:0.65; text-decoration:none;"
+                    onmouseover="this.style.backgroundColor='rgba(255,107,107,0.08)'; this.style.opacity='1';"
+                    onmouseout="this.style.backgroundColor='transparent'; this.style.opacity='0.65';">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                        <polyline points="16 17 21 12 16 7" />
+                        <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
                     Sign out
                 </a>
             </div>
+
             {% else %}
-            <div class="py-1">
-                <a href="{% url 'login' %}" class="flex items-center gap-3 px-4 py-2 text-[11px] text-neutral-content
-                  tracking-[0.05em] hover:bg-neutral/30 hover:text-primary transition-colors">
+
+            <div style="padding: 8px 0;">
+                <a href="{% url 'login' %}" class="flex items-center justify-center gap-3"
+                    style="padding: 14px 24px; font-size:13px; color:#7aaa96; text-decoration:none;"
+                    onmouseover="this.style.color='#4dffaa';" onmouseout="this.style.color='#7aaa96';">
                     Sign in ->
                 </a>
             </div>
-            {% endif %}
 
+            {% endif %}
         </div>
     </div>
 </header>
+
+<script>
+    (function () {
+        // ── clock ──
+        const clockEl = document.getElementById('clock');
+        const dateEl = document.getElementById('datestamp');
+        const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+        const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+        const pad = n => String(n).padStart(2, '0');
+
+        function tick() {
+            const now = new Date();
+            clockEl.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+            dateEl.textContent = `${days[now.getDay()]} ${pad(now.getDate())} ${months[now.getMonth()]} ${now.getFullYear()}`;
+        }
+        tick();
+        setInterval(tick, 1000);
+
+        // ── profile dropdown ──
+        const btn = document.getElementById('profile-btn');
+        const menu = document.getElementById('profile-menu');
+        const chevron = document.getElementById('profile-chevron');
+        let open = false;
+
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            open = !open;
+            menu.style.display = open ? 'block' : 'none';
+            chevron.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
+        });
+
+        document.addEventListener('click', () => {
+            if (!open) return;
+            open = false;
+            menu.style.display = 'none';
+            chevron.style.transform = 'rotate(0deg)';
+        });
+
+        menu.addEventListener('click', e => e.stopPropagation());
+    })();
+</script>

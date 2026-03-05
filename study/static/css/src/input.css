@@ -1,7 +1,11 @@
 @import "tailwindcss";
-@plugin "daisyui";
 
-/* ─── DaisyUI custom theme ─── */
+/* disable ALL built-in DaisyUI themes so only studyTheme loads */
+@plugin "daisyui" {
+  themes: false;
+}
+
+/* ─── custom theme ─── */
 @plugin "daisyui/theme" {
   name: "studyTheme";
   default: true;
@@ -19,21 +23,22 @@
   --color-error-content: #ffffff;
 }
 
-/* ─── Custom fonts ─── */
+/* ─── fonts ─── */
 @theme {
-  --font-mono: "Geist Mono", monospace;
+  /* --font-mono: "Geist Mono", monospace; */
+  --font-mono: "JetBrains Mono", monospace;
   --font-serif: "Libre Baskerville", serif;
 }
 
-/* ─── Mesh + glow + animation (can't be done with classes) ─── */
+/* ─── mesh + glow + animation ─── */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
   background-image:
-    linear-gradient(#1c2d28 1px, transparent 1px),
-    linear-gradient(90deg, #1c2d28 1px, transparent 1px);
-  background-size: 36px 36px;
+    linear-gradient(#1c2d28 2px, transparent 2px),
+    linear-gradient(90deg, #1c2d28 2px, transparent 2px);
+  background-size: 72px 72px;
   pointer-events: none;
   z-index: 0;
 }

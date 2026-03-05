@@ -84,8 +84,12 @@ WSGI_APPLICATION = 'study.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'planner_db',
+        'USER': 'planner_user',
+        'PASSWORD': 'strongpassword',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
 
@@ -149,5 +153,5 @@ ACCOUNT_AUTHENTICATION_METHOD = 'email'   # already have this
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'  # set to 'mandatory' later with email backend
 
 LOGIN_URL = 'accounts:login'
-LOGIN_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'accounts:login'
