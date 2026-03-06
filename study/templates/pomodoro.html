@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}stud-y — pomodoro{% endblock %}
+
+{% block content %}
+<div class="h-full flex items-center justify-center p-8 animate-up">
+
+    <div class="w-full max-w-md">
+
+        <!-- title -->
+        <div class="text-center mb-12">
+            <h1 class="font-serif italic font-bold text-base-content leading-tight mb-2"
+                style="font-size: 36px; letter-spacing: -0.4px;">
+                focus.
+            </h1>
+            <p class="text-[11px] text-neutral-content tracking-[0.1em] uppercase">
+                pomodoro timer
+            </p>
+        </div>
+
+        <!-- timer display -->
+        <div class="relative mb-12">
+            <!-- outer ring -->
+            <div class="relative w-64 h-64 mx-auto">
+                <svg class="w-full h-full" viewBox="0 0 240 240" style="transform: rotate(-90deg);">
+                    <!-- background circle -->
+                    <circle cx="120" cy="120" r="110" fill="none" stroke="#26403a" stroke-width="1" />
+
+                    <!-- progress ring -->
+                    <circle id="progress-ring" cx="120" cy="120" r="110" fill="none" stroke="#4dffaa" stroke-width="2"
+                        stroke-linecap="round" stroke-dasharray="691.15" stroke-dashoffset="691.15"
+                        style="transition: stroke-dashoffset 1s linear; filter: drop-shadow(0 0 8px rgba(77,255,170,0.4));" />
+                </svg>
+
+                <!-- center content -->
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                    <div class="text-center">
+                        <div id="timer-display" class="font-bold text-base-content leading-none"
+                            style="font-family: 'Share Tech Mono', monospace; font-size: 64px; letter-spacing: -1px;">
+                            25:00
+                        </div>
+                        <div class="text-[12px] text-neutral-content tracking-[0.1em] uppercase mt-2">
+                            work session
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- pulsing dot indicator -->
+            <div class="absolute top-8 left-1/2 transform -translate-x-1/2 flex items-center justify-center"
+                id="timer-indicator">
+                <div class="w-2 h-2 rounded-full bg-primary" style="box-shadow: 0 0 12px rgba(77,255,170,0.7);
+                      animation: pulse 2.4s ease-in-out infinite;"></div>
+            </div>
+        </div>
+
+        <!-- controls -->
+        <div class="flex gap-3 justify-center mb-8">
+            <button id="start-btn" class="px-6 py-3 rounded-lg font-semibold text-[13px] tracking-wide
+                             bg-primary/15 border border-primary/25 text-primary
+                             hover:bg-primary/25 hover:border-primary/40
+                             transition-all active:scale-95" style="min-width: 100px;">
+                START
+            </button>
+            <button id="pause-btn" class="px-6 py-3 rounded-lg font-semibold text-[13px] tracking-wide
+                             bg-neutral/20 border border-neutral text-neutral-content
+                             hover:bg-neutral/30 hover:border-neutral-content/40
+                             transition-all active:scale-95 opacity-50 cursor-not-allowed" disabled
+                style="min-width: 100px;">
+                PAUSE
+            </button>
+            <button id="reset-btn" class="px-6 py-3 rounded-lg font-semibold text-[13px] tracking-wide
+                             bg-neutral/20 border border-neutral text-neutral-content
+                             hover:bg-neutral/30 hover:border-neutral-content/40
+                             transition-all active:scale-95" style="min-width: 100px;">
+                RESET
+            </button>
+        </div>
+
+        <!-- mode selector -->
+        <div class="flex gap-2 justify-center mb-12 p-2 rounded-lg bg-neutral/10 border border-neutral/30"
+            style="width: fit-content; margin-left: auto; margin-right: auto;">
+            <button id="work-mode-btn" class="px-4 py-2 rounded font-semibold text-[12px] tracking-wide
+                             bg-primary/20 border border-primary/40 text-primary
+                             transition-all" style="min-width: 80px;">
+                WORK
+            </button>
+            <button id="break-mode-btn" class="px-4 py-2 rounded font-semibold text-[12px] tracking-wide
+                             border border-neutral text-neutral-content
+                             hover:bg-neutral/20
+                             transition-all" style="min-width: 80px;">
+                BREAK
+            </button>
+        </div>
+
+        <!-- stats -->
+        <div class="flex gap-4 justify-center">
+            <div class="text-center">
+                <div class="text-[28px] font-bold text-primary leading-none mb-1" id="sessions-count">0</div>
+                <div class="text-[11px] text-neutral-content tracking-[0.1em] uppercase">sessions</div>
+            </div>
+            <div class="w-px bg-neutral/50"></div>
+            <div class="text-center">
+                <div class="text-[28px] font-bold text-primary leading-none mb-1" id="time-count">0h</div>
+                <div class="text-[11px] text-neutral-content tracking-[0.1em] uppercase">focused</div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<style>
+    @keyframes pulse {
+
+        0%,
+        100% {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        50% {
+            opacity: 0.5;
+            transform: scale(0.85);
+        }
+    }
+
+    @keyframes fade-in {
+        from {
+            opacity: 0;
+            transform: translateY(-4px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    #timer-indicator {
+        animation: fade-in 0.6s ease-out 0.3s both;
+    }
+</style>
+
+<script>
+    // ── state ──
+    let timeLeft = 25 * 60; // 25 minutes in seconds
+    let isRunning = false;
+    let mode = 'work'; // 'work' or 'break'
+    let sessionsCompleted = 0;
+    let totalFocusedSeconds = 0;
+    let timerInterval = null;
+
+    const WORK_TIME = 25 * 60;
+    const BREAK_TIME = 5 * 60;
+
+    // ── elements ──
+    const timerDisplay = document.getElementById('timer-display');
+    const progressRing = document.getElementById('progress-ring');
+    const startBtn = document.getElementById('start-btn');
+    const pauseBtn = document.getElementById('pause-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    const workModeBtn = document.getElementById('work-mode-btn');
+    const breakModeBtn = document.getElementById('break-mode-btn');
+    const sessionsCount = document.getElementById('sessions-count');
+    const timeCount = document.getElementById('time-count');
+    const timerIndicator = document.getElementById('timer-indicator');
+
+    const circumference = 2 * Math.PI * 110;
+
+    // ── format time ──
+    function formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    // ── update display ──
+    function updateDisplay() {
+        timerDisplay.textContent = formatTime(timeLeft);
+        const totalTime = mode === 'work' ? WORK_TIME : BREAK_TIME;
+        const progress = (totalTime - timeLeft) / totalTime;
+        progressRing.style.strokeDashoffset = circumference * (1 - progress);
+    }
+
+    // ── update stats ──
+    function updateStats() {
+        sessionsCount.textContent = sessionsCompleted;
+        const hours = Math.floor(totalFocusedSeconds / 3600);
+        timeCount.textContent = hours > 0 ? `${hours}h` : `${Math.floor(totalFocusedSeconds / 60)}m`;
+    }
+
+    // ── start timer ──
+    function start() {
+        if (isRunning) return;
+        isRunning = true;
+        startBtn.disabled = true;
+        pauseBtn.disabled = false;
+        startBtn.style.opacity = '0.5';
+        startBtn.style.cursor = 'not-allowed';
+        pauseBtn.style.opacity = '1';
+        pauseBtn.style.cursor = 'pointer';
+
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            totalFocusedSeconds++;
+            updateDisplay();
+            updateStats();
+
+            if (timeLeft === 0) {
+                complete();
+            }
+        }, 1000);
+    }
+
+    // ── pause timer ──
+    function pause() {
+        if (!isRunning) return;
+        isRunning = false;
+        clearInterval(timerInterval);
+        startBtn.disabled = false;
+        pauseBtn.disabled = true;
+        startBtn.style.opacity = '1';
+        startBtn.style.cursor = 'pointer';
+        pauseBtn.style.opacity = '0.5';
+        pauseBtn.style.cursor = 'not-allowed';
+    }
+
+    // ── reset timer ──
+    function reset() {
+        pause();
+        timeLeft = mode === 'work' ? WORK_TIME : BREAK_TIME;
+        updateDisplay();
+    }
+
+    // ── complete session ──
+    function complete() {
+        clearInterval(timerInterval);
+        isRunning = false;
+        if (mode === 'work') {
+            sessionsCompleted++;
+        }
+        // Auto switch to break after work
+        if (mode === 'work') {
+            switchMode('break');
+        } else {
+            switchMode('work');
+        }
+        updateStats();
+        updateDisplay();
+        startBtn.disabled = false;
+        pauseBtn.disabled = true;
+        startBtn.style.opacity = '1';
+        startBtn.style.cursor = 'pointer';
+        pauseBtn.style.opacity = '0.5';
+        pauseBtn.style.cursor = 'not-allowed';
+    }
+
+    // ── switch mode ──
+    function switchMode(newMode) {
+        mode = newMode;
+        timeLeft = mode === 'work' ? WORK_TIME : BREAK_TIME;
+
+        if (mode === 'work') {
+            workModeBtn.classList.add('bg-primary/20', 'border-primary/40', 'text-primary');
+            workModeBtn.classList.remove('border-neutral', 'text-neutral-content', 'hover:bg-neutral/20');
+            breakModeBtn.classList.remove('bg-primary/20', 'border-primary/40', 'text-primary');
+            breakModeBtn.classList.add('border-neutral', 'text-neutral-content', 'hover:bg-neutral/20');
+            document.querySelector('.text-center:nth-child(1) .text-[11px]').textContent = 'work session';
+        } else {
+            breakModeBtn.classList.add('bg-primary/20', 'border-primary/40', 'text-primary');
+            breakModeBtn.classList.remove('border-neutral', 'text-neutral-content', 'hover:bg-neutral/20');
+            workModeBtn.classList.remove('bg-primary/20', 'border-primary/40', 'text-primary');
+            workModeBtn.classList.add('border-neutral', 'text-neutral-content', 'hover:bg-neutral/20');
+            document.querySelector('.text-center:nth-child(1) .text-[11px]').textContent = 'break time';
+        }
+
+        updateDisplay();
+    }
+
+    // ── event listeners ──
+    startBtn.addEventListener('click', start);
+    pauseBtn.addEventListener('click', pause);
+    resetBtn.addEventListener('click', reset);
+    workModeBtn.addEventListener('click', () => {
+        if (!isRunning) switchMode('work');
+    });
+    breakModeBtn.addEventListener('click', () => {
+        if (!isRunning) switchMode('break');
+    });
+
+    // ── initial setup ──
+    updateDisplay();
+    updateStats();
+</script>
+{% endblock %}
