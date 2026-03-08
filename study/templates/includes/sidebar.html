@@ -21,10 +21,9 @@
     <nav class="flex-1 flex flex-col overflow-y-auto overflow-x-hidden px-3" "
         style=" padding-top:24px; padding-bottom:16px; gap:8px;">
 
-        <!-- Dashboard — active, icon always centered -->
+        <!-- Dashboard -->
         <a href="{% url 'dashboard' %}" class="flex items-center justify-center rounded-xl
-                  bg-primary/15 border border-primary/25 text-primary transition-all"
-            style="padding: 15px 0; gap:0; min-height:54px;">
+                  transition-all" id="nav-dashboard" style="padding: 15px 0; gap:0; min-height:54px;">
             <svg id="nav-icon-0" class="flex-shrink-0" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="3" width="7" height="7" rx="1.5" />
@@ -38,10 +37,10 @@
                 Dashboard
             </span>
         </a>
+
         <!-- Pomodoro -->
         <a href="{% url 'pomodoro' %}" class="flex items-center justify-center rounded-xl
-                  text-neutral-content hover:text-base-content hover:bg-neutral/30 transition-all"
-            style="padding: 15px 0; gap:0; min-height:54px;">
+                  transition-all" id="nav-pomodoro" style="padding: 15px 0; gap:0; min-height:54px;">
             <svg id="nav-icon-1" class="flex-shrink-0" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <!-- tomato/clock icon -->
@@ -55,7 +54,6 @@
                 Pomodoro
             </span>
         </a>
-
 
     </nav>
 
@@ -108,7 +106,27 @@
     const logoS = document.getElementById('logo-s');
     const logoFull = document.getElementById('logo-full');
     const navTexts = document.querySelectorAll('.nav-text');
+    const navDashboard = document.getElementById('nav-dashboard');
+    const navPomodoro = document.getElementById('nav-pomodoro');
     let expanded = false;
+
+    // ── highlight active page ──
+    const currentPath = window.location.pathname;
+    if (currentPath.includes('pomodoro')) {
+        navPomodoro.style.backgroundColor = 'rgba(77,255,170,0.15)';
+        navPomodoro.style.borderColor = 'rgba(77,255,170,0.25)';
+        navPomodoro.style.color = '#4dffaa';
+        navDashboard.style.color = '#7aaa96';
+        navDashboard.style.backgroundColor = 'transparent';
+        navDashboard.style.borderColor = 'transparent';
+    } else {
+        navDashboard.style.backgroundColor = 'rgba(77,255,170,0.15)';
+        navDashboard.style.borderColor = 'rgba(77,255,170,0.25)';
+        navDashboard.style.color = '#4dffaa';
+        navPomodoro.style.color = '#7aaa96';
+        navPomodoro.style.backgroundColor = 'transparent';
+        navPomodoro.style.borderColor = 'transparent';
+    }
 
     function toggle() {
         expanded = !expanded;

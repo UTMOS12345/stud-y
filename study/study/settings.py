@@ -34,6 +34,7 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'dashboard',
     'accounts',
+    'pomodoro',
 
     'allauth',
     'allauth.account',
