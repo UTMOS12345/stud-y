@@ -1,0 +1,183 @@
+{% load i18n %}
+
+<div class="p-12 animate-up">
+    <div class="max-w-2xl">
+        <!-- Header -->
+        <div class="mb-10">
+            <h1 class="text-[32px] font-serif italic font-bold text-base-content mb-2">
+                pomodoro settings
+            </h1>
+            <p class="text-[12px] text-neutral-content tracking-[0.1em] uppercase">
+                customize your pomodoro timer
+            </p>
+        </div>
+
+        <!-- Info Card -->
+        <div class="bg-primary/10 border border-primary/30 rounded-xl p-6 mb-10">
+            <div class="flex gap-4">
+                <svg class="w-5 h-5 text-primary flex-shrink-0 mt-1" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                </svg>
+                <div>
+                    <p class="text-[13px] text-primary font-medium">pomodoro technique</p>
+                    <p class="text-[12px] text-primary/80 mt-1">
+                        The Pomodoro Technique is a time management method using a timer to break work into intervals.
+                        Customize the durations below to match your workflow.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pomodoro Form -->
+        <form method="POST" action="{% url 'settings:pomodoro' %}" class="space-y-8">
+            {% csrf_token %}
+
+            <!-- Timer Durations -->
+            <section>
+                <div class="flex items-center gap-4 mb-6">
+                    <h3 class="text-[14px] text-primary tracking-[0.12em] uppercase font-semibold">
+                        timer durations
+                    </h3>
+                    <div class="flex-1 h-px bg-neutral/30"></div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-6">
+                    <!-- Work Duration -->
+                    <div>
+                        <label for="pomodoro_duration"
+                            class="block text-[11px] text-neutral-content tracking-[0.08em] uppercase mb-3">
+                            work session (minutes)
+                        </label>
+                        <div class="flex items-center gap-3">
+                            <input type="number" id="pomodoro_duration" name="default_pomodoro_duration"
+                                value="{{ profile.default_pomodoro_duration }}" min="1" max="120" class="flex-1 px-4 py-3 rounded-lg bg-base-200 border border-neutral
+                                       focus:border-primary/50 text-base-content text-[13px] font-light
+                                       transition-colors focus:outline-none focus:ring-1 focus:ring-primary/20" />
+                            <span class="text-[12px] text-neutral-content/60 whitespace-nowrap">min</span>
+                        </div>
+                        <p class="text-[10px] text-neutral-content/60 mt-2">Recommended: 25 minutes</p>
+                    </div>
+
+                    <!-- Short Break Duration -->
+                    <div>
+                        <label for="short_break_duration"
+                            class="block text-[11px] text-neutral-content tracking-[0.08em] uppercase mb-3">
+                            short break (minutes)
+                        </label>
+                        <div class="flex items-center gap-3">
+                            <input type="number" id="short_break_duration" name="default_short_break_duration"
+                                value="{{ profile.default_short_break_duration }}" min="1" max="60" class="flex-1 px-4 py-3 rounded-lg bg-base-200 border border-neutral
+                                       focus:border-primary/50 text-base-content text-[13px] font-light
+                                       transition-colors focus:outline-none focus:ring-1 focus:ring-primary/20" />
+                            <span class="text-[12px] text-neutral-content/60 whitespace-nowrap">min</span>
+                        </div>
+                        <p class="text-[10px] text-neutral-content/60 mt-2">Recommended: 5 minutes</p>
+                    </div>
+
+                    <!-- Long Break Duration -->
+                    <div>
+                        <label for="long_break_duration"
+                            class="block text-[11px] text-neutral-content tracking-[0.08em] uppercase mb-3">
+                            long break (minutes)
+                        </label>
+                        <div class="flex items-center gap-3">
+                            <input type="number" id="long_break_duration" name="default_long_break_duration"
+                                value="{{ profile.default_long_break_duration }}" min="1" max="120" class="flex-1 px-4 py-3 rounded-lg bg-base-200 border border-neutral
+                                       focus:border-primary/50 text-base-content text-[13px] font-light
+                                       transition-colors focus:outline-none focus:ring-1 focus:ring-primary/20" />
+                            <span class="text-[12px] text-neutral-content/60 whitespace-nowrap">min</span>
+                        </div>
+                        <p class="text-[10px] text-neutral-content/60 mt-2">Recommended: 15 minutes</p>
+                    </div>
+
+                    <!-- Long Break Interval -->
+                    <div>
+                        <label for="long_break_interval"
+                            class="block text-[11px] text-neutral-content tracking-[0.08em] uppercase mb-3">
+                            sessions until long break
+                        </label>
+                        <div class="flex items-center gap-3">
+                            <input type="number" id="long_break_interval" name="default_long_break_interval"
+                                value="{{ profile.default_long_break_interval }}" min="1" max="20" class="flex-1 px-4 py-3 rounded-lg bg-base-200 border border-neutral
+                                       focus:border-primary/50 text-base-content text-[13px] font-light
+                                       transition-colors focus:outline-none focus:ring-1 focus:ring-primary/20" />
+                            <span class="text-[12px] text-neutral-content/60 whitespace-nowrap">sessions</span>
+                        </div>
+                        <p class="text-[10px] text-neutral-content/60 mt-2">Recommended: 4 sessions</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Preview -->
+            <section>
+                <div class="flex items-center gap-4 mb-6">
+                    <h3 class="text-[14px] text-primary tracking-[0.12em] uppercase font-semibold">
+                        preview
+                    </h3>
+                    <div class="flex-1 h-px bg-neutral/30"></div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="bg-base-300 border border-neutral rounded-lg p-4">
+                        <p class="text-[11px] text-neutral-content/60 tracking-[0.05em] uppercase mb-2">
+                            work session
+                        </p>
+                        <p class="text-[28px] font-bold text-primary" id="work-preview">
+                            {{ profile.default_pomodoro_duration }}
+                        </p>
+                        <p class="text-[10px] text-neutral-content/60 mt-1">minutes</p>
+                    </div>
+
+                    <div class="bg-base-300 border border-neutral rounded-lg p-4">
+                        <p class="text-[11px] text-neutral-content/60 tracking-[0.05em] uppercase mb-2">
+                            short break
+                        </p>
+                        <p class="text-[28px] font-bold text-primary" id="short-preview">
+                            {{ profile.default_short_break_duration }}
+                        </p>
+                        <p class="text-[10px] text-neutral-content/60 mt-1">minutes</p>
+                    </div>
+
+                    <div class="bg-base-300 border border-neutral rounded-lg p-4">
+                        <p class="text-[11px] text-neutral-content/60 tracking-[0.05em] uppercase mb-2">
+                            long break
+                        </p>
+                        <p class="text-[28px] font-bold text-primary" id="long-preview">
+                            {{ profile.default_long_break_duration }}
+                        </p>
+                        <p class="text-[10px] text-neutral-content/60 mt-1">minutes</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Action Buttons -->
+            <div class="flex gap-4 pt-8 border-t border-neutral/50">
+                <button type="submit" class="px-8 py-3 rounded-lg bg-primary text-primary-content
+                               text-[13px] font-semibold tracking-[0.05em]
+                               hover:bg-primary/90 transition-colors">
+                    save changes
+                </button>
+                <button type="reset" class="px-8 py-3 rounded-lg border border-neutral text-neutral-content
+                               text-[13px] font-semibold tracking-[0.05em]
+                               hover:border-neutral-content/40 hover:text-base-content transition-colors">
+                    reset
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Live preview updates
+    document.getElementById('pomodoro_duration').addEventListener('change', function () {
+        document.getElementById('work-preview').textContent = this.value;
+    });
+    document.getElementById('short_break_duration').addEventListener('change', function () {
+        document.getElementById('short-preview').textContent = this.value;
+    });
+    document.getElementById('long_break_duration').addEventListener('change', function () {
+        document.getElementById('long-preview').textContent = this.value;
+    });
+</script>

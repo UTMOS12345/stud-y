@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}stud-y — settings{% endblock %}
+
+{% block content %}
+<div class="h-full flex items-stretch overflow-hidden">
+
+    <!-- Sidebar Navigation -->
+    <aside class="w-64 bg-base-200 border-r border-neutral overflow-y-auto flex-shrink-0">
+        <div class="sticky top-0 bg-base-200 px-6 py-6 border-b border-neutral">
+            <h2 class="text-[16px] font-semibold text-base-content tracking-tight">
+                settings
+            </h2>
+            <p class="text-[11px] text-neutral-content tracking-[0.08em] uppercase mt-1">
+                manage your account
+            </p>
+        </div>
+
+        <nav class="py-6 space-y-1 px-3">
+            <!-- Profile Section -->
+            <div>
+                <div class="px-3 py-2 mb-4">
+                    <p class="text-[10px] text-neutral-content/60 tracking-[0.1em] uppercase font-semibold">
+                        account
+                    </p>
+                </div>
+
+                <a href="{% url 'settings:profile' %}"
+                    class="group flex items-center gap-3 px-3 py-3 rounded-lg transition-all
+                          {% if active_section == 'profile' %}bg-base-300 border-l-2 border-primary{% else %}hover:bg-base-300/50 border-l-2 border-transparent{% endif %}">
+                    <svg class="w-5 h-5 text-neutral-content group-hover:text-primary transition-colors"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-[13px] text-base-content font-medium">Profile</p>
+                        <p class="text-[10px] text-neutral-content/60">Edit your profile info</p>
+                    </div>
+                    <svg class="w-4 h-4 text-neutral-content/40" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                </a>
+
+                <a href="{% url 'settings:pomodoro' %}"
+                    class="group flex items-center gap-3 px-3 py-3 rounded-lg transition-all
+                          {% if active_section == 'pomodoro' %}bg-base-300 border-l-2 border-primary{% else %}hover:bg-base-300/50 border-l-2 border-transparent{% endif %}">
+                    <svg class="w-5 h-5 text-neutral-content group-hover:text-primary transition-colors"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-[13px] text-base-content font-medium">Pomodoro</p>
+                        <p class="text-[10px] text-neutral-content/60">Timer settings</p>
+                    </div>
+                    <svg class="w-4 h-4 text-neutral-content/40" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                </a>
+
+                <a href="{% url 'settings:preferences' %}"
+                    class="group flex items-center gap-3 px-3 py-3 rounded-lg transition-all
+                          {% if active_section == 'preferences' %}bg-base-300 border-l-2 border-primary{% else %}hover:bg-base-300/50 border-l-2 border-transparent{% endif %}">
+                    <svg class="w-5 h-5 text-neutral-content group-hover:text-primary transition-colors"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                            d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+                    </svg>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-[13px] text-base-content font-medium">Preferences</p>
+                        <p class="text-[10px] text-neutral-content/60">Theme & language</p>
+                    </div>
+                    <svg class="w-4 h-4 text-neutral-content/40" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                </a>
+            </div>
+
+            <!-- Support Section -->
+            <div class="mt-8">
+                <div class="px-3 py-2 mb-4">
+                    <p class="text-[10px] text-neutral-content/60 tracking-[0.1em] uppercase font-semibold">
+                        support
+                    </p>
+                </div>
+
+                <a href="{% url 'settings:security' %}"
+                    class="group flex items-center gap-3 px-3 py-3 rounded-lg transition-all
+                          {% if active_section == 'security' %}bg-base-300 border-l-2 border-primary{% else %}hover:bg-base-300/50 border-l-2 border-transparent{% endif %}">
+                    <svg class="w-5 h-5 text-neutral-content group-hover:text-primary transition-colors"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    </svg>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-[13px] text-base-content font-medium">Security</p>
+                        <p class="text-[10px] text-neutral-content/60">Password & safety</p>
+                    </div>
+                    <svg class="w-4 h-4 text-neutral-content/40" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                </a>
+
+                <a href="{% url 'settings:about' %}"
+                    class="group flex items-center gap-3 px-3 py-3 rounded-lg transition-all
+                          {% if active_section == 'about' %}bg-base-300 border-l-2 border-primary{% else %}hover:bg-base-300/50 border-l-2 border-transparent{% endif %}">
+                    <svg class="w-5 h-5 text-neutral-content group-hover:text-primary transition-colors"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="16" x2="12" y2="12" />
+                        <line x1="12" y1="8" x2="12.01" y2="8" />
+                    </svg>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-[13px] text-base-content font-medium">About</p>
+                        <p class="text-[10px] text-neutral-content/60">App information</p>
+                    </div>
+                    <svg class="w-4 h-4 text-neutral-content/40" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                </a>
+            </div>
+
+            <!-- Danger Zone -->
+            <div class="mt-8 pt-6 border-t border-neutral/30">
+                <div class="px-3 py-2 mb-4">
+                    <p class="text-[10px] text-error tracking-[0.1em] uppercase font-semibold">
+                        danger zone
+                    </p>
+                </div>
+
+                <button type="button" class="group flex items-center gap-3 px-3 py-3 rounded-lg transition-all w-full
+                          hover:bg-error/5 border-l-2 border-transparent" onclick="alert('Coming soon')">
+                    <svg class="w-5 h-5 text-error" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2">
+                        <polyline points="3 6 5 4 21 4 23 6 23 20a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V6z" />
+                        <line x1="10" y1="11" x2="10" y2="17" />
+                        <line x1="14" y1="11" x2="14" y2="17" />
+                    </svg>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-[13px] text-error font-medium">Delete Account</p>
+                        <p class="text-[10px] text-error/60">Permanently delete</p>
+                    </div>
+                    <svg class="w-4 h-4 text-error/40" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                </button>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto">
+        {% if active_section == 'profile' %}
+        {% include "settings/profile_section.html" %}
+        {% elif active_section == 'pomodoro' %}
+        {% include "settings/pomodoro_section.html" %}
+        {% elif active_section == 'preferences' %}
+        {% include "settings/preferences_section.html" %}
+        {% elif active_section == 'security' %}
+        {% include "settings/security_section.html" %}
+        {% elif active_section == 'about' %}
+        {% include "settings/about_section.html" %}
+        {% else %}
+        {% include "settings/profile_section.html" %}
+        {% endif %}
+    </main>
+</div>
+
+<style>
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #26403a;
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #4dffaa;
+    }
+</style>
+{% endblock %}

@@ -118,12 +118,13 @@
     (function () {
         if (window.lucide) lucide.createIcons();
 
-        let timeLeft = 25 * 60;
+        let endTime = null;
         let isRunning = false;
         let mode = 'work';
         let sessionsCompleted = 0;
         let totalFocusedSeconds = 0;
         let timerInterval = null;
+        let timeLeft;
 
         const WORK_TIME = 25 * 60;
         const BREAK_TIME = 5 * 60;
@@ -154,6 +155,23 @@
             progressRing.style.strokeDashoffset = -offset;
         }
 
+        function updateTimer() {
+            if (endTime) {
+                const remaining = Math.round((endTime - Date.now()) / 1000);
+                if (remaining >= 0) {
+                    timeLeft = remaining;
+                    if (mode === 'work') {
+                        const focusedSecondsSinceStart = (mode === 'work' ? WORK_TIME : BREAK_TIME) - timeLeft;
+                        totalFocusedSeconds = parseInt(localStorage.getItem('totalFocusedSeconds') || 0) + focusedSecondsSinceStart;
+                    }
+                    updateDisplay();
+                } else {
+                    complete();
+                }
+            }
+        }
+
+
         function updateStats() {
             sessionsCount.textContent = sessionsCompleted;
             const mins = Math.floor(totalFocusedSeconds / 60);
@@ -162,16 +180,21 @@
 
         function start() {
             if (isRunning) return;
+
             isRunning = true;
             playIcon.style.display = 'none';
             pauseIcon.style.display = 'block';
-            timerInterval = setInterval(() => {
-                timeLeft--;
-                if (mode === 'work') totalFocusedSeconds++;
-                updateDisplay();
-                updateStats();
-                if (timeLeft <= 0) complete();
-            }, 1000);
+
+            const duration = mode === 'work' ? WORK_TIME : BREAK_TIME;
+            if (endTime === null) {
+                endTime = Date.now() + timeLeft * 1000;
+            }
+
+            localStorage.setItem('endTime', endTime);
+            localStorage.setItem('isRunning', isRunning);
+            localStorage.setItem('mode', mode);
+
+            timerInterval = setInterval(updateTimer, 250);
         }
 
         function pause() {
@@ -179,11 +202,19 @@
             clearInterval(timerInterval);
             playIcon.style.display = 'block';
             pauseIcon.style.display = 'none';
+            localStorage.setItem('isRunning', isRunning);
+            localStorage.setItem('timeLeft', timeLeft);
+            localStorage.removeItem('endTime');
         }
 
         function complete() {
             pause();
-            if (mode === 'work') sessionsCompleted++;
+            if (mode === 'work') {
+                sessionsCompleted++;
+                localStorage.setItem('sessionsCompleted', sessionsCompleted);
+                const focusedSeconds = parseInt(localStorage.getItem('totalFocusedSeconds') || 0);
+                localStorage.setItem('totalFocusedSeconds', focusedSeconds + WORK_TIME);
+            }
             switchMode(mode === 'work' ? 'break' : 'work');
         }
 
@@ -191,6 +222,11 @@
             mode = newMode;
             timeLeft = mode === 'work' ? WORK_TIME : BREAK_TIME;
             sessionLabel.textContent = mode;
+            endTime = null;
+            localStorage.setItem('mode', mode);
+            localStorage.setItem('timeLeft', timeLeft);
+            localStorage.removeItem('endTime');
+
 
             if (mode === 'work') {
                 workModeBtn.className = "px-7 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] transition-all bg-primary/20 text-primary border border-primary/30";
@@ -202,13 +238,54 @@
             updateDisplay();
         }
 
+        function loadState() {
+            const savedEndTime = parseInt(localStorage.getItem('endTime'));
+            const savedIsRunning = localStorage.getItem('isRunning') === 'true';
+            const savedMode = localStorage.getItem('mode');
+            const savedTimeLeft = parseInt(localStorage.getItem('timeLeft'));
+            sessionsCompleted = parseInt(localStorage.getItem('sessionsCompleted') || 0);
+            totalFocusedSeconds = parseInt(localStorage.getItem('totalFocusedSeconds') || 0);
+
+            if (savedMode) {
+                mode = savedMode;
+            }
+
+            if (savedIsRunning && savedEndTime) {
+                const remaining = Math.round((savedEndTime - Date.now()) / 1000);
+                if (remaining > 0) {
+                    timeLeft = remaining;
+                    endTime = savedEndTime;
+                    start();
+                } else {
+                    timeLeft = savedTimeLeft || (mode === 'work' ? WORK_TIME : BREAK_TIME);
+                    complete();
+                }
+            } else {
+                timeLeft = savedTimeLeft || (mode === 'work' ? WORK_TIME : BREAK_TIME);
+            }
+
+            switchMode(mode);
+            updateDisplay();
+            updateStats();
+        }
+
+        window.addEventListener('beforeunload', () => {
+            if (isRunning) {
+                localStorage.setItem('timeLeft', timeLeft);
+            }
+        });
+
         startBtn.addEventListener('click', () => isRunning ? pause() : start());
-        resetBtn.addEventListener('click', () => { pause(); switchMode(mode); });
+        resetBtn.addEventListener('click', () => {
+            pause();
+            localStorage.removeItem('endTime');
+            localStorage.removeItem('timeLeft');
+            switchMode(mode);
+        });
         workModeBtn.addEventListener('click', () => { if (!isRunning) switchMode('work'); });
         breakModeBtn.addEventListener('click', () => { if (!isRunning) switchMode('break'); });
 
-        updateDisplay();
-        updateStats();
+        loadState();
     })();
 </script>
 {% endblock %}

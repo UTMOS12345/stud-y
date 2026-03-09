@@ -1,0 +1,67 @@
+{% load i18n %}
+
+<div class="p-12 animate-up">
+    <div class="max-w-2xl">
+        <!-- Header -->
+        <div class="mb-10">
+            <h1 class="text-[32px] font-serif italic font-bold text-base-content mb-2">
+                security
+            </h1>
+            <p class="text-[12px] text-neutral-content tracking-[0.1em] uppercase">
+                protect your account
+            </p>
+        </div>
+
+        <!-- Password Section -->
+        <section class="mb-10">
+            <div class="flex items-center gap-4 mb-6">
+                <h3 class="text-[14px] text-primary tracking-[0.12em] uppercase font-semibold">
+                    password
+                </h3>
+                <div class="flex-1 h-px bg-neutral/30"></div>
+            </div>
+
+            <div class="bg-base-300 border border-neutral rounded-xl p-6">
+                <div class="flex items-start justify-between mb-4">
+                    <div>
+                        <p class="text-[13px] font-semibold text-base-content mb-1">
+                            change your password
+                        </p>
+                        <p class="text-[12px] text-neutral-content/60">
+                            update your password regularly for better security
+                        </p>
+                    </div>
+                </div>
+                <button type="button" class="px-6 py-2 rounded-lg border border-primary text-primary
+                               text-[12px] font-semibold tracking-[0.05em]
+                               hover:bg-primary/10 transition-colors" onclick="alert('Password change coming soon')">
+                    change password
+                </button>
+            </div>
+        </section>
+
+        <!-- Danger Zone -->
+        <section class="pt-8 border-t border-error/30">
+            <div class="flex items-center gap-4 mb-6">
+                <h3 class="text-[14px] text-error tracking-[0.12em] uppercase font-semibold">
+                    danger zone
+                </h3>
+                <div class="flex-1 h-px bg-error/30"></div>
+            </div>
+
+            <div class="bg-error/5 border border-error/30 rounded-xl p-6">
+                <p class="text-[13px] text-error font-semibold mb-2">
+                    delete account
+                </p>
+                <p class="text-[12px] text-error/80 mb-4">
+                    permanently delete your account and all data. this cannot be undone.
+                </p>
+                <button type="button" class="px-6 py-2 rounded-lg bg-error/20 text-error
+                               text-[12px] font-semibold tracking-[0.05em]
+                               hover:bg-error/30 transition-colors" onclick="alert('Account deletion coming soon')">
+                    delete account
+                </button>
+            </div>
+        </section>
+    </div>
+</div>
