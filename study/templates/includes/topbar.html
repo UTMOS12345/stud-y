@@ -1,5 +1,5 @@
 {% load static %}
-<header class="bg-base-300 border-b border-neutral flex items-center justify-between px-10 z-10 relative flex-shrink-0"
+<header class="bg-base-300 border-b border-neutral flex items-center justify-between px-10 z-20 relative flex-shrink-0"
     style="height:80px; min-height:80px;">
 
     <!-- clock + date -->
@@ -15,75 +15,60 @@
     </div>
 
     <!-- profile -->
-    <div class="relative flex items-center gap-3 ">
-
+    <div class="relative flex items-center gap-3">
         <!-- live dot -->
         <div class="w-2 h-2 rounded-full bg-primary flex-shrink-0" style="box-shadow: 0 0 8px rgba(77,255,170,0.65);">
         </div>
 
         <!-- profile button -->
-        <button id="profile-btn" class="flex items-center gap-2.5 px-4 py-3 rounded-lg
-                       border border-neutral hover:border-neutral-content/40
-                       transition-all group" style="margin: 24px;">
-            <div class="w-7 h-7 rounded-full bg-neutral flex items-center justify-center
-                        text-[11px] font-semibold text-neutral-content
-                        group-hover:text-primary transition-colors flex-shrink-0" style="margin-right: 4px;">
-                {% if user.is_authenticated %} {{ user.username|first|upper }}{% else %}?{% endif %}
+        <button id="profile-btn"
+            class="flex items-center gap-2.5 px-4 py-3 rounded-lg border border-neutral hover:border-neutral-content/40 transition-all group pointer-events-auto cursor-pointer"
+            style="margin: 24px;">
+            <div
+                class="w-7 h-7 rounded-full bg-neutral flex items-center justify-center text-[11px] font-semibold text-neutral-content group-hover:text-primary transition-colors flex-shrink-0">
+                {% if user.is_authenticated %}{{ user.username|first|upper }}{% else %}?{% endif %}
             </div>
-            <span class="text-[12px] tracking-[0.04em] text-neutral-content
-                         group-hover:text-base-content transition-colors max-w-[120px] truncate">
+            <span
+                class="text-[12px] tracking-[0.04em] text-neutral-content group-hover:text-base-content transition-colors max-w-[120px] truncate">
                 {% if user.is_authenticated %}{{ user.username }}{% else %}guest{% endif %}
             </span>
             <svg id="profile-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-                class="text-neutral-content group-hover:text-primary flex-shrink-0"
-                style="transition: transform 0.2s ease;">
+                class="text-neutral-content group-hover:text-primary flex-shrink-0 transition-transform">
                 <polyline points="6 9 12 15 18 9" />
             </svg>
         </button>
 
         <!-- dropdown -->
-        <div id="profile-menu" class="absolute right-0 rounded-xl overflow-hidden z-50" style="top:calc(100% + 12px); display:none; width:320px;
-                    background-color: #0f1a17;
-                    border: 1px solid #26403a;
-                    box-shadow: 0 20px 60px rgba(0,0,0,0.85), 0 0 0 1px rgba(77,255,170,0.05);">
+        <div id="profile-menu" class="absolute right-0 rounded-xl overflow-hidden z-[100] hidden"
+            style="top:calc(100% - 10px); width:280px; background-color: #0f1a17; border: 1px solid #26403a; box-shadow: 0 20px 60px rgba(0,0,0,0.85);">
 
             {% if user.is_authenticated %}
-
-            <!-- user header — centered -->
-            <div style="display:flex; flex-direction:column; align-items:center; text-align:center;
-                        padding: 28px 24px 24px; border-bottom: 1px solid #26403a;">
-                <div style="width:64px; height:64px; border-radius:50%; flex-shrink:0;
-                            background-color:#1c2d28; border: 2px solid #26403a;
-                            display:flex; align-items:center; justify-content:center;
-                            margin-bottom:14px;">
-                    <span style="font-size:24px; font-weight:700; color:#4dffaa;
-                                 font-family:'Geist Mono',monospace; line-height:1;">
-                        {{ user.username|first|upper }}
-                    </span>
+            <!-- user header -->
+            <div class="flex flex-col items-center text-center p-6 border-b border-[#26403a]">
+                <div
+                    class="w-12 h-12 rounded-full bg-[#1c2d28] border border-[#26403a] flex items-center justify-center mb-3">
+                    <span class="text-primary font-bold text-lg">{{ user.username|first|upper }}</span>
                 </div>
-                <p style="font-size:16px; font-weight:600; color:#f0faf5; margin:0 0 6px;">{{ user.username }}</p>
-                <p style="font-size:12px; color:#7aaa96; margin:0;">{{ user.email }}</p>
+                <p class="text-sm font-semibold text-base-content">{{ user.username }}</p>
+                <p class="text-[11px] text-neutral-content/60">{{ user.email }}</p>
             </div>
 
             <!-- links -->
-            <div style="padding: 10px 0;">
-                <a href="#" class="flex items-center justify-center gap-3 transition-colors"
-                    style="padding: 16px 28px; font-size:14px; color:#7aaa96; text-decoration:none;"
-                    onmouseover="this.style.backgroundColor='#1c2d28'; this.style.color='#f0faf5';"
-                    onmouseout="this.style.backgroundColor='transparent'; this.style.color='#7aaa96';">
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            <div class="py-2">
+                <a href="{% url 'settings:profile' %}"
+                    class="flex items-center gap-3 px-6 py-4 text-sm text-neutral-content hover:bg-[#1c2d28] hover:text-primary transition-all cursor-pointer">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                         <circle cx="12" cy="7" r="4" />
                     </svg>
                     Profile
                 </a>
-                <a href="{% url 'settings:profile' %}" class="flex items-center justify-center gap-3 transition-colors"
-                    style="padding: 16px 28px; font-size:14px; color:#7aaa96; text-decoration:none;"
-                    onmouseover="this.style.backgroundColor='#1c2d28'; this.style.color='#f0faf5';"
-                    onmouseout="this.style.backgroundColor='transparent'; this.style.color='#7aaa96';">
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+
+                <a href="{% url 'settings:profile' %}"
+                    class="flex items-center gap-3 px-6 py-4 text-sm text-neutral-content hover:bg-[#1c2d28] hover:text-primary transition-all cursor-pointer">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="3" />
                         <path
@@ -94,12 +79,10 @@
             </div>
 
             <!-- sign out -->
-            <div style="border-top: 1px solid #26403a; padding: 10px 0;">
-                <a href="{% url 'logout' %}" class="flex items-center justify-center gap-3 transition-colors"
-                    style="padding: 16px 28px; font-size:14px; color:#ff6b6b; opacity:0.65; text-decoration:none;"
-                    onmouseover="this.style.backgroundColor='rgba(255,107,107,0.08)'; this.style.opacity='1';"
-                    onmouseout="this.style.backgroundColor='transparent'; this.style.opacity='0.65';">
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            <div class="border-t border-[#26403a] py-2">
+                <a href="{% url 'logout' %}"
+                    class="flex items-center gap-3 px-6 py-4 text-sm text-error/70 hover:bg-error/5 hover:text-error transition-all cursor-pointer">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                         <polyline points="16 17 21 12 16 7" />
@@ -108,17 +91,13 @@
                     Sign out
                 </a>
             </div>
-
             {% else %}
-
-            <div style="padding: 8px 0;">
-                <a href="{% url 'login' %}" class="flex items-center justify-center gap-3"
-                    style="padding: 14px 24px; font-size:13px; color:#7aaa96; text-decoration:none;"
-                    onmouseover="this.style.color='#4dffaa';" onmouseout="this.style.color='#7aaa96';">
-                    Sign in ->
+            <div class="p-2">
+                <a href="{% url 'account_login' %}"
+                    class="flex items-center justify-center p-3 text-sm text-neutral-content hover:text-primary transition-all cursor-pointer">
+                    Sign in →
                 </a>
             </div>
-
             {% endif %}
         </div>
     </div>
@@ -126,7 +105,7 @@
 
 <script>
     (function () {
-        // ── clock ──
+        // Clock
         const clockEl = document.getElementById('clock');
         const dateEl = document.getElementById('datestamp');
         const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
@@ -135,32 +114,36 @@
 
         function tick() {
             const now = new Date();
-            clockEl.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-            dateEl.textContent = `${days[now.getDay()]} ${pad(now.getDate())} ${months[now.getMonth()]} ${now.getFullYear()}`;
+            if (clockEl) clockEl.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+            if (dateEl) dateEl.textContent = `${days[now.getDay()]} ${pad(now.getDate())} ${months[now.getMonth()]} ${now.getFullYear()}`;
         }
         tick();
         setInterval(tick, 1000);
 
-        // ── profile dropdown ──
+        // Dropdown Logic
         const btn = document.getElementById('profile-btn');
         const menu = document.getElementById('profile-menu');
         const chevron = document.getElementById('profile-chevron');
-        let open = false;
 
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            open = !open;
-            menu.style.display = open ? 'block' : 'none';
-            chevron.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
-        });
+        if (btn && menu) {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isHidden = menu.classList.contains('hidden');
+                if (isHidden) {
+                    menu.classList.remove('hidden');
+                    chevron.style.transform = 'rotate(180deg)';
+                } else {
+                    menu.classList.add('hidden');
+                    chevron.style.transform = 'rotate(0deg)';
+                }
+            });
 
-        document.addEventListener('click', () => {
-            if (!open) return;
-            open = false;
-            menu.style.display = 'none';
-            chevron.style.transform = 'rotate(0deg)';
-        });
-
-        menu.addEventListener('click', e => e.stopPropagation());
+            document.addEventListener('click', (e) => {
+                if (!menu.contains(e.target) && !btn.contains(e.target)) {
+                    menu.classList.add('hidden');
+                    chevron.style.transform = 'rotate(0deg)';
+                }
+            });
+        }
     })();
 </script>

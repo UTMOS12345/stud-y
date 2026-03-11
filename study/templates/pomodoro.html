@@ -55,7 +55,7 @@
                     <button
                         class="w-11 h-11 rounded-full border border-primary/20 text-primary/40 hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center group"
                         title="Settings">
-                        <i data-lucide="settings"
+                        <i id="settings-btn" data-lucide="settings"
                             class="w-4 h-4 group-hover:rotate-90 transition-transform duration-500"></i>
                     </button>
 
@@ -131,6 +131,7 @@
         const circumference = 2 * Math.PI * 255;
 
         const timerDisplay = document.getElementById('timer-display');
+        const settingsBtn = document.getElementById('settings-btn');
         const startBtn = document.getElementById('start-btn');
         const resetBtn = document.getElementById('reset-btn');
         const playIcon = document.getElementById('play-icon');
@@ -141,6 +142,10 @@
         const timeCount = document.getElementById('time-count');
         const sessionLabel = document.getElementById('session-label');
         const progressRing = document.getElementById('progress-ring');
+
+        settingsBtn.addEventListener('click', () => {
+            window.location.href = '{% url "settings:pomodoro" %}';
+        });
 
         function formatTime(seconds) {
             const mins = Math.floor(seconds / 60);

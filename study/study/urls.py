@@ -10,6 +10,6 @@ urlpatterns = [
     path('', include('dashboard.urls')),
     path('dashboard/', RedirectView.as_view(url='/')),
     path('pomodoro/' , include('pomodoro.urls')) ,
-    path('settings/' , include('settings.urls')) ,
+    path('settings/' , include('settings.urls', namespace='settings')) ,
     path('admin/', admin.site.urls),
 ]
