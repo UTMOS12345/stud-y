@@ -1,15 +1,15 @@
 {% load static %}
-<header
-    class="bg-base-300 border-b border-neutral flex items-center justify-between px-10 z-20 relative flex-shrink-0 overflow-hidden"
+<header class="bg-base-300 border-b border-neutral flex items-center justify-between px-10 z-20 relative flex-shrink-0"
     style="height:80px; min-height:80px;">
 
     <!-- Progress Bar (Pomodoro Timer Indicator) -->
-    <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary/0 to-transparent"
+    <div class="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-transparent via-primary/0 to-transparent"
         id="progress-bar-container" style="background: linear-gradient(90deg, transparent, rgba(77, 255, 170, 0), transparent);
                 box-shadow: none;
                 width: 0%;
                 height: 2px;
-                transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;">
+                transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+                z-index: 1;">
     </div>
 
     <!-- Glowing Flow Effect (Background) -->
@@ -17,7 +17,8 @@
                 background: rgba(77, 255, 170, 0.5);
                 box-shadow: 0 0 30px rgba(77, 255, 170, 0.8), 0 0 60px rgba(77, 255, 170, 0.4);
                 filter: blur(2px);
-                transition: opacity 0.3s ease;">
+                transition: opacity 0.3s ease;
+                z-index: 1;">
     </div>
 
     <!-- clock + date -->
@@ -33,7 +34,7 @@
     </div>
 
     <!-- profile -->
-    <div class="relative flex items-center gap-3">
+    <div class="relative flex items-center gap-3" style="z-index: 50;">
         <!-- live dot -->
         <div class="w-2 h-2 rounded-full bg-primary flex-shrink-0" style="box-shadow: 0 0 8px rgba(77,255,170,0.65);">
         </div>
@@ -58,8 +59,8 @@
         </button>
 
         <!-- dropdown -->
-        <div id="profile-menu" class="absolute right-0 rounded-xl overflow-hidden z-[100] hidden"
-            style="top:calc(100% - 10px); width:280px; background-color: #0f1a17; border: 1px solid #26403a; box-shadow: 0 20px 60px rgba(0,0,0,0.85);">
+        <div id="profile-menu" class="absolute right-0 rounded-xl overflow-hidden z-50 hidden"
+            style="top:calc(100% + 8px); width:280px; background-color: #0f1a17; border: 1px solid #26403a; box-shadow: 0 20px 60px rgba(0,0,0,0.85);">
 
             {% if user.is_authenticated %}
             <!-- user header -->
@@ -181,7 +182,7 @@
         tick();
         setInterval(tick, 1000);
 
-        // Pomodoro Progress Bar
+        // Pomodoro Progress Bar - Update every 250ms to match timer
         function updateProgressBar() {
             const isRunning = localStorage.getItem('pomodoro_isRunning') === 'true';
             const mode = localStorage.getItem('pomodoro_mode') || 'work';
@@ -191,7 +192,7 @@
             const BREAK_TIME = 5 * 60;
             const totalTime = mode === 'work' ? WORK_TIME : BREAK_TIME;
 
-            if (isRunning && timeLeft >= 0) {
+            if (isRunning && timeLeft >= 0 && totalTime > 0) {
                 // Calculate progress percentage (inverse so it fills as time decreases)
                 const progress = ((totalTime - timeLeft) / totalTime) * 100;
                 progressBar.style.width = progress + '%';
@@ -202,6 +203,7 @@
                 // Add active animations when timer is running
                 progressBar.classList.add('active');
                 flowGlow.classList.add('active');
+                flowGlow.style.opacity = '1';
 
                 // Make progress bar more visible when timer is low (last 25%)
                 if (timeLeft < totalTime * 0.25) {
