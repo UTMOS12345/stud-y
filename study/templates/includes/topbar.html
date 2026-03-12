@@ -1,6 +1,24 @@
 {% load static %}
-<header class="bg-base-300 border-b border-neutral flex items-center justify-between px-10 z-20 relative flex-shrink-0"
+<header
+    class="bg-base-300 border-b border-neutral flex items-center justify-between px-10 z-20 relative flex-shrink-0 overflow-hidden"
     style="height:80px; min-height:80px;">
+
+    <!-- Progress Bar (Pomodoro Timer Indicator) -->
+    <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary/0 to-transparent"
+        id="progress-bar-container" style="background: linear-gradient(90deg, transparent, rgba(77, 255, 170, 0), transparent);
+                box-shadow: none;
+                width: 0%;
+                height: 2px;
+                transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;">
+    </div>
+
+    <!-- Glowing Flow Effect (Background) -->
+    <div class="absolute bottom-0 left-0 h-px pointer-events-none opacity-0" id="flow-glow" style="width: 0%;
+                background: rgba(77, 255, 170, 0.5);
+                box-shadow: 0 0 30px rgba(77, 255, 170, 0.8), 0 0 60px rgba(77, 255, 170, 0.4);
+                filter: blur(2px);
+                transition: opacity 0.3s ease;">
+    </div>
 
     <!-- clock + date -->
     <div class="flex items-end gap-4" style="padding-left: 12px;">
@@ -103,11 +121,54 @@
     </div>
 </header>
 
+<style>
+    @keyframes flow-pulse {
+        0% {
+            box-shadow: 0 0 20px rgba(77, 255, 170, 0.4), 0 0 40px rgba(77, 255, 170, 0.2);
+        }
+
+        50% {
+            box-shadow: 0 0 30px rgba(77, 255, 170, 0.7), 0 0 60px rgba(77, 255, 170, 0.4);
+        }
+
+        100% {
+            box-shadow: 0 0 20px rgba(77, 255, 170, 0.4), 0 0 40px rgba(77, 255, 170, 0.2);
+        }
+    }
+
+    @keyframes flow-wave {
+        0% {
+            background-position: 0% center;
+        }
+
+        100% {
+            background-position: 100% center;
+        }
+    }
+
+    #flow-glow.active {
+        animation: flow-pulse 1.5s ease-in-out infinite;
+    }
+
+    #progress-bar-container.active {
+        animation: flow-wave 2s linear infinite;
+        background: linear-gradient(90deg,
+                transparent 0%,
+                rgba(77, 255, 170, 0.3) 25%,
+                rgba(77, 255, 170, 0.6) 50%,
+                rgba(77, 255, 170, 0.3) 75%,
+                transparent 100%);
+        background-size: 200% 100%;
+    }
+</style>
+
 <script>
     (function () {
         // Clock
         const clockEl = document.getElementById('clock');
         const dateEl = document.getElementById('datestamp');
+        const progressBar = document.getElementById('progress-bar-container');
+        const flowGlow = document.getElementById('flow-glow');
         const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
         const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
         const pad = n => String(n).padStart(2, '0');
@@ -119,6 +180,53 @@
         }
         tick();
         setInterval(tick, 1000);
+
+        // Pomodoro Progress Bar
+        function updateProgressBar() {
+            const isRunning = localStorage.getItem('pomodoro_isRunning') === 'true';
+            const mode = localStorage.getItem('pomodoro_mode') || 'work';
+            const timeLeft = parseInt(localStorage.getItem('pomodoro_timeLeft')) || 0;
+
+            const WORK_TIME = 25 * 60;
+            const BREAK_TIME = 5 * 60;
+            const totalTime = mode === 'work' ? WORK_TIME : BREAK_TIME;
+
+            if (isRunning && timeLeft >= 0) {
+                // Calculate progress percentage (inverse so it fills as time decreases)
+                const progress = ((totalTime - timeLeft) / totalTime) * 100;
+                progressBar.style.width = progress + '%';
+
+                // Show glow effect
+                flowGlow.style.width = progress + '%';
+
+                // Add active animations when timer is running
+                progressBar.classList.add('active');
+                flowGlow.classList.add('active');
+
+                // Make progress bar more visible when timer is low (last 25%)
+                if (timeLeft < totalTime * 0.25) {
+                    progressBar.style.height = '3px';
+                    progressBar.style.boxShadow = `0 0 20px rgba(77, 255, 170, 0.8), 0 0 40px rgba(77, 255, 170, 0.6), inset 0 0 20px rgba(77, 255, 170, 0.3)`;
+                } else {
+                    progressBar.style.height = '2px';
+                    progressBar.style.boxShadow = 'none';
+                }
+            } else {
+                // Reset when timer is not running
+                progressBar.style.width = '0%';
+                progressBar.style.height = '2px';
+                progressBar.style.boxShadow = 'none';
+                progressBar.classList.remove('active');
+
+                flowGlow.style.width = '0%';
+                flowGlow.style.opacity = '0';
+                flowGlow.classList.remove('active');
+            }
+        }
+
+        // Update progress bar every 250ms to match pomodoro timer
+        updateProgressBar();
+        setInterval(updateProgressBar, 250);
 
         // Dropdown Logic
         const btn = document.getElementById('profile-btn');

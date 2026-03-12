@@ -52,15 +52,15 @@
 
                 <!-- Controls (Floating Style) -->
                 <div class="flex items-center justify-center gap-8 mb-10">
-                    <button
-                        class="w-11 h-11 rounded-full border border-primary/20 text-primary/40 hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center group"
+                    <button id="settings-btn-wrapper"
+                        class="w-11 h-11 rounded-full border border-primary/20 text-primary/40 hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center group cursor-pointer"
                         title="Settings">
-                        <i id="settings-btn" data-lucide="settings"
+                        <i id="settings-icon" data-lucide="settings"
                             class="w-4 h-4 group-hover:rotate-90 transition-transform duration-500"></i>
                     </button>
 
                     <button id="start-btn"
-                        class="w-20 h-20 rounded-full border-2 border-primary/40 text-primary hover:border-primary hover:bg-primary/10 transition-all active:scale-90 flex items-center justify-center shadow-[0_0_40px_rgba(77,255,170,0.2)] hover:shadow-[0_0_60px_rgba(77,255,170,0.4)] group">
+                        class="w-20 h-20 rounded-full border-2 border-primary/40 text-primary hover:border-primary hover:bg-primary/10 transition-all active:scale-90 flex items-center justify-center shadow-[0_0_40px_rgba(77,255,170,0.2)] hover:shadow-[0_0_60px_rgba(77,255,170,0.4)] group cursor-pointer">
                         <i id="play-icon" data-lucide="play"
                             class="w-9 h-9 fill-primary/10 ml-1 group-hover:fill-primary/30 transition-all"></i>
                         <i id="pause-icon" data-lucide="pause"
@@ -69,9 +69,9 @@
                     </button>
 
                     <button id="reset-btn"
-                        class="w-11 h-11 rounded-full border border-primary/20 text-primary/40 hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center group"
+                        class="w-11 h-11 rounded-full border border-primary/20 text-primary/40 hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center group cursor-pointer"
                         title="Reset">
-                        <i data-lucide="rotate-ccw"
+                        <i id="reset-icon" data-lucide="rotate-ccw"
                             class="w-4 h-4 group-hover:-rotate-180 transition-transform duration-500"></i>
                     </button>
                 </div>
@@ -80,9 +80,9 @@
                 <div class="flex flex-col items-center gap-8">
                     <div class="flex items-center bg-black/20 rounded-full p-1 border border-primary/10">
                         <button id="work-mode-btn"
-                            class="px-7 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] transition-all bg-primary/20 text-primary border border-primary/30">WORK</button>
+                            class="px-7 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] transition-all bg-primary/20 text-primary border border-primary/30 cursor-pointer">WORK</button>
                         <button id="break-mode-btn"
-                            class="px-7 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] transition-all text-neutral-content/40 hover:text-primary/70">BREAK</button>
+                            class="px-7 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] transition-all text-neutral-content/40 hover:text-primary/70 cursor-pointer">BREAK</button>
                     </div>
 
                     <div class="flex gap-12 items-center justify-center">
@@ -116,6 +116,7 @@
 {% block scripts %}
 <script>
     (function () {
+        // Initialize lucide icons
         if (window.lucide) lucide.createIcons();
 
         let endTime = null;
@@ -125,13 +126,14 @@
         let totalFocusedSeconds = 0;
         let timerInterval = null;
         let timeLeft;
+        let sessionStartTime = null;
 
         const WORK_TIME = 25 * 60;
         const BREAK_TIME = 5 * 60;
         const circumference = 2 * Math.PI * 255;
 
         const timerDisplay = document.getElementById('timer-display');
-        const settingsBtn = document.getElementById('settings-btn');
+        const settingsBtnWrapper = document.getElementById('settings-btn-wrapper');
         const startBtn = document.getElementById('start-btn');
         const resetBtn = document.getElementById('reset-btn');
         const playIcon = document.getElementById('play-icon');
@@ -143,7 +145,8 @@
         const sessionLabel = document.getElementById('session-label');
         const progressRing = document.getElementById('progress-ring');
 
-        settingsBtn.addEventListener('click', () => {
+        // FIX 1: Attach event listener to the button, not the icon
+        settingsBtnWrapper.addEventListener('click', () => {
             window.location.href = '{% url "settings:pomodoro" %}';
         });
 
@@ -165,10 +168,6 @@
                 const remaining = Math.round((endTime - Date.now()) / 1000);
                 if (remaining >= 0) {
                     timeLeft = remaining;
-                    if (mode === 'work') {
-                        const focusedSecondsSinceStart = (mode === 'work' ? WORK_TIME : BREAK_TIME) - timeLeft;
-                        totalFocusedSeconds = parseInt(localStorage.getItem('totalFocusedSeconds') || 0) + focusedSecondsSinceStart;
-                    }
                     updateDisplay();
                 } else {
                     complete();
@@ -176,11 +175,20 @@
             }
         }
 
-
         function updateStats() {
             sessionsCount.textContent = sessionsCompleted;
             const mins = Math.floor(totalFocusedSeconds / 60);
             timeCount.textContent = `${mins}m`;
+        }
+
+        // FIX 2: Improved persistence - save state regularly during timer execution
+        function saveState() {
+            localStorage.setItem('pomodoro_endTime', endTime || '');
+            localStorage.setItem('pomodoro_isRunning', isRunning);
+            localStorage.setItem('pomodoro_mode', mode);
+            localStorage.setItem('pomodoro_timeLeft', timeLeft);
+            localStorage.setItem('pomodoro_sessionsCompleted', sessionsCompleted);
+            localStorage.setItem('pomodoro_totalFocusedSeconds', totalFocusedSeconds);
         }
 
         function start() {
@@ -190,16 +198,15 @@
             playIcon.style.display = 'none';
             pauseIcon.style.display = 'block';
 
-            const duration = mode === 'work' ? WORK_TIME : BREAK_TIME;
             if (endTime === null) {
                 endTime = Date.now() + timeLeft * 1000;
             }
 
-            localStorage.setItem('endTime', endTime);
-            localStorage.setItem('isRunning', isRunning);
-            localStorage.setItem('mode', mode);
-
-            timerInterval = setInterval(updateTimer, 250);
+            saveState();
+            timerInterval = setInterval(() => {
+                updateTimer();
+                saveState(); // Save every update to ensure persistence
+            }, 250);
         }
 
         function pause() {
@@ -207,19 +214,17 @@
             clearInterval(timerInterval);
             playIcon.style.display = 'block';
             pauseIcon.style.display = 'none';
-            localStorage.setItem('isRunning', isRunning);
-            localStorage.setItem('timeLeft', timeLeft);
-            localStorage.removeItem('endTime');
+            endTime = null;
+            saveState();
         }
 
         function complete() {
             pause();
             if (mode === 'work') {
                 sessionsCompleted++;
-                localStorage.setItem('sessionsCompleted', sessionsCompleted);
-                const focusedSeconds = parseInt(localStorage.getItem('totalFocusedSeconds') || 0);
-                localStorage.setItem('totalFocusedSeconds', focusedSeconds + WORK_TIME);
+                totalFocusedSeconds += WORK_TIME;
             }
+            saveState();
             switchMode(mode === 'work' ? 'break' : 'work');
         }
 
@@ -228,68 +233,79 @@
             timeLeft = mode === 'work' ? WORK_TIME : BREAK_TIME;
             sessionLabel.textContent = mode;
             endTime = null;
-            localStorage.setItem('mode', mode);
-            localStorage.setItem('timeLeft', timeLeft);
-            localStorage.removeItem('endTime');
-
+            saveState();
 
             if (mode === 'work') {
-                workModeBtn.className = "px-7 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] transition-all bg-primary/20 text-primary border border-primary/30";
-                breakModeBtn.className = "px-7 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] transition-all text-neutral-content/40 hover:text-primary/70";
+                workModeBtn.className = "px-7 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] transition-all bg-primary/20 text-primary border border-primary/30 cursor-pointer";
+                breakModeBtn.className = "px-7 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] transition-all text-neutral-content/40 hover:text-primary/70 cursor-pointer";
             } else {
-                breakModeBtn.className = "px-7 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] transition-all bg-primary/20 text-primary border border-primary/30";
-                workModeBtn.className = "px-7 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] transition-all text-neutral-content/40 hover:text-primary/70";
+                breakModeBtn.className = "px-7 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] transition-all bg-primary/20 text-primary border border-primary/30 cursor-pointer";
+                workModeBtn.className = "px-7 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] transition-all text-neutral-content/40 hover:text-primary/70 cursor-pointer";
             }
             updateDisplay();
         }
 
+        // FIX 2: Improved state loading from localStorage with namespaced keys
         function loadState() {
-            const savedEndTime = parseInt(localStorage.getItem('endTime'));
-            const savedIsRunning = localStorage.getItem('isRunning') === 'true';
-            const savedMode = localStorage.getItem('mode');
-            const savedTimeLeft = parseInt(localStorage.getItem('timeLeft'));
-            sessionsCompleted = parseInt(localStorage.getItem('sessionsCompleted') || 0);
-            totalFocusedSeconds = parseInt(localStorage.getItem('totalFocusedSeconds') || 0);
+            const savedEndTime = localStorage.getItem('pomodoro_endTime');
+            const savedIsRunning = localStorage.getItem('pomodoro_isRunning') === 'true';
+            const savedMode = localStorage.getItem('pomodoro_mode') || 'work';
+            const savedTimeLeft = parseInt(localStorage.getItem('pomodoro_timeLeft')) || WORK_TIME;
+            sessionsCompleted = parseInt(localStorage.getItem('pomodoro_sessionsCompleted') || 0);
+            totalFocusedSeconds = parseInt(localStorage.getItem('pomodoro_totalFocusedSeconds') || 0);
 
-            if (savedMode) {
-                mode = savedMode;
-            }
+            mode = savedMode;
 
+            // If timer was running, check if time hasn't expired
             if (savedIsRunning && savedEndTime) {
-                const remaining = Math.round((savedEndTime - Date.now()) / 1000);
+                const savedEndTimeMs = parseInt(savedEndTime);
+                const remaining = Math.round((savedEndTimeMs - Date.now()) / 1000);
+
                 if (remaining > 0) {
+                    // Timer still has time left
                     timeLeft = remaining;
-                    endTime = savedEndTime;
+                    endTime = savedEndTimeMs;
                     start();
-                } else {
-                    timeLeft = savedTimeLeft || (mode === 'work' ? WORK_TIME : BREAK_TIME);
+                } else if (remaining <= 0 && remaining > -5) {
+                    // Timer just expired (within 5 seconds)
                     complete();
+                } else {
+                    // Timer expired long ago, reset to normal
+                    timeLeft = savedTimeLeft;
+                    switchMode(mode);
                 }
             } else {
-                timeLeft = savedTimeLeft || (mode === 'work' ? WORK_TIME : BREAK_TIME);
+                // Timer wasn't running, load the saved time
+                timeLeft = savedTimeLeft;
+                switchMode(mode);
             }
 
-            switchMode(mode);
             updateDisplay();
             updateStats();
         }
 
+        // Save state before page unload
         window.addEventListener('beforeunload', () => {
-            if (isRunning) {
-                localStorage.setItem('timeLeft', timeLeft);
-            }
+            saveState();
         });
 
+        // Save state periodically (every 5 seconds) as backup
+        setInterval(() => {
+            if (isRunning) {
+                saveState();
+            }
+        }, 5000);
+
+        // Event listeners
         startBtn.addEventListener('click', () => isRunning ? pause() : start());
         resetBtn.addEventListener('click', () => {
             pause();
-            localStorage.removeItem('endTime');
-            localStorage.removeItem('timeLeft');
             switchMode(mode);
         });
         workModeBtn.addEventListener('click', () => { if (!isRunning) switchMode('work'); });
         breakModeBtn.addEventListener('click', () => { if (!isRunning) switchMode('break'); });
 
+        // Load state on page load
         loadState();
     })();
 </script>
