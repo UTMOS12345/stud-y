@@ -7,7 +7,13 @@
 <div class="h-full w-full flex flex-col items-center justify-center p-4 animate-up relative">
 
     <!-- The Hero Circular Card -->
-    <div class="relative flex items-center justify-center">
+    <div class="flex flex-col items-center gap-6">
+
+        <!-- Cycle Label (above circle) -->
+        <div class="text-center">
+            <div id="cycle-label-top" class="text-[9px] text-primary/40 tracking-[0.4em] uppercase font-bold">cycle 1
+            </div>
+        </div>
 
         <!-- Outer Glow Layer -->
         <div class="absolute rounded-full opacity-20 blur-[100px] bg-primary w-[540px] h-[540px] pointer-events-none">
@@ -76,34 +82,41 @@
                     </button>
                 </div>
 
-                <!-- Mode Selector & Stats (Bottom Section) -->
-                <div class="flex flex-col items-center gap-8">
+                <!-- Mode Selector (Bottom Section) -->
+                <div class="flex flex-col items-center gap-6">
                     <div class="flex items-center bg-black/20 rounded-full p-1 border border-primary/10">
                         <button id="work-mode-btn"
                             class="px-7 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] transition-all bg-primary/20 text-primary border border-primary/30 cursor-pointer">WORK</button>
                         <button id="break-mode-btn"
                             class="px-7 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] transition-all text-neutral-content/40 hover:text-primary/70 cursor-pointer">BREAK</button>
                     </div>
-
-                    <div class="flex gap-12 items-center justify-center">
-                        <div class="text-center">
-                            <div class="text-[24px] font-bold text-primary/90 leading-none" id="sessions-count">0</div>
-                            <div class="text-[8px] text-primary/30 tracking-[0.2em] uppercase mt-2 font-bold">sessions
-                            </div>
-                        </div>
-                        <div class="w-px h-8 bg-primary/10"></div>
-                        <div class="text-center">
-                            <div class="text-[24px] font-bold text-primary/90 leading-none" id="time-count">0m</div>
-                            <div class="text-[8px] text-primary/30 tracking-[0.2em] uppercase mt-2 font-bold">focused
-                            </div>
-                        </div>
+                </div>
+                <!-- Sessions & Focused  -->
+                <div class="flex gap-12 items-center justify-center py-4">
+                    <div class="text-center">
+                        <div class="text-[22px] font-bold text-primary/90 leading-none" id="sessions-count">0</div>
+                        <div class="text-[8px] text-primary/30 tracking-[0.2em] uppercase mt-2 font-bold">sessions</div>
+                    </div>
+                    <div class="w-px h-8 bg-primary/10"></div>
+                    <div class="text-center">
+                        <div class="text-[22px] font-bold text-primary/90 leading-none" id="time-count">0m</div>
+                        <div class="text-[8px] text-primary/30 tracking-[0.2em] uppercase mt-2 font-bold">focused</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Footer Branding (Integrated) -->
-        <div class="absolute -bottom-24 left-1/2 -translate-x-1/2 text-center w-full">
+        <!-- Cycle Dots (below circle) -->
+        <div class="flex flex-col items-center gap-3">
+            <div id="cycle-dots" class="flex items-center gap-2.5"></div>
+            <div class="text-[8px] text-primary/30 tracking-[0.25em] uppercase font-bold" id="cycle-label">cycle 1 · 4
+                sessions until long break</div>
+        </div>
+
+
+
+        <!-- Footer Branding -->
+        <div class="text-center mt-2">
             <h1 class="font-serif italic font-bold text-base-content/80 leading-tight"
                 style="font-size: 40px; letter-spacing: -1px;">focus.</h1>
             <p class="text-[10px] text-neutral-content/30 tracking-[0.4em] uppercase mt-2">pomodoro timer system v1.0
@@ -191,6 +204,50 @@
         function updateStats() {
             sessionsCount.textContent = sessionsCompleted;
             timeCount.textContent = `${Math.floor(totalFocusedSeconds / 60)}m`;
+            updateCycleDots();
+        }
+
+        function updateCycleDots() {
+            const dotsEl = document.getElementById('cycle-dots');
+            const labelEl = document.getElementById('cycle-label');
+            const labelTop = document.getElementById('cycle-label-top');
+            if (!dotsEl || !labelEl) return;
+
+            const posInCycle = sessionsCompleted % LONG_BREAK_INTERVAL;
+            const cycleNumber = Math.floor(sessionsCompleted / LONG_BREAK_INTERVAL) + 1;
+            const remaining = LONG_BREAK_INTERVAL - posInCycle;
+
+            // Top label: cycle number
+            if (labelTop) {
+                labelTop.textContent = `cycle ${cycleNumber}`;
+                labelTop.style.color = mode !== 'work' ? 'rgba(77,255,170,0.55)' : '';
+            }
+
+            // Dots
+            dotsEl.innerHTML = '';
+            for (let i = 0; i < LONG_BREAK_INTERVAL; i++) {
+                const dot = document.createElement('div');
+                const isDone = i < posInCycle;
+                const isCurrent = i === posInCycle && mode === 'work';
+                dot.style.cssText = [
+                    `width:${isCurrent ? '22px' : '8px'}`,
+                    'height:8px',
+                    'border-radius:999px',
+                    'transition:all 0.4s cubic-bezier(0.4,0,0.2,1)',
+                    `background:${isDone ? 'rgba(77,255,170,0.85)' : isCurrent ? 'rgba(77,255,170,1)' : 'rgba(77,255,170,0.12)'}`,
+                    `box-shadow:${isCurrent ? '0 0 12px rgba(77,255,170,0.8)' : 'none'}`
+                ].join(';');
+                dotsEl.appendChild(dot);
+            }
+
+            // Bottom label: sessions until long break
+            if (posInCycle === 0 && sessionsCompleted > 0) {
+                labelEl.textContent = 'long break next — nice work';
+                labelEl.style.color = 'rgba(77,255,170,0.6)';
+            } else {
+                labelEl.textContent = `${remaining} session${remaining !== 1 ? 's' : ''} until long break`;
+                labelEl.style.color = '';
+            }
         }
 
         function applyModeButtons() {
@@ -199,6 +256,7 @@
             workModeBtn.className = (mode === 'work') ? activeClass : inactiveClass;
             breakModeBtn.className = (mode !== 'work') ? activeClass : inactiveClass;
             sessionLabel.textContent = labelForMode(mode);
+            updateCycleDots();
         }
 
         // ── Persistence ────────────────────────────────────────────────────
