@@ -6,98 +6,37 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}stud-y{% endblock %}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link
         href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital@1&family=Geist+Mono:wght@300;400;500&family=Share+Tech+Mono&display=swap"
         rel="stylesheet">
+
+    <!-- Compiled Tailwind CSS with DaisyUI (from input.css) -->
+    <link rel="stylesheet" href="{% static 'css/src/output.css' %}">
+
+    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#4dffaa',
-                        'primary-content': '#060f0b',
-                        'base-100': '#09100e',
-                        'base-200': '#0f1a17',
-                        'base-300': '#121f1b',
-                        'base-content': '#f0faf5',
-                        neutral: '#26403a',
-                        'neutral-content': '#7aaa96',
-                        error: '#ff6b6b',
-                    },
-                    fontFamily: {
-                        mono: ['"Share Tech Mono"', 'monospace'],
-                        serif: ['"Libre Baskerville"', 'serif'],
-                    },
-                }
-            }
-        }
-    </script>
-    <style>
-        body {
-            background-color: #09100e;
-            color: #f0faf5;
-            font-family: 'Geist Mono', monospace;
-        }
 
-        /* Reverted to 72px grid with 2px lines */
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background-image: linear-gradient(#1c2d28 2px, transparent 2px), linear-gradient(90deg, #1c2d28 2px, transparent 2px);
-            background-size: 72px 72px;
-            pointer-events: none;
-            z-index: -1;
-            opacity: 0.3;
-        }
-
-        /* Reverted to original glow dimensions */
-        body::after {
-            content: '';
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 600px;
-            height: 400px;
-            background: radial-gradient(ellipse, rgba(77, 255, 170, .06) 0%, transparent 65%);
-            pointer-events: none;
-            z-index: -1;
-        }
-
-        @keyframes up {
-            from {
-                opacity: 0;
-                transform: translateY(14px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .animate-up {
-            animation: up 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
-        }
-    </style>
     {% block head %}{% endblock %}
 </head>
 
-<body class="bg-base-100 text-base-content font-mono font-light h-screen flex overflow-hidden">
+<body class="bg-base-100 text-base-content font-mono font-light h-screen flex overflow-hidden scrollbar-thin">
     {% include "includes/sidebar.html" %}
+
     <div class="flex-1 flex flex-col min-w-0 overflow-hidden relative z-10">
         {% include "includes/topbar.html" %}
-        <main id="main-content" class="flex-1 overflow-y-auto overflow-x-hidden relative">
-            <div class="relative z-10 h-full">
-                {% block content %}{% endblock %}
-            </div>
+
+        <main id="main-content" class="flex-1 overflow-y-auto overflow-x-hidden">
+            {% block content %}{% endblock %}
         </main>
     </div>
-    <script>lucide.createIcons();</script>
+
+    <script>
+        lucide.createIcons();
+    </script>
+
     {% block scripts %}{% endblock %}
 </body>
 

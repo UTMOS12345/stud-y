@@ -1,11 +1,12 @@
 @import "tailwindcss";
 
-/* disable ALL built-in DaisyUI themes so only studyTheme loads */
+/* ─── DAISYUI CONFIGURATION ─── */
 @plugin "daisyui" {
+  /* Disable built-in themes so only our custom ones load */
   themes: false;
 }
 
-/* ─── custom theme ─── */
+/* ─── DARK THEME (studyTheme) ─── */
 @plugin "daisyui/theme" {
   name: "studyTheme";
   default: true;
@@ -21,53 +22,131 @@
   --color-neutral-content: #7aaa96;
   --color-error: #ff6b6b;
   --color-error-content: #ffffff;
+
+  /* Background variables for Dark Mode */
+  --grid-color: rgba(28, 45, 40, 0.5);
+  --glow-color: rgba(77, 255, 170, 0.06);
 }
 
-/* ─── fonts ─── */
+/* ─── LIGHT THEME (studyLight) ─── */
+@plugin "daisyui/theme" {
+  name: "studyLight";
+  default: false;
+  color-scheme: light;
+
+  --color-primary: #00a86b;
+  --color-primary-content: #ffffff;
+  --color-base-100: #f4fbf8;
+  --color-base-200: #e8f3ee;
+  --color-base-300: #dae8e1;
+  --color-base-content: #09100e;
+  --color-neutral: #d2e1da;
+  --color-neutral-content: #26403a;
+  --color-error: #e63946;
+  --color-error-content: #ffffff;
+
+  /* Background variables for Light Mode */
+  --grid-color: rgba(204, 220, 213, 0.4);
+  --glow-color: rgba(0, 168, 107, 0.04);
+}
+
+/* ─── GLOBAL DESIGN SYSTEM ─── */
 @theme {
-  /* --font-mono: "Geist Mono", monospace; */
-  --font-mono: "JetBrains Mono", monospace;
+  --font-mono: "Share Tech Mono", "Geist Mono", ui-monospace, monospace;
   --font-serif: "Libre Baskerville", serif;
-}
 
-/* ─── mesh + glow + animation ─── */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image:
-    linear-gradient(#1c2d28 2px, transparent 2px),
-    linear-gradient(90deg, #1c2d28 2px, transparent 2px);
-  background-size: 72px 72px;
-  pointer-events: none;
-  z-index: 0;
-}
+  /* Re-defining the animation so it can be used as 'animate-up' */
+  --animate-up: up 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
 
-body::after {
-  content: '';
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -52%);
-  width: 600px;
-  height: 420px;
-  background: radial-gradient(ellipse, rgba(77, 255, 170, .06) 0%, transparent 65%);
-  pointer-events: none;
-  z-index: 0;
-}
+  @keyframes up {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
 
-@keyframes up {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }
 
-.animate-up {
-  animation: up 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+/* ─── GLOBAL BASE STYLES ─── */
+@layer base {
+  body {
+    @apply bg-base-100 text-base-content font-mono font-light;
+    position: relative;
+    min-height: 100vh;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* The Mesh Grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--grid-color) 2px, transparent 2px),
+      linear-gradient(90deg, var(--grid-color) 2px, transparent 2px);
+    background-size: 72px 72px;
+    pointer-events: none;
+    z-index: -1;
+    /* Behind everything */
+  }
+
+  /* The Radial Glow */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    height: 420px;
+    background: radial-gradient(ellipse, var(--glow-color) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: -1;
+    /* Behind everything */
+  }
+
+  /* Ensure main content sits above glow */
+  main {
+    @apply relative;
+    z-index: 10;
+  }
+}
+
+/* ─── UTILITIES ─── */
+@layer utilities {
+
+  /* Manual class if the @theme animation isn't picked up by your IDE */
+  .animate-up {
+    animation: up 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* Utility for scrollbar styling */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(77, 255, 170, 0.3) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: rgba(77, 255, 170, 0.3);
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(77, 255, 170, 0.5);
+  }
 }

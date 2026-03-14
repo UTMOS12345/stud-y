@@ -12,7 +12,9 @@
   "description": "",
   "devDependencies": {
     "@tailwindcss/cli": "^4.2.1",
+    "autoprefixer": "^10.4.27",
     "daisyui": "^5.5.19",
+    "postcss": "^8.5.8",
     "tailwindcss": "^4.2.1"
   }
 }
