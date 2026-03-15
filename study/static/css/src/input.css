@@ -83,22 +83,34 @@
     scroll-behavior: smooth;
   }
 
-  /* The Mesh Grid */
-  body::before {
+  /* The Mesh Grid - Dark Theme */
+  [data-theme="studyTheme"] body::before {
     content: '';
     position: fixed;
     inset: 0;
     background-image:
-      linear-gradient(var(--grid-color) 2px, transparent 2px),
-      linear-gradient(90deg, var(--grid-color) 2px, transparent 2px);
+      linear-gradient(rgba(28, 45, 40, 0.5) 2px, transparent 2px),
+      linear-gradient(90deg, rgba(28, 45, 40, 0.5) 2px, transparent 2px);
     background-size: 72px 72px;
     pointer-events: none;
-    z-index: -1;
-    /* Behind everything */
+    z-index: 0;
   }
 
-  /* The Radial Glow */
-  body::after {
+  /* The Mesh Grid - Light Theme */
+  [data-theme="studyLight"] body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(204, 220, 213, 0.4) 2px, transparent 2px),
+      linear-gradient(90deg, rgba(204, 220, 213, 0.4) 2px, transparent 2px);
+    background-size: 72px 72px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* The Radial Glow - Dark Theme */
+  [data-theme="studyTheme"] body::after {
     content: '';
     position: fixed;
     top: 50%;
@@ -106,13 +118,26 @@
     transform: translate(-50%, -50%);
     width: 600px;
     height: 420px;
-    background: radial-gradient(ellipse, var(--glow-color) 0%, transparent 70%);
+    background: radial-gradient(ellipse, rgba(77, 255, 170, 0.06) 0%, transparent 70%);
     pointer-events: none;
-    z-index: -1;
-    /* Behind everything */
+    z-index: 0;
   }
 
-  /* Ensure main content sits above glow */
+  /* The Radial Glow - Light Theme */
+  [data-theme="studyLight"] body::after {
+    content: '';
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    height: 420px;
+    background: radial-gradient(ellipse, rgba(0, 168, 107, 0.04) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Ensure main content sits above grid */
   main {
     @apply relative;
     z-index: 10;

@@ -2461,16 +2461,25 @@
   html {
     scroll-behavior: smooth;
   }
-  body::before {
+  [data-theme="studyTheme"] body::before {
     content: '';
     position: fixed;
     inset: 0;
-    background-image: linear-gradient(var(--grid-color) 2px, transparent 2px), linear-gradient(90deg, var(--grid-color) 2px, transparent 2px);
+    background-image: linear-gradient(rgba(28, 45, 40, 0.5) 2px, transparent 2px), linear-gradient(90deg, rgba(28, 45, 40, 0.5) 2px, transparent 2px);
     background-size: 72px 72px;
     pointer-events: none;
-    z-index: -1;
+    z-index: 0;
   }
-  body::after {
+  [data-theme="studyLight"] body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: linear-gradient(rgba(204, 220, 213, 0.4) 2px, transparent 2px), linear-gradient(90deg, rgba(204, 220, 213, 0.4) 2px, transparent 2px);
+    background-size: 72px 72px;
+    pointer-events: none;
+    z-index: 0;
+  }
+  [data-theme="studyTheme"] body::after {
     content: '';
     position: fixed;
     top: 50%;
@@ -2478,9 +2487,21 @@
     transform: translate(-50%, -50%);
     width: 600px;
     height: 420px;
-    background: radial-gradient(ellipse, var(--glow-color) 0%, transparent 70%);
+    background: radial-gradient(ellipse, rgba(77, 255, 170, 0.06) 0%, transparent 70%);
     pointer-events: none;
-    z-index: -1;
+    z-index: 0;
+  }
+  [data-theme="studyLight"] body::after {
+    content: '';
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    height: 420px;
+    background: radial-gradient(ellipse, rgba(0, 168, 107, 0.04) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
   }
   main {
     position: relative;

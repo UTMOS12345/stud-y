@@ -1,6 +1,7 @@
 {% load static i18n %}
 <!DOCTYPE html>
-<html lang="en" data-theme="studyTheme">
+<html lang="en"
+    data-theme="{% if user.is_authenticated %}{{ user.profile.get_theme_display_for_html }}{% else %}studyTheme{% endif %}">
 
 <head>
     <meta charset="UTF-8" />
@@ -35,6 +36,44 @@
 
     <script>
         lucide.createIcons();
+
+        // Theme switching function
+        function setTheme(theme) {
+            const themeMap = {
+                'light': 'studyLight',
+                'dark': 'studyTheme',
+                'system': getSystemTheme()
+            };
+
+            const appliedTheme = themeMap[theme] || 'studyTheme';
+            document.documentElement.setAttribute('data-theme', appliedTheme);
+            console.log('Theme set to:', appliedTheme);
+        }
+
+        // Detect system theme preference
+        function getSystemTheme() {
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'studyTheme' : 'studyLight';
+        }
+
+        // Initialize theme on page load
+        document.addEventListener('DOMContentLoaded', function () {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            console.log('Current theme on load:', currentTheme);
+
+            // If it's 'system', update to actual system preference
+            if (currentTheme === 'system') {
+                setTheme('system');
+            }
+        });
+
+        // Listen for system theme changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
+            const htmlTheme = document.documentElement.getAttribute('data-theme');
+            // Only apply if current theme is 'system'
+            if (htmlTheme === 'system') {
+                setTheme('system');
+            }
+        });
     </script>
 
     {% block scripts %}{% endblock %}

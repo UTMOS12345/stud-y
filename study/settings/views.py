@@ -4,12 +4,24 @@ from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
 import logging
+import pytz
 
 # Import Profile from accounts app
 from accounts.models import Profile
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
+
+# List of common timezones
+COMMON_TIMEZONES = [
+    'UTC',
+    'Africa/Cairo', 'Africa/Johannesburg', 'Africa/Lagos',
+    'America/Anchorage', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'America/New_York', 'America/Toronto', 'America/Vancouver',
+    'Asia/Bangkok', 'Asia/Dubai', 'Asia/Hong_Kong', 'Asia/Jakarta', 'Asia/Kolkata', 'Asia/Shanghai', 'Asia/Singapore', 'Asia/Tokyo',
+    'Australia/Brisbane', 'Australia/Sydney',
+    'Europe/Berlin', 'Europe/London', 'Europe/Moscow', 'Europe/Paris',
+    'Pacific/Auckland', 'Pacific/Fiji'
+]
 
 @login_required
 def settings_view(request, section='profile'):
@@ -35,6 +47,7 @@ def settings_view(request, section='profile'):
         'profile': profile,
         'user': request.user,
         'active_section': section,
+        'timezones': COMMON_TIMEZONES,
     }
     return render(request, 'settings/settings_page.html', context)
 
@@ -96,12 +109,20 @@ def handle_preferences_post(request, profile):
     """Handles only Profile model (Theme, Timezone, Sync)"""
     try:
         # Update Timezone
-        profile.timezone = request.POST.get('timezone', 'UTC').strip()
+        timezone = request.POST.get('timezone', 'UTC').strip()
+        # Validate timezone exists
+        try:
+            pytz.timezone(timezone)
+            profile.timezone = timezone
+        except pytz.exceptions.UnknownTimeZoneError:
+            logger.warning(f"Invalid timezone '{timezone}' provided by user {request.user.pk}")
+            profile.timezone = 'UTC'
 
         # Update Theme
-        theme = request.POST.get('theme_preference')
+        theme = request.POST.get('theme_preference', 'dark')
         if theme in ['light', 'dark', 'system']:
             profile.theme_preference = theme
+            logger.info(f"User {request.user.pk} changed theme to {theme}")
 
         # Update Language
         profile.language_preference = request.POST.get('language_preference', 'en')

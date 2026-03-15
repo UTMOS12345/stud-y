@@ -27,10 +27,22 @@ class Profile(models.Model):
         ('light', 'Light'),
         ('dark', 'Dark'),
         ('system', 'System'),
-    ], default='system')
+    ], default='dark')
     language_preference = models.CharField(max_length=10, default='en')
     
     google_sync_enabled = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Profile for {self.user.email}"
+    
+    def get_theme_display_for_html(self):
+        """
+        Returns the proper HTML data-theme value based on user preference
+        Used in base.html for setting data-theme attribute
+        """
+        if self.theme_preference == 'light':
+            return 'studyLight'
+        elif self.theme_preference == 'dark':
+            return 'studyTheme'
+        else:  # system
+            return 'system'
