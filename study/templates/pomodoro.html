@@ -6,67 +6,57 @@
 {% block content %}
 <div class="h-full w-full flex flex-col items-center justify-center p-4 animate-up relative">
 
-    <!-- The Hero Circular Card -->
     <div class="flex flex-col items-center gap-6">
 
-        <!-- Cycle Label (above circle) -->
         <div class="text-center">
             <div id="cycle-label-top" class="text-[9px] text-primary/40 tracking-[0.4em] uppercase font-bold">cycle 1
             </div>
         </div>
 
-        <!-- Outer Glow Layer -->
-        <div class="absolute rounded-full opacity-20 blur-[100px] bg-primary w-[540px] h-[540px] pointer-events-none">
+        <div class="absolute rounded-full opacity-60 blur-[100px] w-[540px] h-[540px] pointer-events-none"
+            style="background: var(--glow-color);">
         </div>
 
-        <!-- Main Circular Card -->
-        <div class="relative flex items-center justify-center rounded-full border border-primary/30 overflow-hidden"
-            style="background: rgba(15, 26, 23, 0.75);
-                    box-shadow: 0 0 120px rgba(0, 0, 0, 0.5), inset 0 0 80px rgba(77, 255, 170, 0.05);
+        <div class="relative flex items-center justify-center rounded-full border border-primary/20 overflow-hidden"
+            style="background: color-mix(in srgb, var(--color-base-200), transparent 25%);
+                    box-shadow: 0 0 80px rgba(0, 0, 0, 0.05), inset 0 0 40px var(--glow-color);
                     backdrop-filter: blur(24px);
                     width: 540px; height: 540px;">
 
-            <!-- Progress Ring (Concentric) -->
             <svg class="absolute inset-0 w-full h-full -rotate-90 pointer-events-none" viewBox="0 0 540 540">
-                <!-- Background Track -->
                 <circle cx="270" cy="270" r="255" fill="none" stroke="currentColor" stroke-width="1.5"
                     class="text-primary/10" />
-                <!-- Active Progress -->
-                <circle id="progress-ring" cx="270" cy="270" r="255" fill="none" stroke="#4dffaa" stroke-width="5"
-                    stroke-linecap="round"
-                    style="stroke-dasharray: 1602; stroke-dashoffset: 0; transition: stroke-dashoffset 0.5s cubic-bezier(0.4, 0, 0.2, 1); filter: drop-shadow(0 0 15px rgba(77, 255, 170, 0.7))" />
+                <circle id="progress-ring" cx="270" cy="270" r="255" fill="none" stroke="currentColor" stroke-width="5"
+                    stroke-linecap="round" class="text-primary"
+                    style="stroke-dasharray: 1602; stroke-dashoffset: 0; transition: stroke-dashoffset 0.5s cubic-bezier(0.4, 0, 0.2, 1); filter: drop-shadow(0 0 10px var(--glow-color))" />
             </svg>
 
-            <!-- Inner Content Layout -->
             <div class="relative z-10 flex flex-col items-center justify-center w-full h-full px-16 text-center">
 
-                <!-- Session Label (Top) -->
                 <div class="mb-4">
-                    <div id="session-label" class="text-[12px] text-primary/70 tracking-[0.5em] uppercase font-bold"
-                        style="text-shadow: 0 0 15px rgba(77, 255, 170, 0.3);">work</div>
-                    <div class="text-[9px] text-neutral-content/30 tracking-[0.3em] uppercase mt-1.5">active session
+                    <div id="session-label" class="text-[12px] text-primary tracking-[0.5em] uppercase font-bold">work
                     </div>
+                    <div class="text-[9px] text-base-content/40 tracking-[0.3em] uppercase mt-1.5 font-medium">active
+                        session</div>
                 </div>
 
-                <!-- Timer Display (The Centerpiece) -->
                 <div class="my-2">
                     <div id="timer-display" class="font-bold text-primary leading-none"
-                        style="font-family: 'Share Tech Mono', monospace; font-size: 140px; letter-spacing: -6px; text-shadow: 0 0 60px rgba(77, 255, 170, 0.5);">
+                        style="font-family: var(--font-mono); font-size: 140px; letter-spacing: -6px; filter: drop-shadow(0 0 30px var(--glow-color));">
                         {{ pomodoro_time }}:00
                     </div>
                 </div>
 
-                <!-- Controls (Floating Style) -->
                 <div class="flex items-center justify-center gap-8 mb-10">
                     <button id="settings-btn-wrapper"
-                        class="w-11 h-11 rounded-full border border-primary/20 text-primary/40 hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center group cursor-pointer"
-                        title="Settings">
+                        class="w-11 h-11 rounded-full border border-primary/20 text-primary/40 hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center group cursor-pointer">
                         <i id="settings-icon" data-lucide="settings"
                             class="w-4 h-4 group-hover:rotate-90 transition-transform duration-500"></i>
                     </button>
 
                     <button id="start-btn"
-                        class="w-20 h-20 rounded-full border-2 border-primary/40 text-primary hover:border-primary hover:bg-primary/10 transition-all active:scale-90 flex items-center justify-center shadow-[0_0_40px_rgba(77,255,170,0.2)] hover:shadow-[0_0_60px_rgba(77,255,170,0.4)] group cursor-pointer">
+                        class="w-20 h-20 rounded-full border-2 border-primary/40 text-primary hover:border-primary hover:bg-primary/10 transition-all active:scale-90 flex items-center justify-center group cursor-pointer"
+                        style="box-shadow: 0 0 30px var(--glow-color);">
                         <i id="play-icon" data-lucide="play"
                             class="w-9 h-9 fill-primary/10 ml-1 group-hover:fill-primary/30 transition-all"></i>
                         <i id="pause-icon" data-lucide="pause"
@@ -75,24 +65,20 @@
                     </button>
 
                     <button id="reset-btn"
-                        class="w-11 h-11 rounded-full border border-primary/20 text-primary/40 hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center group cursor-pointer"
-                        title="Reset">
+                        class="w-11 h-11 rounded-full border border-primary/20 text-primary/40 hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center group cursor-pointer">
                         <i id="reset-icon" data-lucide="rotate-ccw"
                             class="w-4 h-4 group-hover:-rotate-180 transition-transform duration-500"></i>
                     </button>
                 </div>
 
-                <!-- Mode Selector (Bottom Section) -->
                 <div class="flex flex-col items-center gap-6">
-                    <div class="flex items-center bg-black/20 rounded-full p-1 border border-primary/10">
-                        <button id="work-mode-btn"
-                            class="px-7 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] transition-all bg-primary/20 text-primary border border-primary/30 cursor-pointer">WORK</button>
-                        <button id="break-mode-btn"
-                            class="px-7 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] transition-all text-neutral-content/40 hover:text-primary/70 cursor-pointer">BREAK</button>
+                    <div class="flex items-center bg-base-content/5 rounded-full p-1 border border-primary/10">
+                        <button id="work-mode-btn" class="cursor-pointer">WORK</button>
+                        <button id="break-mode-btn" class="cursor-pointer">BREAK</button>
                     </div>
                 </div>
-                <!-- Sessions & Focused  -->
-                <div class="flex gap-12 items-center justify-center py-4">
+
+                <div class="flex gap-12 items-center justify-center py-4 mt-2">
                     <div class="text-center">
                         <div class="text-[22px] font-bold text-primary/90 leading-none" id="sessions-count">0</div>
                         <div class="text-[8px] text-primary/30 tracking-[0.2em] uppercase mt-2 font-bold">sessions</div>
@@ -106,270 +92,144 @@
             </div>
         </div>
 
-        <!-- Cycle Dots (below circle) -->
-        <div class="flex flex-col items-center gap-3">
-            <div id="cycle-dots" class="flex items-center gap-2.5"></div>
-            <div class="text-[8px] text-primary/30 tracking-[0.25em] uppercase font-bold" id="cycle-label">cycle 1 · 4
-                sessions until long break</div>
-        </div>
+        <div class="flex flex-col items-center gap-10 mt-2">
 
+            <div class="flex flex-col items-center gap-4">
+                <div id="cycle-dots" class="flex items-center gap-3"></div>
+                <div class="flex items-center gap-4">
+                    <div class="h-[1px] w-6 bg-primary/20"></div>
+                    <div id="cycle-label"
+                        class="text-[10px] text-primary/40 text-base-content/50 tracking-[0.3em] uppercase font-bold">
+                        cycle 1 · 4 sessions until long break
+                    </div>
+                    <div class="h-[1px] w-6 bg-primary/20"></div>
+                </div>
+            </div>
 
-
-        <!-- Footer Branding -->
-        <div class="text-center mt-2">
-            <h1 class="font-serif italic font-bold text-base-content/80 leading-tight"
-                style="font-size: 40px; letter-spacing: -1px;">focus.</h1>
-            <p class="text-[10px] text-neutral-content/30 tracking-[0.4em] uppercase mt-2">pomodoro timer system v1.0
-            </p>
+            <div class="text-center group">
+                <h1 class="font-serif italic font-bold text-base-content/90 leading-none"
+                    style="font-size: 52px; letter-spacing: -2px; margin-top: 20px;">
+                    focus<span class="text-primary">.</span>
+                </h1>
+                <!-- <div class="flex flex-col items-center gap-2 mt-4">
+                    <p class="text-[10px] text-base-content/30 tracking-[0.5em] uppercase font-medium">
+                        pomodoro timer system
+                    </p>
+                    <!-- <div
+                        class="flex items-center gap-3 py-1 px-3 rounded-full border border-base-content/5 bg-base-content/[0.02]">
+                        <span class="w-1 h-1 rounded-full bg-primary animate-pulse"></span>
+                        <span class="text-[9px] text-base-content/40 tracking-[0.2em] font-mono uppercase">build
+                            v1.0.4</span>
+                    </div> -->
+            </div>
         </div>
     </div>
+</div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
     (function () {
-        // Initialize lucide icons
         if (window.lucide) lucide.createIcons();
 
-        // ── Profile defaults injected from Django ──────────────────────────
         const WORK_TIME = parseInt("{{ pomodoro_time|default:25 }}", 10) * 60;
         const SHORT_BREAK_TIME = parseInt("{{ short_break_time|default:5 }}", 10) * 60;
         const LONG_BREAK_TIME = parseInt("{{ long_break_time|default:15 }}", 10) * 60;
         const LONG_BREAK_INTERVAL = parseInt("{{ long_break_interval|default:4 }}", 10);
-        // ───────────────────────────────────────────────────────────────────
 
         const circumference = 2 * Math.PI * 255;
-
-        let endTime = null;
-        let isRunning = false;
-        let mode = 'work';          // 'work' | 'short_break' | 'long_break'
-        let sessionsCompleted = 0;
-        let totalFocusedSeconds = 0;
-        let timerInterval = null;
-        let timeLeft;
+        let endTime = null, isRunning = false, mode = 'work', sessionsCompleted = 0, totalFocusedSeconds = 0, timerInterval = null, timeLeft;
 
         const timerDisplay = document.getElementById('timer-display');
-        const settingsBtnWrapper = document.getElementById('settings-btn-wrapper');
-        const startBtn = document.getElementById('start-btn');
-        const resetBtn = document.getElementById('reset-btn');
-        const playIcon = document.getElementById('play-icon');
-        const pauseIcon = document.getElementById('pause-icon');
-        const workModeBtn = document.getElementById('work-mode-btn');
-        const breakModeBtn = document.getElementById('break-mode-btn');
-        const sessionsCount = document.getElementById('sessions-count');
-        const timeCount = document.getElementById('time-count');
-        const sessionLabel = document.getElementById('session-label');
-        const progressRing = document.getElementById('progress-ring');
-
-        settingsBtnWrapper.addEventListener('click', () => {
-            window.location.href = '{% url "settings:pomodoro" %}';
-        });
-
-        // ── Helpers ────────────────────────────────────────────────────────
-
-        function durationForMode(m) {
-            if (m === 'work') return WORK_TIME;
-            if (m === 'long_break') return LONG_BREAK_TIME;
-            return SHORT_BREAK_TIME;
-        }
-
-        function labelForMode(m) {
-            if (m === 'work') return 'work';
-            if (m === 'long_break') return 'long break';
-            return 'break';
-        }
-
-        /** After a work session, decide which break comes next. */
-        function nextBreakMode() {
-            // sessionsCompleted has already been incremented before this is called
-            return (sessionsCompleted % LONG_BREAK_INTERVAL === 0) ? 'long_break' : 'short_break';
-        }
-
-        function formatTime(seconds) {
-            const mins = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-        }
-
-        // ── Display ────────────────────────────────────────────────────────
+        const startBtn = document.getElementById('start-btn'), playIcon = document.getElementById('play-icon'), pauseIcon = document.getElementById('pause-icon');
+        const workModeBtn = document.getElementById('work-mode-btn'), breakModeBtn = document.getElementById('break-mode-btn');
+        const progressRing = document.getElementById('progress-ring'), sessionLabel = document.getElementById('session-label');
 
         function updateDisplay() {
-            timerDisplay.textContent = formatTime(timeLeft);
-            const total = durationForMode(mode);
-            const offset = circumference - (timeLeft / total) * circumference;
+            timerDisplay.textContent = `${String(Math.floor(timeLeft / 60)).padStart(2, '0')}:${String(timeLeft % 60).padStart(2, '0')}`;
+            const offset = circumference - (timeLeft / (mode === 'work' ? WORK_TIME : (mode === 'long_break' ? LONG_BREAK_TIME : SHORT_BREAK_TIME))) * circumference;
             progressRing.style.strokeDashoffset = -offset;
-        }
-
-        function updateStats() {
-            sessionsCount.textContent = sessionsCompleted;
-            timeCount.textContent = `${Math.floor(totalFocusedSeconds / 60)}m`;
-            updateCycleDots();
         }
 
         function updateCycleDots() {
             const dotsEl = document.getElementById('cycle-dots');
             const labelEl = document.getElementById('cycle-label');
             const labelTop = document.getElementById('cycle-label-top');
-            if (!dotsEl || !labelEl) return;
+            if (!dotsEl) return;
 
             const posInCycle = sessionsCompleted % LONG_BREAK_INTERVAL;
             const cycleNumber = Math.floor(sessionsCompleted / LONG_BREAK_INTERVAL) + 1;
-            const remaining = LONG_BREAK_INTERVAL - posInCycle;
 
-            // Top label: cycle number
-            if (labelTop) {
-                labelTop.textContent = `cycle ${cycleNumber}`;
-                labelTop.style.color = mode !== 'work' ? 'rgba(77,255,170,0.55)' : '';
-            }
-
-            // Dots
+            labelTop.textContent = `cycle ${cycleNumber}`;
             dotsEl.innerHTML = '';
+
             for (let i = 0; i < LONG_BREAK_INTERVAL; i++) {
                 const dot = document.createElement('div');
                 const isDone = i < posInCycle;
                 const isCurrent = i === posInCycle && mode === 'work';
-                dot.style.cssText = [
-                    `width:${isCurrent ? '22px' : '8px'}`,
-                    'height:8px',
-                    'border-radius:999px',
-                    'transition:all 0.4s cubic-bezier(0.4,0,0.2,1)',
-                    `background:${isDone ? 'rgba(77,255,170,0.85)' : isCurrent ? 'rgba(77,255,170,1)' : 'rgba(77,255,170,0.12)'}`,
-                    `box-shadow:${isCurrent ? '0 0 12px rgba(77,255,170,0.8)' : 'none'}`
-                ].join(';');
+
+                dot.className = "transition-all duration-500 ease-in-out";
+                dot.style.cssText = `
+                    width: ${isCurrent ? '28px' : '8px'};
+                    height: 6px;
+                    border-radius: 99px;
+                    background-color: ${isDone || isCurrent ? 'var(--color-primary)' : 'color-mix(in srgb, var(--color-base-content), transparent 85%)'};
+                    opacity: ${isDone ? '0.4' : '1'};
+                    box-shadow: ${isCurrent ? '0 0 15px var(--glow-color)' : 'none'};
+                `;
                 dotsEl.appendChild(dot);
             }
-
-            // Bottom label: sessions until long break
-            if (posInCycle === 0 && sessionsCompleted > 0) {
-                labelEl.textContent = 'long break next — nice work';
-                labelEl.style.color = 'rgba(77,255,170,0.6)';
-            } else {
-                labelEl.textContent = `${remaining} session${remaining !== 1 ? 's' : ''} until long break`;
-                labelEl.style.color = '';
-            }
+            labelEl.textContent = (posInCycle === 0 && sessionsCompleted > 0) ? 'long break next — nice work' : `${LONG_BREAK_INTERVAL - posInCycle} sessions until long break`;
         }
 
         function applyModeButtons() {
-            const activeClass = "px-7 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] transition-all bg-primary/20 text-primary border border-primary/30 cursor-pointer";
-            const inactiveClass = "px-7 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] transition-all text-neutral-content/40 hover:text-primary/70 cursor-pointer";
-            workModeBtn.className = (mode === 'work') ? activeClass : inactiveClass;
-            breakModeBtn.className = (mode !== 'work') ? activeClass : inactiveClass;
-            sessionLabel.textContent = labelForMode(mode);
+            const active = "px-7 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] transition-all bg-primary/20 text-primary border border-primary/30";
+            const inactive = "px-7 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] transition-all text-base-content/40 hover:text-primary/70";
+            workModeBtn.className = (mode === 'work') ? active : inactive;
+            breakModeBtn.className = (mode !== 'work') ? active : inactive;
+            sessionLabel.textContent = mode.replace('_', ' ');
             updateCycleDots();
-        }
-
-        // ── Persistence ───────────────────────────────────────────────────
-
-        function saveState() {
-            localStorage.setItem('pomodoro_endTime', endTime || '');
-            localStorage.setItem('pomodoro_isRunning', isRunning);
-            localStorage.setItem('pomodoro_mode', mode);
-            localStorage.setItem('pomodoro_timeLeft', timeLeft);
-            localStorage.setItem('pomodoro_totalTime', durationForMode(mode));
-            localStorage.setItem('pomodoro_sessionsCompleted', sessionsCompleted);
-            localStorage.setItem('pomodoro_totalFocusedSeconds', totalFocusedSeconds);
-        }
-
-        function loadState() {
-            const savedEndTime = localStorage.getItem('pomodoro_endTime');
-            const savedIsRunning = localStorage.getItem('pomodoro_isRunning') === 'true';
-            const savedMode = localStorage.getItem('pomodoro_mode') || 'work';
-            const savedTimeLeft = parseInt(localStorage.getItem('pomodoro_timeLeft')) || WORK_TIME;
-
-            sessionsCompleted = parseInt(localStorage.getItem('pomodoro_sessionsCompleted') || 0);
-            totalFocusedSeconds = parseInt(localStorage.getItem('pomodoro_totalFocusedSeconds') || 0);
-            mode = savedMode;
-
-            if (savedIsRunning && savedEndTime) {
-                const remaining = Math.round((parseInt(savedEndTime) - Date.now()) / 1000);
-                if (remaining > 0) {
-                    timeLeft = remaining;
-                    endTime = parseInt(savedEndTime);
-                    start();
-                } else if (remaining > -5) {
-                    timeLeft = durationForMode(mode);
-                    complete();
-                } else {
-                    timeLeft = savedTimeLeft;
-                    applyModeButtons();
-                }
-            } else {
-                timeLeft = savedTimeLeft;
-                applyModeButtons();
-            }
-
-            updateDisplay();
-            updateStats();
-        }
-
-        // ── Core timer logic ───────────────────────────────────────────────
-
-        function updateTimer() {
-            if (!endTime) return;
-            const remaining = Math.round((endTime - Date.now()) / 1000);
-            if (remaining >= 0) {
-                timeLeft = remaining;
-                updateDisplay();
-            } else {
-                complete();
-            }
         }
 
         function start() {
             if (isRunning) return;
             isRunning = true;
-            playIcon.style.display = 'none';
-            pauseIcon.style.display = 'block';
-            if (endTime === null) endTime = Date.now() + timeLeft * 1000;
-            saveState();
-            timerInterval = setInterval(() => { updateTimer(); saveState(); }, 250);
+            playIcon.style.display = 'none'; pauseIcon.style.display = 'block';
+            if (!endTime) endTime = Date.now() + timeLeft * 1000;
+            timerInterval = setInterval(() => {
+                const remaining = Math.round((endTime - Date.now()) / 1000);
+                if (remaining >= 0) { timeLeft = remaining; updateDisplay(); }
+                else { complete(); }
+            }, 250);
         }
 
         function pause() {
-            isRunning = false;
-            clearInterval(timerInterval);
-            playIcon.style.display = 'block';
-            pauseIcon.style.display = 'none';
+            isRunning = false; clearInterval(timerInterval);
+            playIcon.style.display = 'block'; pauseIcon.style.display = 'none';
             endTime = null;
-            saveState();
         }
 
         function complete() {
             pause();
             if (mode === 'work') {
-                sessionsCompleted++;
-                totalFocusedSeconds += WORK_TIME;
-                updateStats();
-                switchMode(nextBreakMode());
-            } else {
-                switchMode('work');
-            }
+                sessionsCompleted++; totalFocusedSeconds += WORK_TIME;
+                document.getElementById('sessions-count').textContent = sessionsCompleted;
+                document.getElementById('time-count').textContent = `${Math.floor(totalFocusedSeconds / 60)}m`;
+                mode = (sessionsCompleted % LONG_BREAK_INTERVAL === 0) ? 'long_break' : 'short_break';
+            } else { mode = 'work'; }
+            timeLeft = (mode === 'work') ? WORK_TIME : (mode === 'long_break' ? LONG_BREAK_TIME : SHORT_BREAK_TIME);
+            applyModeButtons(); updateDisplay();
         }
-
-        function switchMode(newMode) {
-            mode = newMode;
-            timeLeft = durationForMode(mode);
-            endTime = null;
-            applyModeButtons();
-            updateDisplay();
-            saveState();
-        }
-
-        // ── Event listeners ────────────────────────────────────────────────
 
         startBtn.addEventListener('click', () => isRunning ? pause() : start());
-        resetBtn.addEventListener('click', () => { pause(); timeLeft = durationForMode(mode); updateDisplay(); saveState(); });
-        workModeBtn.addEventListener('click', () => { if (!isRunning) switchMode('work'); });
-        breakModeBtn.addEventListener('click', () => { if (!isRunning) switchMode('short_break'); });
+        document.getElementById('reset-btn').addEventListener('click', () => { pause(); timeLeft = (mode === 'work') ? WORK_TIME : (mode === 'long_break' ? LONG_BREAK_TIME : SHORT_BREAK_TIME); updateDisplay(); });
+        workModeBtn.addEventListener('click', () => { if (!isRunning) { mode = 'work'; timeLeft = WORK_TIME; applyModeButtons(); updateDisplay(); } });
+        breakModeBtn.addEventListener('click', () => { if (!isRunning) { mode = 'short_break'; timeLeft = SHORT_BREAK_TIME; applyModeButtons(); updateDisplay(); } });
 
-        window.addEventListener('beforeunload', saveState);
-        setInterval(() => { if (isRunning) saveState(); }, 5000);
-
-        // ── Boot ───────────────────────────────────────────────────────────
-        loadState();
+        timeLeft = WORK_TIME;
+        applyModeButtons();
+        updateDisplay();
     })();
 </script>
 {% endblock %}
-
-<!-- Working Version -->

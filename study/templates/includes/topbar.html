@@ -1,119 +1,93 @@
 {% load static %}
-<header class="bg-base-300 border-b border-neutral flex items-center justify-between px-10 z-20 relative flex-shrink-0"
+<header
+    class="bg-base-300 border-b border-primary/10 flex items-center justify-between px-10 z-20 relative flex-shrink-0"
     style="height:80px; min-height:80px;">
 
-    <!-- Progress Bar (Pomodoro Timer Indicator) -->
-    <div class="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-transparent via-primary/0 to-transparent"
-        id="progress-bar-container" style="background: linear-gradient(90deg, transparent, rgba(77, 255, 170, 0), transparent);
-                box-shadow: none;
+    <div class="absolute bottom-0 left-0 h-1 transition-all duration-300 ease-out" id="progress-bar-container" style="background: linear-gradient(90deg, transparent, var(--color-primary), transparent);
+                box-shadow: 0 0 15px var(--glow-color);
                 width: 0%;
                 height: 2px;
-                transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
                 z-index: 1;">
     </div>
 
-    <!-- Glowing Flow Effect (Background) -->
     <div class="absolute bottom-0 left-0 h-px pointer-events-none opacity-0" id="flow-glow" style="width: 0%;
-                background: rgba(77, 255, 170, 0.5);
-                box-shadow: 0 0 30px rgba(77, 255, 170, 0.8), 0 0 60px rgba(77, 255, 170, 0.4);
+                background: var(--color-primary);
+                box-shadow: 0 0 30px var(--color-primary), 0 0 60px var(--glow-color);
                 filter: blur(2px);
                 transition: opacity 0.3s ease;
                 z-index: 1;">
     </div>
 
-    <!-- clock + date -->
     <div class="flex items-end gap-4" style="padding-left: 12px;">
         <span id="clock" class="font-bold text-base-content leading-none tracking-tight"
-            style="font-family:'Share Tech Mono', monospace; font-size:32px;">
+            style="font-family:'Share Tech Mono', monospace; font-size:32px; filter: drop-shadow(0 0 8px var(--glow-color));">
             00:00:00
         </span>
-        <span id="datestamp" class="text-[12px] text-neutral-content tracking-[0.1em] uppercase"
+        <span id="datestamp" class="text-[12px] text-base-content/40 tracking-[0.1em] uppercase"
             style="margin-bottom:4px;">
             — —
         </span>
     </div>
 
-    <!-- profile -->
     <div class="relative flex items-center gap-3" style="z-index: 50;">
-        <!-- live dot -->
-        <div class="w-2 h-2 rounded-full bg-primary flex-shrink-0" style="box-shadow: 0 0 8px rgba(77,255,170,0.65);">
+        <div class="w-2 h-2 rounded-full bg-primary flex-shrink-0" style="box-shadow: 0 0 8px var(--color-primary);">
         </div>
 
-        <!-- profile button -->
         <button id="profile-btn"
-            class="flex items-center gap-2.5 px-4 py-3 rounded-lg border border-neutral hover:border-neutral-content/40 transition-all group pointer-events-auto cursor-pointer"
+            class="flex items-center gap-2.5 px-4 py-3 rounded-lg border border-primary/10 bg-primary/5 hover:border-primary/40 transition-all group pointer-events-auto cursor-pointer"
             style="margin: 24px;">
             <div
-                class="w-7 h-7 rounded-full bg-neutral flex items-center justify-center text-[11px] font-semibold text-neutral-content group-hover:text-primary transition-colors flex-shrink-0">
+                class="w-7 h-7 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-[11px] font-semibold text-primary group-hover:bg-primary/20 transition-colors flex-shrink-0">
                 {% if user.is_authenticated %}{{ user.username|first|upper }}{% else %}?{% endif %}
             </div>
             <span
-                class="text-[12px] tracking-[0.04em] text-neutral-content group-hover:text-base-content transition-colors max-w-[120px] truncate">
+                class="text-[12px] tracking-[0.04em] text-base-content/70 group-hover:text-primary transition-colors max-w-[120px] truncate">
                 {% if user.is_authenticated %}{{ user.username }}{% else %}guest{% endif %}
             </span>
             <svg id="profile-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-                class="text-neutral-content group-hover:text-primary flex-shrink-0 transition-transform">
+                class="text-base-content/30 group-hover:text-primary flex-shrink-0 transition-transform">
                 <polyline points="6 9 12 15 18 9" />
             </svg>
         </button>
 
-        <!-- dropdown -->
         <div id="profile-menu" class="absolute right-0 rounded-xl overflow-hidden z-50 hidden"
-            style="top:calc(100% + 8px); width:280px; background-color: #0f1a17; border: 1px solid #26403a; box-shadow: 0 20px 60px rgba(0,0,0,0.85);">
+            style="top:calc(100% + 8px); width:280px; background-color: var(--color-base-200); border: 1px solid var(--color-primary); border-opacity: 0.1; box-shadow: 0 20px 60px rgba(0,0,0,0.5); backdrop-filter: blur(20px);">
 
             {% if user.is_authenticated %}
-            <!-- user header -->
-            <div class="flex flex-col items-center text-center p-6 border-b border-[#26403a]">
+            <div class="flex flex-col items-center text-center p-6 border-b border-primary/10">
                 <div
-                    class="w-12 h-12 rounded-full bg-[#1c2d28] border border-[#26403a] flex items-center justify-center mb-3">
+                    class="w-12 h-12 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mb-3">
                     <span class="text-primary font-bold text-lg">{{ user.username|first|upper }}</span>
                 </div>
                 <p class="text-sm font-semibold text-base-content">{{ user.username }}</p>
-                <p class="text-[11px] text-neutral-content/60">{{ user.email }}</p>
+                <p class="text-[11px] text-base-content/40">{{ user.email }}</p>
             </div>
 
-            <!-- links -->
             <div class="py-2">
                 <a href="{% url 'settings:profile' %}"
-                    class="flex items-center gap-3 px-6 py-4 text-sm text-neutral-content hover:bg-[#1c2d28] hover:text-primary transition-all cursor-pointer">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                        <circle cx="12" cy="7" r="4" />
-                    </svg>
+                    class="flex items-center gap-3 px-6 py-4 text-sm text-base-content/70 hover:bg-primary/10 hover:text-primary transition-all cursor-pointer">
+                    <i data-lucide="user" class="w-4 h-4"></i>
                     Profile
                 </a>
-
                 <a href="{% url 'settings:profile' %}"
-                    class="flex items-center gap-3 px-6 py-4 text-sm text-neutral-content hover:bg-[#1c2d28] hover:text-primary transition-all cursor-pointer">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="3" />
-                        <path
-                            d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
-                    </svg>
+                    class="flex items-center gap-3 px-6 py-4 text-sm text-base-content/70 hover:bg-primary/10 hover:text-primary transition-all cursor-pointer">
+                    <i data-lucide="settings" class="w-4 h-4"></i>
                     Settings
                 </a>
             </div>
 
-            <!-- sign out -->
-            <div class="border-t border-[#26403a] py-2">
+            <div class="border-t border-primary/10 py-2">
                 <a href="{% url 'logout' %}"
                     class="flex items-center gap-3 px-6 py-4 text-sm text-error/70 hover:bg-error/5 hover:text-error transition-all cursor-pointer">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                        <polyline points="16 17 21 12 16 7" />
-                        <line x1="21" y1="12" x2="9" y2="12" />
-                    </svg>
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
                     Sign out
                 </a>
             </div>
             {% else %}
-            <div class="p-2">
+            <div class="p-2 text-center">
                 <a href="{% url 'account_login' %}"
-                    class="flex items-center justify-center p-3 text-sm text-neutral-content hover:text-primary transition-all cursor-pointer">
+                    class="flex items-center justify-center p-3 text-sm text-primary hover:bg-primary/5 rounded-lg transition-all cursor-pointer">
                     Sign in →
                 </a>
             </div>
@@ -125,25 +99,15 @@
 <style>
     @keyframes flow-pulse {
         0% {
-            box-shadow: 0 0 20px rgba(77, 255, 170, 0.4), 0 0 40px rgba(77, 255, 170, 0.2);
+            box-shadow: 0 0 20px var(--glow-color);
         }
 
         50% {
-            box-shadow: 0 0 30px rgba(77, 255, 170, 0.7), 0 0 60px rgba(77, 255, 170, 0.4);
+            box-shadow: 0 0 40px var(--color-primary);
         }
 
         100% {
-            box-shadow: 0 0 20px rgba(77, 255, 170, 0.4), 0 0 40px rgba(77, 255, 170, 0.2);
-        }
-    }
-
-    @keyframes flow-wave {
-        0% {
-            background-position: 0% center;
-        }
-
-        100% {
-            background-position: 100% center;
+            box-shadow: 0 0 20px var(--glow-color);
         }
     }
 
@@ -152,17 +116,13 @@
     }
 
     #progress-bar-container.active {
-        animation: flow-wave 2s linear infinite;
         background: linear-gradient(90deg,
                 transparent 0%,
-                rgba(77, 255, 170, 0.3) 25%,
-                rgba(77, 255, 170, 0.6) 50%,
-                rgba(77, 255, 170, 0.3) 75%,
+                var(--color-primary) 50%,
                 transparent 100%);
         background-size: 200% 100%;
     }
 </style>
-
 <script>
     (function () {
         // Clock

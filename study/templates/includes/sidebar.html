@@ -24,14 +24,17 @@
         <!-- Dashboard -->
         <a href="{% url 'dashboard' %}" class="flex items-center justify-center rounded-xl
                   transition-all" id="nav-dashboard" style="padding: 15px 0; gap:0; min-height:54px;">
-            <svg id="nav-icon-0" class="flex-shrink-0" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <svg id="nav-icon-0" class="flex-shrink-0 text-primary transition-colors" width="24" height="24"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                stroke-linejoin="round">
                 <rect x="3" y="3" width="7" height="7" rx="1.5" />
                 <rect x="14" y="3" width="7" height="7" rx="1.5" />
                 <rect x="3" y="14" width="7" height="7" rx="1.5" />
                 <rect x="14" y="14" width="7" height="7" rx="1.5" />
             </svg>
-            <span class="nav-text text-[15px] font-semibold tracking-wide whitespace-nowrap" style="opacity:0; max-width:0; overflow:hidden; margin-left:0;
+            <span
+                class="nav-text text-[15px] text-primary transition-colors font-semibold tracking-wide whitespace-nowrap"
+                style="opacity:0; max-width:0; overflow:hidden; margin-left:0;
                          transition: max-width 0.3s cubic-bezier(0.16,1,0.3,1),
                                      opacity 0.2s ease, margin-left 0.3s ease;">
                 Dashboard
@@ -112,20 +115,38 @@
 
     // ── highlight active page ──
     const currentPath = window.location.pathname;
+
+    function applyActive(el) {
+        el.style.backgroundColor = 'var(--color-highlight-bg)';
+        el.style.borderColor = 'var(--color-highlight-border)';
+        el.style.color = 'var(--color-highlight-text)';
+        el.style.borderRadius = 'var(--nav-highlight-radius)';
+        el.style.borderWidth = 'var(--nav-highlight-border-width)';
+        el.style.borderStyle = 'solid';
+
+        el.style.paddingLeft = '12px';
+        el.style.paddingRight = '12px';
+
+    }
+
+    function applyInactive(el) {
+        el.style.backgroundColor = 'transparent';
+        el.style.borderColor = 'transparent';
+        el.style.color = 'var(--color-highlight-inactive)';
+        el.style.opacity = '0.6';
+        el.style.borderWidth = 'var(--nav-highlight-border)';
+        el.style.borderStyle = 'solid';
+        el.style.borderRadius = 'var(--nav-highlight-radius)';
+
+    }
+
+
     if (currentPath.includes('pomodoro')) {
-        navPomodoro.style.backgroundColor = 'rgba(77,255,170,0.15)';
-        navPomodoro.style.borderColor = 'rgba(77,255,170,0.25)';
-        navPomodoro.style.color = '#4dffaa';
-        navDashboard.style.color = '#7aaa96';
-        navDashboard.style.backgroundColor = 'transparent';
-        navDashboard.style.borderColor = 'transparent';
+        applyActive(navPomodoro);
+        applyInactive(navDashboard);
     } else {
-        navDashboard.style.backgroundColor = 'rgba(77,255,170,0.15)';
-        navDashboard.style.borderColor = 'rgba(77,255,170,0.25)';
-        navDashboard.style.color = '#4dffaa';
-        navPomodoro.style.color = '#7aaa96';
-        navPomodoro.style.backgroundColor = 'transparent';
-        navPomodoro.style.borderColor = 'transparent';
+        applyActive(navDashboard);
+        applyInactive(navPomodoro);
     }
 
     function toggle() {
