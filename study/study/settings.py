@@ -36,6 +36,8 @@ INSTALLED_APPS = [
     'accounts',
     'pomodoro',
     'settings',
+    'schedule',
+    
 
     'allauth',
     'allauth.account',

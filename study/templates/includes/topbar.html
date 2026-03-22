@@ -1,93 +1,109 @@
 {% load static %}
-<header
-    class="bg-base-300 border-b border-primary/10 flex items-center justify-between px-10 z-20 relative flex-shrink-0"
+<header class="bg-base-300 border-b border-neutral flex items-center justify-between px-10 z-20 relative flex-shrink-0"
     style="height:80px; min-height:80px;">
 
-    <div class="absolute bottom-0 left-0 h-1 transition-all duration-300 ease-out" id="progress-bar-container" style="background: linear-gradient(90deg, transparent, var(--color-primary), transparent);
-                box-shadow: 0 0 15px var(--glow-color);
-                width: 0%;
-                height: 2px;
-                z-index: 1;">
+    <!-- Solid Progress Bar -->
+    <div id="progress-bar-container" class="absolute bottom-0 left-0 h-1 bg-primary transition-all" style="
+            width: 0%;
+            z-index: 5;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        ">
     </div>
 
-    <div class="absolute bottom-0 left-0 h-px pointer-events-none opacity-0" id="flow-glow" style="width: 0%;
-                background: var(--color-primary);
-                box-shadow: 0 0 30px var(--color-primary), 0 0 60px var(--glow-color);
-                filter: blur(2px);
-                transition: opacity 0.3s ease;
-                z-index: 1;">
-    </div>
-
-    <div class="flex items-end gap-4" style="padding-left: 12px;">
+    <!-- clock + date -->
+    <div class="flex items-end gap-4 relative z-10" style="padding-left: 12px;">
         <span id="clock" class="font-bold text-base-content leading-none tracking-tight"
-            style="font-family:'Share Tech Mono', monospace; font-size:32px; filter: drop-shadow(0 0 8px var(--glow-color));">
+            style="font-family:'Share Tech Mono', monospace; font-size:32px;">
             00:00:00
         </span>
-        <span id="datestamp" class="text-[12px] text-base-content/40 tracking-[0.1em] uppercase"
+        <span id="datestamp" class="text-[12px] text-neutral-content tracking-[0.1em] uppercase"
             style="margin-bottom:4px;">
             — —
         </span>
     </div>
 
-    <div class="relative flex items-center gap-3" style="z-index: 50;">
-        <div class="w-2 h-2 rounded-full bg-primary flex-shrink-0" style="box-shadow: 0 0 8px var(--color-primary);">
+    <!-- profile -->
+    <div class="relative flex items-center gap-3 z-50">
+        <!-- live dot -->
+        <div class="w-2 h-2 rounded-full bg-primary flex-shrink-0">
         </div>
 
+        <!-- profile button -->
         <button id="profile-btn"
-            class="flex items-center gap-2.5 px-4 py-3 rounded-lg border border-primary/10 bg-primary/5 hover:border-primary/40 transition-all group pointer-events-auto cursor-pointer"
+            class="flex items-center gap-2.5 px-4 py-3 rounded-lg border border-neutral hover:border-neutral-content/40 transition-all group pointer-events-auto cursor-pointer"
             style="margin: 24px;">
             <div
-                class="w-7 h-7 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-[11px] font-semibold text-primary group-hover:bg-primary/20 transition-colors flex-shrink-0">
+                class="w-7 h-7 rounded-full bg-neutral flex items-center justify-center text-[11px] font-semibold text-neutral-content group-hover:text-primary transition-colors flex-shrink-0">
                 {% if user.is_authenticated %}{{ user.username|first|upper }}{% else %}?{% endif %}
             </div>
             <span
-                class="text-[12px] tracking-[0.04em] text-base-content/70 group-hover:text-primary transition-colors max-w-[120px] truncate">
+                class="text-[12px] tracking-[0.04em] text-neutral-content group-hover:text-base-content transition-colors max-w-[120px] truncate">
                 {% if user.is_authenticated %}{{ user.username }}{% else %}guest{% endif %}
             </span>
             <svg id="profile-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-                class="text-base-content/30 group-hover:text-primary flex-shrink-0 transition-transform">
+                class="text-neutral-content group-hover:text-primary flex-shrink-0 transition-transform">
                 <polyline points="6 9 12 15 18 9" />
             </svg>
         </button>
 
-        <div id="profile-menu" class="absolute right-0 rounded-xl overflow-hidden z-50 hidden"
-            style="top:calc(100% + 8px); width:280px; background-color: var(--color-base-200); border: 1px solid var(--color-primary); border-opacity: 0.1; box-shadow: 0 20px 60px rgba(0,0,0,0.5); backdrop-filter: blur(20px);">
+        <!-- dropdown -->
+        <div id="profile-menu"
+            class="absolute right-0 rounded-xl overflow-hidden z-50 hidden bg-base-200 border border-neutral"
+            style="top:calc(100% + 8px); width:280px; box-shadow: 0 20px 60px rgba(0,0,0,0.85);">
 
             {% if user.is_authenticated %}
-            <div class="flex flex-col items-center text-center p-6 border-b border-primary/10">
+            <!-- user header -->
+            <div class="flex flex-col items-center text-center p-6 border-b border-neutral">
                 <div
-                    class="w-12 h-12 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mb-3">
+                    class="w-12 h-12 rounded-full bg-base-300 border border-neutral flex items-center justify-center mb-3">
                     <span class="text-primary font-bold text-lg">{{ user.username|first|upper }}</span>
                 </div>
                 <p class="text-sm font-semibold text-base-content">{{ user.username }}</p>
-                <p class="text-[11px] text-base-content/40">{{ user.email }}</p>
+                <p class="text-[11px] text-neutral-content/60">{{ user.email }}</p>
             </div>
 
+            <!-- links -->
             <div class="py-2">
                 <a href="{% url 'settings:profile' %}"
-                    class="flex items-center gap-3 px-6 py-4 text-sm text-base-content/70 hover:bg-primary/10 hover:text-primary transition-all cursor-pointer">
-                    <i data-lucide="user" class="w-4 h-4"></i>
+                    class="flex items-center gap-3 px-6 py-4 text-sm text-neutral-content hover:bg-base-300 hover:text-primary transition-all cursor-pointer">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
                     Profile
                 </a>
+
                 <a href="{% url 'settings:profile' %}"
-                    class="flex items-center gap-3 px-6 py-4 text-sm text-base-content/70 hover:bg-primary/10 hover:text-primary transition-all cursor-pointer">
-                    <i data-lucide="settings" class="w-4 h-4"></i>
+                    class="flex items-center gap-3 px-6 py-4 text-sm text-neutral-content hover:bg-base-300 hover:text-primary transition-all cursor-pointer">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                            d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+                    </svg>
                     Settings
                 </a>
             </div>
 
-            <div class="border-t border-primary/10 py-2">
+            <!-- sign out -->
+            <div class="border-t border-neutral py-2">
                 <a href="{% url 'logout' %}"
                     class="flex items-center gap-3 px-6 py-4 text-sm text-error/70 hover:bg-error/5 hover:text-error transition-all cursor-pointer">
-                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                        <polyline points="16 17 21 12 16 7" />
+                        <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
                     Sign out
                 </a>
             </div>
             {% else %}
-            <div class="p-2 text-center">
+            <div class="p-2">
                 <a href="{% url 'account_login' %}"
-                    class="flex items-center justify-center p-3 text-sm text-primary hover:bg-primary/5 rounded-lg transition-all cursor-pointer">
+                    class="flex items-center justify-center p-3 text-sm text-neutral-content hover:text-primary transition-all cursor-pointer">
                     Sign in →
                 </a>
             </div>
@@ -96,101 +112,56 @@
     </div>
 </header>
 
-<style>
-    @keyframes flow-pulse {
-        0% {
-            box-shadow: 0 0 20px var(--glow-color);
-        }
-
-        50% {
-            box-shadow: 0 0 40px var(--color-primary);
-        }
-
-        100% {
-            box-shadow: 0 0 20px var(--glow-color);
-        }
-    }
-
-    #flow-glow.active {
-        animation: flow-pulse 1.5s ease-in-out infinite;
-    }
-
-    #progress-bar-container.active {
-        background: linear-gradient(90deg,
-                transparent 0%,
-                var(--color-primary) 50%,
-                transparent 100%);
-        background-size: 200% 100%;
-    }
-</style>
 <script>
     (function () {
         // Clock
         const clockEl = document.getElementById('clock');
         const dateEl = document.getElementById('datestamp');
         const progressBar = document.getElementById('progress-bar-container');
-        const flowGlow = document.getElementById('flow-glow');
         const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
         const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-        const pad = n => String(n).padStart(2, '0');
 
-        function tick() {
+        function pad(n) {
+            return String(n).padStart(2, '0');
+        }
+
+        // ═══ CLOCK UPDATE ═══
+        function updateClock() {
             const now = new Date();
             if (clockEl) clockEl.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
             if (dateEl) dateEl.textContent = `${days[now.getDay()]} ${pad(now.getDate())} ${months[now.getMonth()]} ${now.getFullYear()}`;
         }
-        tick();
-        setInterval(tick, 1000);
 
-        // Pomodoro Progress Bar - Update every 250ms to match timer
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // ═══ PROGRESS BAR UPDATE ═══
         function updateProgressBar() {
-            const isRunning = localStorage.getItem('pomodoro_isRunning') === 'true';
-            const mode = localStorage.getItem('pomodoro_mode') || 'work';
-            const timeLeft = parseInt(localStorage.getItem('pomodoro_timeLeft')) || 0;
+            try {
+                const isRunning = localStorage.getItem('pomodoro_isRunning') === 'true';
+                const timeLeft = parseInt(localStorage.getItem('pomodoro_timeLeft')) || 0;
+                const totalTime = parseInt(localStorage.getItem('pomodoro_totalTime')) || 0;
 
-            const WORK_TIME = 25 * 60;
-            const BREAK_TIME = 5 * 60;
-            const totalTime = mode === 'work' ? WORK_TIME : BREAK_TIME;
+                if (isRunning && timeLeft >= 0 && totalTime > 0) {
+                    // Calculate progress: how much time has ELAPSED
+                    const elapsed = totalTime - timeLeft;
+                    const progress = (elapsed / totalTime) * 100;
 
-            if (isRunning && timeLeft >= 0 && totalTime > 0) {
-                // Calculate progress percentage (inverse so it fills as time decreases)
-                const progress = ((totalTime - timeLeft) / totalTime) * 100;
-                progressBar.style.width = progress + '%';
-
-                // Show glow effect
-                flowGlow.style.width = progress + '%';
-
-                // Add active animations when timer is running
-                progressBar.classList.add('active');
-                flowGlow.classList.add('active');
-                flowGlow.style.opacity = '1';
-
-                // Make progress bar more visible when timer is low (last 25%)
-                if (timeLeft < totalTime * 0.25) {
-                    progressBar.style.height = '3px';
-                    progressBar.style.boxShadow = `0 0 20px rgba(77, 255, 170, 0.8), 0 0 40px rgba(77, 255, 170, 0.6), inset 0 0 20px rgba(77, 255, 170, 0.3)`;
+                    progressBar.style.width = progress + '%';
                 } else {
-                    progressBar.style.height = '2px';
-                    progressBar.style.boxShadow = 'none';
+                    // Timer not running - reset bar
+                    progressBar.style.width = '0%';
                 }
-            } else {
-                // Reset when timer is not running
-                progressBar.style.width = '0%';
-                progressBar.style.height = '2px';
-                progressBar.style.boxShadow = 'none';
-                progressBar.classList.remove('active');
-
-                flowGlow.style.width = '0%';
-                flowGlow.style.opacity = '0';
-                flowGlow.classList.remove('active');
+            } catch (e) {
+                console.error('Progress bar error:', e);
             }
         }
 
-        // Update progress bar every 250ms to match pomodoro timer
+        // Update progress bar
         updateProgressBar();
-        setInterval(updateProgressBar, 250);
+        setInterval(updateProgressBar, 100);
 
-        // Dropdown Logic
+        // ═══ DROPDOWN LOGIC ═══
         const btn = document.getElementById('profile-btn');
         const menu = document.getElementById('profile-menu');
         const chevron = document.getElementById('profile-chevron');
