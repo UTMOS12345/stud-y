@@ -12,4 +12,5 @@ urlpatterns = [
     path('pomodoro/' , include('pomodoro.urls')) ,
     path('settings/' , include('settings.urls', namespace='settings')) ,
     path('admin/', admin.site.urls),
+    path('schedule/', include('schedule.urls')),
 ]

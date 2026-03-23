@@ -58,7 +58,28 @@
             </span>
         </a>
 
+        <!-- Schedule -->
+        <a href="{% url 'schedule' %}" class="flex items-center justify-center rounded-xl transition-all"
+            id="nav-schedule" style="padding: 15px 0; gap:0; min-height:54px;">
+            <svg id="nav-icon-2" class="flex-shrink-0" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <!-- Calendar Icon -->
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span class="nav-text text-[15px] font-medium tracking-wide whitespace-nowrap" style="opacity:0; max-width:0; overflow:hidden; margin-left:0;
+                    transition: max-width 0.3s cubic-bezier(0.16,1,0.3,1),
+                             opacity 0.2s ease, margin-left 0.3s ease;">
+                Schedule
+            </span>
+        </a>
+
     </nav>
+
+
+
 
     <!-- divider -->
     <div class="mx-3 border-t border-neutral/50" style="margin-bottom:16px;"></div>
@@ -109,53 +130,61 @@
     const logoS = document.getElementById('logo-s');
     const logoFull = document.getElementById('logo-full');
     const navTexts = document.querySelectorAll('.nav-text');
-    const navDashboard = document.getElementById('nav-dashboard');
-    const navPomodoro = document.getElementById('nav-pomodoro');
+
+    // Select all nav links
+    const navItems = {
+        dashboard: document.getElementById('nav-dashboard'),
+        pomodoro: document.getElementById('nav-pomodoro'),
+        schedule: document.getElementById('nav-schedule')
+    };
+
     let expanded = false;
 
-    // ── highlight active page ──
+    // ── 1. ACTIVE STATE LOGIC ──
     const currentPath = window.location.pathname;
 
-    function applyActive(el) {
-        el.style.backgroundColor = 'var(--color-highlight-bg)';
-        el.style.borderColor = 'var(--color-highlight-border)';
-        el.style.color = 'var(--color-highlight-text)';
-        el.style.borderRadius = 'var(--nav-highlight-radius)';
-        el.style.borderWidth = 'var(--nav-highlight-border-width)';
-        el.style.borderStyle = 'solid';
-
-        el.style.paddingLeft = '12px';
-        el.style.paddingRight = '12px';
-
+    function setElementStyle(el, isActive) {
+        if (!el) return;
+        if (isActive) {
+            el.style.backgroundColor = 'var(--color-highlight-bg)';
+            el.style.borderColor = 'var(--color-highlight-border)';
+            el.style.color = 'var(--color-highlight-text)';
+            el.style.borderRadius = 'var(--nav-highlight-radius)';
+            el.style.borderWidth = 'var(--nav-highlight-border-width)';
+            el.style.borderStyle = 'solid';
+            el.style.paddingLeft = '12px';
+            el.style.paddingRight = '12px';
+            el.style.opacity = '1';
+        } else {
+            el.style.backgroundColor = 'transparent';
+            el.style.borderColor = 'transparent';
+            el.style.color = 'var(--color-highlight-inactive)';
+            el.style.opacity = '0.6';
+            el.style.borderWidth = '0px';
+        }
     }
 
-    function applyInactive(el) {
-        el.style.backgroundColor = 'transparent';
-        el.style.borderColor = 'transparent';
-        el.style.color = 'var(--color-highlight-inactive)';
-        el.style.opacity = '0.6';
-        el.style.borderWidth = 'var(--nav-highlight-border)';
-        el.style.borderStyle = 'solid';
-        el.style.borderRadius = 'var(--nav-highlight-radius)';
-
-    }
+    // Determine which link is active based on URL
+    Object.keys(navItems).forEach(key => {
+        const isCurrent = currentPath.includes(key);
+        // Default to dashboard if root path
+        const isHome = (key === 'dashboard' && currentPath === '/');
+        setElementStyle(navItems[key], isCurrent || isHome);
+    });
 
 
-    if (currentPath.includes('pomodoro')) {
-        applyActive(navPomodoro);
-        applyInactive(navDashboard);
-    } else {
-        applyActive(navDashboard);
-        applyInactive(navPomodoro);
-    }
-
-    function toggle() {
+    // ── 2. TOGGLE LOGIC ──
+    function toggleSidebar() {
         expanded = !expanded;
 
+        // Animate Sidebar Width
         sidebar.style.width = expanded ? '232px' : '76px';
+
+        // Animate Logo
         logoS.style.opacity = expanded ? '0' : '1';
         logoFull.style.opacity = expanded ? '1' : '0';
 
+        // Animate Text Labels (Staggered)
         navTexts.forEach((el, i) => {
             setTimeout(() => {
                 el.style.maxWidth = expanded ? '180px' : '0';
@@ -164,15 +193,26 @@
             }, expanded ? i * 40 : 0);
         });
 
+        // Shift alignment and padding for all rows
         document.querySelectorAll('nav a, aside > div:last-child a').forEach(row => {
             row.style.justifyContent = expanded ? 'flex-start' : 'center';
-            row.style.paddingLeft = expanded ? '14px' : '0';
-            row.style.paddingRight = expanded ? '14px' : '0';
+            // Only force padding when expanded; when collapsed, items center themselves
+            if (expanded) {
+                row.style.paddingLeft = '14px';
+                row.style.paddingRight = '14px';
+            } else {
+                // If it's the active element, it needs small padding to keep the highlight ring looking good
+                const isActive = row.style.backgroundColor !== 'transparent' && row.style.backgroundColor !== '';
+                row.style.paddingLeft = isActive ? '12px' : '0';
+                row.style.paddingRight = isActive ? '12px' : '0';
+            }
         });
     }
 
-    // whole sidebar toggles except links and buttons
+    // Toggle when clicking sidebar background, but NOT when clicking links
     sidebar.addEventListener('click', (e) => {
-        if (!e.target.closest('a, button')) toggle();
+        if (!e.target.closest('a, button')) {
+            toggleSidebar();
+        }
     });
 </script>

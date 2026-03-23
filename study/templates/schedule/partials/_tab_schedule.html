@@ -1,0 +1,181 @@
+{% load tz %}
+<!DOCTYPE html>
+<html lang="en" data-theme="studyTheme">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style type="text/tailwindcss">
+
+        /* Solid block design - made slightly lighter and more distinct */
+        .solid-card {
+            @apply  rounded-[2rem] p-8 border border-white/5 transition-all duration-300 w-full shadow-2xl;
+        }
+        
+        /* Active highlight: Bright white border */
+        .solid-card.active {
+            @apply border-white ring-4 ring-white/10 bg-[#334155];
+        }
+
+        /* Red Progress Bar */
+        .progress-red {
+            background: linear-gradient(90deg, #ff6b6b 0%, #ee5253 100%);
+        }
+
+        /* Hide Scrollbar but allow scrolling */
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+
+<body class="min-h-screen">
+    <main class="relative z-10 flex flex-col h-screen w-full">
+
+        <!-- Header -->
+        <header class="px-8 py-8 flex items-center justify-between w-full">
+            <button class="text-slate-400 hover:text-white transition-opacity">
+                <i data-lucide="chevron-left" class="w-8 h-8"></i>
+            </button>
+            <div class="bg-primary px-10 py-3 rounded-2xl border border-white/10 shadow-lg">
+                <span class="text-sm font-bold tracking-[0.3em] uppercase">{% now "D, d M. Y г." %}</span>
+            </div>
+            <button class="text-slate-400 hover:text-white transition-opacity">
+                <i data-lucide="settings" class="w-8 h-8"></i>
+            </button>
+        </header>
+
+        <!-- Schedule Container (Line removed) -->
+        <div class="flex-1 overflow-y-auto px-8 pb-32 scrollbar-hide">
+            <div class="space-y-12 w-full max-w-7xl mx-auto">
+                {% for block in schedule.blocks.all %}
+                <div class="flex gap-8 group min-h-[160px] w-full" data-block-start="{{ block.start_time|time:'H:i' }}"
+                    data-block-end="{{ block.end_time|time:'H:i' }}">
+
+                    <!-- Time Column (Left Side) -->
+                    <div class="w-24 flex-shrink-0 flex flex-col justify-between py-2 text-right">
+                        <!-- Start Time -->
+                        <span class="text-xl font-bold text-slate-400 tracking-tighter">
+                            {{ block.start_time|time:"H:i" }}
+                        </span>
+                        <!-- End Time -->
+                        <span class="text-xl font-bold text-slate-500/40 tracking-tighter">
+                            {{ block.end_time|time:"H:i" }}
+                        </span>
+                    </div>
+
+                    <!-- Card Column (Stretches to Right Edge) -->
+                    <div class="flex-1">
+                        <div class="bg-base-200 rounded-2xl p-12 border border-neutral/20">
+
+                            <!-- Top Row: Badge + Total Duration -->
+                            <div class="flex justify-between items-center mb-6">
+                                <div class="inline-flex items-center gap-3 px-6 py-2 rounded-full text-sm font-black text-white uppercase tracking-widest shadow-md"
+                                    style="background-color: {{ block.color|default:'#4dffaa' }};">
+                                    {% if block.block_type == 'food' %}
+                                    <i data-lucide="utensils" class="w-5 h-5"></i>
+                                    {% elif block.block_type == 'study' %}
+                                    <i data-lucide="book-open" class="w-5 h-5"></i>
+                                    {% else %}
+                                    <i data-lucide="activity" class="w-5 h-5"></i>
+                                    {% endif %}
+                                    {{ block.title }}
+                                </div>
+                                <div class="w-6 h-6 rounded-full border-2 border-orange-400 shadow-glow"></div>
+                            </div>
+
+                            <!-- Description -->
+                            {% if block.description %}
+                            <p class="text-lg text-slate-300 mb-6 leading-relaxed">{{ block.description }}</p>
+                            {% endif %}
+
+                            <!-- Time Stats -->
+                            <div class="text-xl font-bold text-white mb-4 flex gap-3 items-baseline">
+                                <span class="tracking-tight">{{ block.duration }}</span>
+                                <span class="remaining-area text-slate-400 text-sm font-medium italic"></span>
+                            </div>
+
+                            <!-- Progress Bar -->
+                            <div class="progress-container hidden">
+                                <div class="w-full h-4 bg-slate-900 rounded-full overflow-hidden border border-white/5">
+                                    <div class="progress-bar-fill progress-red h-full transition-all duration-1000"
+                                        style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-40 opacity-20 italic tracking-[0.5em] text-2xl text-slate-400">
+                    NO_SCHEDULED_EVENTS</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Floating Action Button -->
+        <div class="fixed bottom-10 right-10">
+            <button
+                class="w-20 h-20 rounded-[2.5rem] bg-[#ffb3c1] text-slate-900 flex items-center justify-center shadow-2xl text-4xl font-bold hover:scale-110 active:scale-95 transition-all">
+                +
+            </button>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest"></script>
+    <script>
+        function timeToMinutes(timeStr) {
+            if (!timeStr) return 0;
+            const [h, m] = timeStr.split(':').map(Number);
+            return h * 60 + m;
+        }
+
+        function formatDuration(minutes) {
+            if (minutes < 60) return `${minutes} мин.`;
+            const h = Math.floor(minutes / 60);
+            const m = minutes % 60;
+            return m > 0 ? `${h} ч. ${m} м.` : `${h} ч.`;
+        }
+
+        function updateUI() {
+            const now = new Date();
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+            document.querySelectorAll('[data-block-start]').forEach(block => {
+                const start = timeToMinutes(block.dataset.blockStart);
+                const end = timeToMinutes(block.dataset.blockEnd);
+                const total = end - start;
+
+                const card = block.querySelector('[data-block-card]');
+                const progressContainer = block.querySelector('.progress-container');
+                const fill = block.querySelector('.progress-bar-fill');
+                const remainingArea = block.querySelector('.remaining-area');
+
+                if (currentMinutes >= start && currentMinutes < end) {
+                    card.classList.add('active');
+                    progressContainer.classList.remove('hidden');
+
+                    const elapsed = currentMinutes - start;
+                    const progress = (elapsed / total) * 100;
+                    fill.style.width = progress + '%';
+
+                    const remaining = end - currentMinutes;
+                    remainingArea.innerText = `(Осталось: ${formatDuration(remaining)})`;
+                } else {
+                    card.classList.remove('active');
+                    progressContainer.classList.add('hidden');
+                    remainingArea.innerText = '';
+
+                    if (currentMinutes >= end) card.style.opacity = "0.5";
+                    else card.style.opacity = "1";
+                }
+            });
+        }
+
+        setInterval(updateUI, 15000);
+        updateUI();
+        lucide.createIcons();
+    </script>
+</body>
+
+</html>

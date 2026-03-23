@@ -1,0 +1,154 @@
+<h2 class="font-serif italic font-bold text-base-content mb-12" style="font-size: 42px; letter-spacing: -1px;">
+    Statistics</h2>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+    <div
+        class="bg-base-300 border border-neutral p-8 rounded-2xl shadow-lg hover:border-primary/20 transition-colors group">
+        <div class="flex items-center justify-between mb-4">
+            <p class="text-[10px] text-neutral-content uppercase tracking-[0.2em] font-bold">Total Time</p>
+            <i data-lucide="clock"
+                class="w-4 h-4 text-primary opacity-40 group-hover:opacity-100 transition-opacity"></i>
+        </div>
+        <p class="text-4xl font-mono font-bold text-base-content mb-2">124h</p>
+        <div class="flex items-center gap-2">
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">+5.2%</span>
+            <span class="text-[10px] text-neutral-content/60 font-medium uppercase tracking-widest">this month</span>
+        </div>
+    </div>
+    <div
+        class="bg-base-300 border border-neutral p-8 rounded-2xl shadow-lg hover:border-primary/20 transition-colors group">
+        <div class="flex items-center justify-between mb-4">
+            <p class="text-[10px] text-neutral-content uppercase tracking-[0.2em] font-bold">Daily Average</p>
+            <i data-lucide="trending-up"
+                class="w-4 h-4 text-primary opacity-40 group-hover:opacity-100 transition-opacity"></i>
+        </div>
+        <p class="text-4xl font-mono font-bold text-base-content mb-2">6.2h</p>
+        <div class="flex items-center gap-2">
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">+12%</span>
+            <span class="text-[10px] text-neutral-content/60 font-medium uppercase tracking-widest">vs last week</span>
+        </div>
+    </div>
+</div>
+
+<!-- Chart Placeholder -->
+<div class="bg-base-300 border border-neutral p-10 rounded-2xl shadow-lg relative overflow-hidden">
+    <div class="flex items-center justify-between mb-12">
+        <div>
+            <h3 class="text-sm font-bold text-base-content uppercase tracking-widest mb-1">Weekly Activity</h3>
+            <p class="text-xs text-neutral-content font-mono opacity-60">Distribution of study hours by day</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral/20 border border-neutral/40">
+                <div class="w-2 h-2 rounded-full bg-primary"></div>
+                <span class="text-[10px] font-bold uppercase tracking-widest text-neutral-content">Study</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex items-end justify-between h-64 gap-6 px-4">
+        <!-- Monday -->
+        <div class="flex-1 flex flex-col items-center gap-6 group/bar">
+            <div class="relative w-full">
+                <div class="w-full bg-primary/10 rounded-xl hover:bg-primary/30 transition-all cursor-pointer relative z-10"
+                    style="height: 120px;">
+                    <div
+                        class="absolute -top-10 left-1/2 -translate-x-1/2 bg-base-100 border border-neutral px-2 py-1 rounded text-[10px] font-bold text-primary opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none">
+                        4.2h
+                    </div>
+                </div>
+                <div class="absolute bottom-0 left-0 right-0 bg-primary/5 rounded-xl h-full opacity-20"></div>
+            </div>
+            <span
+                class="text-[11px] text-neutral-content font-mono font-bold group-hover/bar:text-primary transition-colors">M</span>
+        </div>
+        <!-- Tuesday -->
+        <div class="flex-1 flex flex-col items-center gap-6 group/bar">
+            <div class="relative w-full">
+                <div class="w-full bg-primary/10 rounded-xl hover:bg-primary/30 transition-all cursor-pointer relative z-10"
+                    style="height: 180px;">
+                    <div
+                        class="absolute -top-10 left-1/2 -translate-x-1/2 bg-base-100 border border-neutral px-2 py-1 rounded text-[10px] font-bold text-primary opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none">
+                        6.8h
+                    </div>
+                </div>
+                <div class="absolute bottom-0 left-0 right-0 bg-primary/5 rounded-xl h-full opacity-20"></div>
+            </div>
+            <span
+                class="text-[11px] text-neutral-content font-mono font-bold group-hover/bar:text-primary transition-colors">T</span>
+        </div>
+        <!-- Wednesday -->
+        <div class="flex-1 flex flex-col items-center gap-6 group/bar">
+            <div class="relative w-full">
+                <div class="w-full bg-primary/10 rounded-xl hover:bg-primary/30 transition-all cursor-pointer relative z-10"
+                    style="height: 140px;">
+                    <div
+                        class="absolute -top-10 left-1/2 -translate-x-1/2 bg-base-100 border border-neutral px-2 py-1 rounded text-[10px] font-bold text-primary opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none">
+                        5.1h
+                    </div>
+                </div>
+                <div class="absolute bottom-0 left-0 right-0 bg-primary/5 rounded-xl h-full opacity-20"></div>
+            </div>
+            <span
+                class="text-[11px] text-neutral-content font-mono font-bold group-hover/bar:text-primary transition-colors">W</span>
+        </div>
+        <!-- Thursday -->
+        <div class="flex-1 flex flex-col items-center gap-6 group/bar">
+            <div class="relative w-full">
+                <div class="w-full bg-primary/10 rounded-xl hover:bg-primary/30 transition-all cursor-pointer relative z-10"
+                    style="height: 220px;">
+                    <div
+                        class="absolute -top-10 left-1/2 -translate-x-1/2 bg-base-100 border border-neutral px-2 py-1 rounded text-[10px] font-bold text-primary opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none">
+                        8.4h
+                    </div>
+                </div>
+                <div class="absolute bottom-0 left-0 right-0 bg-primary/5 rounded-xl h-full opacity-20"></div>
+            </div>
+            <span
+                class="text-[11px] text-neutral-content font-mono font-bold group-hover/bar:text-primary transition-colors">T</span>
+        </div>
+        <!-- Friday -->
+        <div class="flex-1 flex flex-col items-center gap-6 group/bar">
+            <div class="relative w-full">
+                <div class="w-full bg-primary/10 rounded-xl hover:bg-primary/30 transition-all cursor-pointer relative z-10"
+                    style="height: 160px;">
+                    <div
+                        class="absolute -top-10 left-1/2 -translate-x-1/2 bg-base-100 border border-neutral px-2 py-1 rounded text-[10px] font-bold text-primary opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none">
+                        6.1h
+                    </div>
+                </div>
+                <div class="absolute bottom-0 left-0 right-0 bg-primary/5 rounded-xl h-full opacity-20"></div>
+            </div>
+            <span
+                class="text-[11px] text-neutral-content font-mono font-bold group-hover/bar:text-primary transition-colors">F</span>
+        </div>
+        <!-- Saturday -->
+        <div class="flex-1 flex flex-col items-center gap-6 group/bar">
+            <div class="relative w-full">
+                <div class="w-full bg-primary/10 rounded-xl hover:bg-primary/30 transition-all cursor-pointer relative z-10"
+                    style="height: 80px;">
+                    <div
+                        class="absolute -top-10 left-1/2 -translate-x-1/2 bg-base-100 border border-neutral px-2 py-1 rounded text-[10px] font-bold text-primary opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none">
+                        3.2h
+                    </div>
+                </div>
+                <div class="absolute bottom-0 left-0 right-0 bg-primary/5 rounded-xl h-full opacity-20"></div>
+            </div>
+            <span
+                class="text-[11px] text-neutral-content font-mono font-bold group-hover/bar:text-primary transition-colors">S</span>
+        </div>
+        <!-- Sunday -->
+        <div class="flex-1 flex flex-col items-center gap-6 group/bar">
+            <div class="relative w-full">
+                <div class="w-full bg-primary/10 rounded-xl hover:bg-primary/30 transition-all cursor-pointer relative z-10"
+                    style="height: 100px;">
+                    <div
+                        class="absolute -top-10 left-1/2 -translate-x-1/2 bg-base-100 border border-neutral px-2 py-1 rounded text-[10px] font-bold text-primary opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none">
+                        4.0h
+                    </div>
+                </div>
+                <div class="absolute bottom-0 left-0 right-0 bg-primary/5 rounded-xl h-full opacity-20"></div>
+            </div>
+            <span
+                class="text-[11px] text-neutral-content font-mono font-bold group-hover/bar:text-primary transition-colors">S</span>
+        </div>
+    </div>
+</div>

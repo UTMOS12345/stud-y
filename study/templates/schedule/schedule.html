@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}stud-y — schedule{% endblock %}
+
+{% block content %}
+<div class="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden">
+
+    <!-- Main Scrollable Area -->
+    <main class="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide">
+
+        <!-- 1. Schedule Tab -->
+        <section id="tab-schedule" class="p-10 animate-up">
+            {% include "schedule/partials/_tab_schedule.html" %}
+        </section>
+
+        <!-- 2. Templates Tab -->
+        <section id="tab-templates" class="p-10 animate-up hidden">
+            {% include "schedule/partials/_tab_templates.html" %}
+        </section>
+
+        <!-- 3. Statistics Tab -->
+        <section id="tab-statistics" class="p-10 animate-up hidden">
+            {% include "schedule/partials/_tab_statistics.html" %}
+        </section>
+
+        <!-- Floating Action Button -->
+        <button type="button"
+            class="fixed bottom-32 right-10 w-20 h-20 rounded-[24px] bg-[#FF9F9F] text-black flex items-center justify-center shadow-[0_12px_40px_rgba(0,0,0,0.5)] active:scale-95 transition-transform z-30 cursor-pointer">
+            <i data-lucide="plus" class="w-10 h-10"></i>
+        </button>
+    </main>
+
+    <!-- Lowerbar -->
+    {% include "schedule/partials/_lowerbar.html" %}
+</div>
+
+<script>
+    function switchTab(tabId) {
+        console.log('Switching to tab:', tabId);
+
+        const tabs = ['schedule', 'templates', 'statistics'];
+        tabs.forEach(id => {
+            const el = document.getElementById(`tab-${id}`);
+            if (el) {
+                el.classList.add('hidden');
+            }
+        });
+
+        const targetTab = document.getElementById(`tab-${tabId}`);
+        if (targetTab) {
+            targetTab.classList.remove('hidden');
+            // Re-trigger animation if needed
+            targetTab.classList.remove('animate-up');
+            void targetTab.offsetWidth; // trigger reflow
+            targetTab.classList.add('animate-up');
+        }
+
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            const isTarget = btn.getAttribute('data-tab') === tabId;
+            const iconContainer = btn.querySelector('.icon-container');
+
+            if (isTarget) {
+                btn.classList.add('text-primary');
+                btn.classList.remove('text-neutral-content', 'opacity-40');
+                if (iconContainer) {
+                    iconContainer.classList.add('bg-primary/10');
+                    iconContainer.classList.remove('hover:bg-neutral/40');
+                }
+            } else {
+                btn.classList.remove('text-primary');
+                btn.classList.add('text-neutral-content', 'opacity-40');
+                if (iconContainer) {
+                    iconContainer.classList.remove('bg-primary/10');
+                    iconContainer.classList.add('hover:bg-neutral/40');
+                }
+            }
+        });
+    }
+
+    // Initialize state on load
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('Schedule page loaded, initializing tabs');
+        // Ensure lucide icons are created if they weren't already
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
+    });
+    function updateUI() {
+        const now = new Date();
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+        document.querySelectorAll('[data-block-start]').forEach(block => {
+            const start = timeToMinutes(block.dataset.blockStart);
+            const end = timeToMinutes(block.dataset.blockEnd);
+            const total = end - start;
+
+            const card = block.querySelector('[data-block-card]');
+            const progressContainer = block.querySelector('.progress-container');
+            const fill = block.querySelector('.progress-bar-fill');
+            const remainingArea = block.querySelector('.remaining-area');
+
+            if (currentMinutes >= start && currentMinutes < end) {
+                // MATCHING THE ORIGINAL "ACTIVE" SHAPE:
+                // Bright border, slightly lighter background, and ring glow
+                card.classList.add('border-primary', 'ring-4', 'ring-primary/10', 'bg-base-300');
+                card.classList.remove('border-primary/5', 'bg-base-200');
+
+                progressContainer.classList.remove('hidden');
+
+                const elapsed = currentMinutes - start;
+                const progress = (elapsed / total) * 100;
+                fill.style.width = progress + '%';
+
+                const remaining = end - currentMinutes;
+                remainingArea.innerText = `(Remaining: ${formatDuration(remaining)})`;
+            } else {
+                // BACK TO NORMAL SHAPE
+                card.classList.remove('border-primary', 'ring-4', 'ring-primary/10', 'bg-base-300');
+                card.classList.add('border-primary/5', 'bg-base-200');
+
+                progressContainer.classList.add('hidden');
+                remainingArea.innerText = '';
+
+                if (currentMinutes >= end) card.style.opacity = "0.4";
+                else card.style.opacity = "1";
+            }
+        });
+    }
+</script>
+{% endblock %}

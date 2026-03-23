@@ -1,0 +1,27 @@
+<nav class="relative h-24 bg-base-300 border-t border-neutral flex items-center justify-around px-8 z-40 transition-all"
+    id="lowerbar">
+    <button type="button" onclick="switchTab('schedule')"
+        class="tab-btn flex flex-col items-center gap-2 flex-1 py-2 text-primary cursor-pointer active:scale-95 transition-transform"
+        data-tab="schedule">
+        <div class="icon-container p-3 rounded-2xl bg-primary/10 transition-all">
+            <i data-lucide="calendar" class="w-7 h-7"></i>
+        </div>
+        <span class="text-[11px] font-bold uppercase tracking-widest">Расписание</span>
+    </button>
+    <button type="button" onclick="switchTab('templates')"
+        class="tab-btn flex flex-col items-center gap-2 flex-1 py-2 text-neutral-content opacity-40 cursor-pointer active:scale-95 transition-transform"
+        data-tab="templates">
+        <div class="icon-container p-3 rounded-2xl hover:bg-neutral/40 transition-all">
+            <i data-lucide="layout" class="w-7 h-7"></i>
+        </div>
+        <span class="text-[11px] font-bold uppercase tracking-widest">Шаблоны</span>
+    </button>
+    <button type="button" onclick="switchTab('statistics')"
+        class="tab-btn flex flex-col items-center gap-2 flex-1 py-2 text-neutral-content opacity-40 cursor-pointer active:scale-95 transition-transform"
+        data-tab="statistics">
+        <div class="icon-container p-3 rounded-2xl hover:bg-neutral/40 transition-all">
+            <i data-lucide="bar-chart-3" class="w-7 h-7"></i>
+        </div>
+        <span class="text-[11px] font-bold uppercase tracking-widest">Статистика</span>
+    </button>
+</nav>

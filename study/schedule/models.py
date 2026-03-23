@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from accounts.models import User
 from django.db.models import CheckConstraint , Q , F
 from django.core.validators import MinValueValidator , MaxValueValidator
 from django.contrib.postgres.constraints import ExclusionConstraint

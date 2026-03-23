@@ -1,0 +1,41 @@
+<h2 class="font-serif italic font-bold text-base-content mb-12" style="font-size: 42px; letter-spacing: -1px;">Templates
+</h2>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    {% for template in templates %}
+    <div
+        class="bg-base-300 border border-neutral rounded-2xl p-10 flex items-center justify-between group cursor-pointer hover:border-primary/40 hover:bg-base-200/50 transition-all shadow-lg relative overflow-hidden">
+        <div class="flex items-center gap-8">
+            <div
+                class="w-16 h-16 rounded-xl bg-neutral/30 flex items-center justify-center text-primary group-hover:bg-primary/10 transition-colors">
+                <i data-lucide="layout" class="w-8 h-8"></i>
+            </div>
+            <div>
+                <h3 class="text-2xl font-bold text-base-content group-hover:text-primary transition-colors">{{
+                    template.name }}</h3>
+                <div class="flex items-center gap-4 mt-2">
+                    <span class="text-sm text-neutral-content font-mono flex items-center gap-2">
+                        <i data-lucide="layers" class="w-4 h-4 opacity-40"></i>
+                        {{ template.template_blocks.count }} blocks
+                    </span>
+                    <span class="text-[10px] text-neutral-content/40 uppercase tracking-widest font-bold">Ready to
+                        use</span>
+                </div>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <button type="button"
+                class="p-3 rounded-xl hover:bg-neutral/40 text-neutral-content transition-all opacity-0 group-hover:opacity-100">
+                <i data-lucide="play" class="w-5 h-5"></i>
+            </button>
+            <button type="button" class="p-3 rounded-xl hover:bg-neutral/40 text-neutral-content transition-all">
+                <i data-lucide="more-vertical" class="w-6 h-6"></i>
+            </button>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-span-full flex flex-col items-center justify-center py-32 opacity-20 font-mono gap-4">
+        <i data-lucide="layout-template" class="w-16 h-16"></i>
+        <span class="text-lg tracking-widest uppercase">No templates created</span>
+    </div>
+    {% endfor %}
+</div>
