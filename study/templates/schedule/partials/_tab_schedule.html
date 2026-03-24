@@ -1,6 +1,6 @@
 {% load tz %}
 <!DOCTYPE html>
-<html lang="en" data-theme="studyTheme">
+<html lang="en-GB" data-theme="studyTheme">
 
 <head>
     <meta charset="UTF-8">
@@ -26,6 +26,16 @@
                 @apply h-full transition-all duration-1000 ease-in-out;
             }
         }
+        /* Removes the AM/PM button in some Webkit browsers to keep it strictly 24h style */
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            filter: invert(1); /* Makes the icon visible on dark backgrounds */
+            cursor: pointer;
+        }
+
+        /* Ensure the text is always 24h formatted in the input */
+        input[type="time"] {
+            position: relative;
+        }
     </style>
 </head>
 
@@ -37,8 +47,8 @@
             <button class="text-primary-400 hover:text-white transition-opacity" aria-label="Go back">
                 <i data-lucide="chevron-left" class="w-8 h-8"></i>
             </button>
-            <div class="bg-neutral-800 px-10 py-3 rounded-2xl border border-primary-400/10 shadow-lg">
-                <span class="text-primary-400 font-bold tracking-[0.3em] uppercase">{% now "D, d M. Y г." %}</span>
+            <div class="bg-primary text-primary-content px-10 py-3 rounded-2xl border border-primary-400/10 shadow-lg">
+                <span class="text-primary-content font-bold tracking-[0.3em] uppercase">{% now "D, d M. Y г." %}</span>
             </div>
             <button class="text-primary-400 hover:text-white transition-opacity" aria-label="Settings">
                 <i data-lucide="settings" class="w-8 h-8"></i>
@@ -87,9 +97,9 @@
                             <!-- Stats Row: Total Time | Time Left -->
                             <div class="flex justify-between items-end mb-4">
                                 <div>
-                                    <p class="text-xs uppercase tracking-widest text-slate-500 font-bold">Total Duration
+                                    <p class="text-xs uppercase tracking-widest text-primary font-bold">Total Duration
                                     </p>
-                                    <p class="text-xl font-bold text-white total-duration-label">--</p>
+                                    <p class="text-xl font-bold text-primary total-duration-label">--</p>
                                 </div>
                                 <div class="text-right opacity-0 transition-opacity duration-500 active-info">
                                     <p class="text-xs uppercase tracking-widest font-bold opacity-80"
@@ -122,15 +132,76 @@
             </div>
         </div>
 
-        <!-- FAB -->
-        <div class="fixed bottom-10 right-10">
-            <button
-                class="w-20 h-20 rounded-[2.5rem] bg-[#ffb3c1] text-slate-900 flex items-center justify-center shadow-2xl text-4xl font-bold hover:scale-110 active:scale-95 transition-all">
-                +
-            </button>
-        </div>
-    </main>
+        <!-- Modal for Adding Block -->
+        <div id="addBlockModal"
+            class="fixed inset-0 z-[100] {% if not form.errors %}hidden{% endif %} flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <div class="bg-slate-900 border border-white/10 w-full max-w-md rounded-[2rem] p-8 shadow-2xl">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-white uppercase tracking-widest">New Block</h2>
+                    <button onclick="closeModal()" class="text-slate-400 hover:text-white">✕</button>
+                </div>
 
+                <form method="POST">
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                    <div class="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-xl text-red-200 text-sm">
+                        {{ form.non_field_errors.0 }}
+                    </div>
+                    {% endif %}
+
+                    <div class="space-y-4">
+                        <div>
+                            <label
+                                class="text-[10px] uppercase text-slate-400 font-black tracking-widest ml-1">Title</label>
+                            {{ form.title }}
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label
+                                    class="text-[10px] uppercase text-slate-400 font-black tracking-widest ml-1">Start</label>
+                                {{ form.start_time }}
+                            </div>
+                            <div>
+                                <label
+                                    class="text-[10px] uppercase text-slate-400 font-black tracking-widest ml-1">End</label>
+                                {{ form.end_time }}
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label
+                                    class="text-[10px] uppercase text-slate-400 font-black tracking-widest ml-1">Type</label>
+                                {{ form.block_type }}
+                            </div>
+                            <div>
+                                <label
+                                    class="text-[10px] uppercase text-slate-400 font-black tracking-widest ml-1">Color</label>
+                                {{ form.color }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-4 mt-8">
+                        <button type="submit"
+                            class="flex-1 px-6 py-4 rounded-2xl bg-white text-slate-900 font-black uppercase tracking-tighter hover:bg-slate-200 transition-all">
+                            Create Block
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+
+
+    </main>
+    <!-- Floating Action Button - Placed outside the <main> tag -->
+    <button onclick="openModal()"
+        class="fixed bottom-10 right-10 w-20 h-20 rounded-[24px] bg-[#FF9F9F] text-black flex items-center justify-center shadow-[0_12px_40px_rgba(0,0,0,0.5)] active:scale-95 hover:scale-105 transition-all z-[9999] cursor-pointer text-4xl font-bold">
+        +
+    </button>
     <script src="https://cdn.jsdelivr.net/npm/lucide@latest"></script>
     <script>
         // Use a self-invoking function to avoid global scope pollution
@@ -229,7 +300,26 @@
                 setInterval(updateUI, 15000);
             });
         })();
+        function openModal() {
+            const modal = document.getElementById('addBlockModal');
+            modal.classList.remove('hidden');
+            // Focus the title input automatically
+            const titleInput = modal.querySelector('input[name="title"]');
+            if (titleInput) titleInput.focus();
+        }
+
+        function closeModal() {
+            document.getElementById('addBlockModal').classList.add('hidden');
+        }
+
+        // Close modal when clicking outside the box
+        window.addEventListener('click', (e) => {
+            const modal = document.getElementById('addBlockModal');
+            if (e.target === modal) closeModal();
+        });
+
     </script>
+
 </body>
 
 </html>

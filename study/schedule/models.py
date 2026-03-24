@@ -4,12 +4,14 @@ from django.db.models import CheckConstraint , Q , F
 from django.core.validators import MinValueValidator , MaxValueValidator
 from django.contrib.postgres.constraints import ExclusionConstraint
 from django.contrib.postgres.fields import RangeOperators
-
+from django.contrib.postgres.operations import BtreeGistExtension
+from django.core.exceptions import ValidationError
+from django.db import transaction
 
 # Create your models here.
 class DaySchedule(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='day_schedules')
-    date = models.DateField(db_index = True) # Index for fast calendar lookups
+    date = models.DateField(db_index = True)
     template = models.ForeignKey(
         'DayTemplate', 
         on_delete=models.SET_NULL, 
@@ -47,8 +49,6 @@ class ScheduleBlock(models.Model):
 
     @property
     def duration_minutes(self):
-        """Returns total duration of the block in minutes."""
-        # We combine with a dummy date to perform subtraction
         dummy_date = datetime.date.min
         delta = datetime.datetime.combine(dummy_date, self.end_time) - \
                 datetime.datetime.combine(dummy_date, self.start_time)
@@ -63,6 +63,33 @@ class ScheduleBlock(models.Model):
         if h > 0:
             return f"{h} h. {m} m." if m > 0 else f"{h} h."
         return f"{m} m."
+
+    def clean(self):
+        if self.start_time and self.end_time:
+            if self.start_time >= self.end_time:
+                raise ValidationError("End time must be after start time.")
+            
+            if hasattr(self, 'schedule') and self.schedule:
+                overlapping_blocks = ScheduleBlock.objects.filter(
+                    schedule=self.schedule,
+                    start_time__lt=self.end_time,
+                    end_time__gt=self.start_time
+                )
+            
+                if self.pk:
+                    overlapping_blocks = overlapping_blocks.exclude(pk=self.pk)
+
+                if overlapping_blocks.exists():
+                    conflict = overlapping_blocks.first()
+                    raise ValidationError(
+                        f"Overlaps with existing block: '{conflict.title}' "
+                        f"({conflict.start_time} - {conflict.end_time})"
+                    )
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+
 
     class Meta:
         ordering = ['start_time']
@@ -109,14 +136,13 @@ class TemplateBlock(models.Model):
     template = models.ForeignKey(
         DayTemplate, 
         on_delete=models.CASCADE, 
-        related_name="template_blocks" # Renamed for clarity
+        related_name="template_blocks" 
     )
     title = models.CharField(max_length=255)
     start_time = models.TimeField()
     end_time = models.TimeField()
     color = models.CharField(max_length=7, default="#3B82F6")
-    order = models.PositiveSmallIntegerField(default=0) # Smaller footprint
-
+    order = models.PositiveSmallIntegerField(default=0)
     class Meta:
         ordering = ['order', 'start_time']
 
