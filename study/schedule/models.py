@@ -45,6 +45,25 @@ class ScheduleBlock(models.Model):
         default = BlockType.FIXED
     )
 
+    @property
+    def duration_minutes(self):
+        """Returns total duration of the block in minutes."""
+        # We combine with a dummy date to perform subtraction
+        dummy_date = datetime.date.min
+        delta = datetime.datetime.combine(dummy_date, self.end_time) - \
+                datetime.datetime.combine(dummy_date, self.start_time)
+        return int(delta.total_seconds() / 60)
+
+    @property
+    def duration_display(self):
+        """Returns formatted string like '2 h. 30 m.'"""
+        total_mins = self.duration_minutes
+        h = total_mins // 60
+        m = total_mins % 60
+        if h > 0:
+            return f"{h} h. {m} m." if m > 0 else f"{h} h."
+        return f"{m} m."
+
     class Meta:
         ordering = ['start_time']
         constraints = [
