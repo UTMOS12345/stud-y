@@ -66,7 +66,8 @@
             <div class="bg-primary text-primary-content px-10 py-3 rounded-2xl border border-primary/10 shadow-lg">
                 <span class="text-primary-content font-bold tracking-[0.3em] uppercase">{% now "D, d M. Y г." %}</span>
             </div>
-            <button class="text-primary hover:text-primary-focus transition-opacity" aria-label="Settings">
+            <button onclick="openSettingsModal()" class="text-primary hover:text-primary-focus transition-opacity"
+                aria-label="Settings">
                 <i data-lucide="settings" class="w-8 h-8"></i>
             </button>
         </header>
@@ -127,9 +128,20 @@
                                     </div>
                                 </div>
 
-                                <!-- Status Dot -->
-                                <div class="status-dot w-6 h-6 rounded-full border-2 border-warning transition-colors duration-500 flex-shrink-0"
-                                    data-active-color="{% if block.action %}{{ block.action.color|default:'#3B82F6' }}{% else %}#3B82F6{% endif %}">
+                                <!-- Actions & Status Dot -->
+                                <div class="flex items-center gap-4 flex-shrink-0">
+                                    <button
+                                        onclick="editBlock({{ block.id }}, '{{ block.title|escapejs }}', '{{ block.action_id|default_if_none:'' }}', '{{ block.start_time|time:'H:i' }}', '{{ block.end_time|time:'H:i' }}', '{{ block.block_type|escapejs }}', '{{ block.description|escapejs }}')"
+                                        class="text-base-content/40 hover:text-primary transition-colors" title="Edit">
+                                        <i data-lucide="edit-2" class="w-5 h-5"></i>
+                                    </button>
+                                    <button onclick="deleteBlock({{ block.id }})"
+                                        class="text-base-content/40 hover:text-error transition-colors" title="Delete">
+                                        <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                    </button>
+                                    <div class="status-dot w-6 h-6 rounded-full border-2 border-warning transition-colors duration-500"
+                                        data-active-color="{% if block.action %}{{ block.action.color|default:'#3B82F6' }}{% else %}#3B82F6{% endif %}">
+                                    </div>
                                 </div>
                             </div>
 
@@ -188,7 +200,8 @@
 
                 <!-- Header -->
                 <div class="flex justify-between items-center mb-8">
-                    <h2 class="text-2xl font-bold text-primary uppercase tracking-[0.3em] font-mono">Add_Block</h2>
+                    <h2 id="modal-title" class="text-2xl font-bold text-primary uppercase tracking-[0.3em] font-mono">
+                        Add_Block</h2>
                     <button onclick="closeModal()" class="text-base-content hover:text-primary transition-colors">
                         <i data-lucide="x-circle" class="w-8 h-8"></i>
                     </button>
@@ -196,6 +209,7 @@
 
                 <form method="POST">
                     {% csrf_token %}
+                    <input type="hidden" name="block_id" id="id_block_id" value="">
 
                     {% if form.non_field_errors %}
                     <div
@@ -334,6 +348,98 @@
             </div>
         </div>
 
+        <!-- Settings Modal -->
+        <div id="settingsModal"
+            class="fixed inset-0 z-[1010] hidden flex items-center justify-center bg-base-100/90 backdrop-blur-md p-4">
+            <div
+                class="bg-base-200 border-2 border-primary/20 w-full max-w-sm rounded-[2.5rem] p-8 shadow-[0_0_50px_rgba(77,255,170,0.15)] animate-up">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-primary uppercase tracking-[0.2em] font-mono">Options</h2>
+                    <button type="button" onclick="closeSettingsModal()"
+                        class="text-base-content hover:text-primary transition-colors">
+                        <i data-lucide="x-circle" class="w-6 h-6"></i>
+                    </button>
+                </div>
+
+                <div class="space-y-4">
+                    <button type="button" onclick="openConvertTemplateModal()"
+                        class="w-full py-4 rounded-xl border border-primary text-primary-content font-bold uppercase tracking-[0.1em] hover:bg-primary/10 transition-all">
+                        Convert to Template
+                    </button>
+                    <button type="button" onclick="openApplyTemplateModal()"
+                        class="w-full py-4 rounded-xl border border-primary text-primary-content font-bold uppercase tracking-[0.1em] hover:bg-primary/10 transition-all">
+                        Apply Template
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Convert to Template Modal -->
+        <div id="convertTemplateModal"
+            class="fixed inset-0 z-[1020] hidden flex items-center justify-center bg-base-100/90 backdrop-blur-md p-4">
+            <div
+                class="bg-base-200 border-2 border-primary/20 w-full max-w-sm rounded-[2.5rem] p-8 shadow-[0_0_50px_rgba(77,255,170,0.15)] animate-up">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-primary uppercase tracking-[0.2em] font-mono">Save_Template</h2>
+                    <button type="button" onclick="closeConvertTemplateModal()"
+                        class="text-base-content hover:text-primary transition-colors">
+                        <i data-lucide="x-circle" class="w-6 h-6"></i>
+                    </button>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label
+                            class="text-[10px] uppercase text-base-content font-black tracking-[0.2em] mb-2 block ml-1">Template
+                            Name</label>
+                        <input type="text" id="newTemplateName"
+                            class="w-full bg-base-300 border border-neutral/20 rounded-lg p-3 text-primary font-mono focus:outline-none focus:ring-1 focus:ring-primary/50"
+                            placeholder="TEMPLATE_NAME">
+                    </div>
+
+                    <button type="button" onclick="convertToTemplate()"
+                        class="w-full py-3 mt-4 rounded-xl border border-primary text-primary-content font-bold uppercase tracking-[0.2em] hover:bg-primary/10 transition-all bg-primary">
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Apply Template Modal -->
+        <div id="applyTemplateModal"
+            class="fixed inset-0 z-[1020] hidden flex items-center justify-center bg-base-100/90 backdrop-blur-md p-4">
+            <div
+                class="bg-base-200 border-2 border-primary/20 w-full max-w-sm rounded-[2.5rem] p-8 shadow-[0_0_50px_rgba(77,255,170,0.15)] animate-up">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-primary uppercase tracking-[0.2em] font-mono">Apply_Template</h2>
+                    <button type="button" onclick="closeApplyTemplateModal()"
+                        class="text-base-content hover:text-primary transition-colors">
+                        <i data-lucide="x-circle" class="w-6 h-6"></i>
+                    </button>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label
+                            class="text-[10px] uppercase text-base-content font-black tracking-[0.2em] mb-2 block ml-1">Select
+                            Template</label>
+                        <select id="selectTemplateId"
+                            class="w-full bg-base-300 border border-neutral/20 rounded-lg p-3 text-primary font-mono focus:outline-none focus:ring-1 focus:ring-primary/50">
+                            <option value="">-- Select --</option>
+                            {% for template in templates %}
+                            <option value="{{ template.id }}">{{ template.name|default:template }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <button type="button" onclick="applyTemplate()"
+                        class="w-full py-3 mt-4 rounded-xl border border-primary text-primary-content font-bold uppercase tracking-[0.2em] hover:bg-primary/10 transition-all bg-primary">
+                        Apply
+                    </button>
+                </div>
+            </div>
+        </div>
+
     </main>
 
     <!-- Floating Action Button - Placed outside the <main> tag -->
@@ -450,11 +556,96 @@
         })();
 
         function openModal() {
+            document.getElementById('id_block_id').value = '';
+            document.getElementById('id_title').value = '';
+
+            const startInput = document.getElementById('id_start_time');
+            const endInput = document.getElementById('id_end_time');
+            if (startInput && startInput._flatpickr) startInput._flatpickr.clear();
+            else if (startInput) startInput.value = '';
+
+            if (endInput && endInput._flatpickr) endInput._flatpickr.clear();
+            else if (endInput) endInput.value = '';
+
+            const descInput = document.getElementById('id_description');
+            if (descInput) descInput.value = '';
+
+            document.getElementById('modal-title').innerText = 'Add_Block';
+
+            // Deselect actions
+            document.querySelectorAll('.action-select-btn').forEach(b => {
+                b.classList.remove('opacity-100');
+                b.classList.add('opacity-70');
+                b.style.boxShadow = 'none';
+            });
+            const actionSelect = document.getElementById('id_action');
+            if (actionSelect) actionSelect.value = '';
+
             const modal = document.getElementById('addBlockModal');
             modal.classList.remove('hidden');
-            // Focus the action input automatically
-            const actionInput = modal.querySelector('select[name="action"]');
-            if (actionInput) actionInput.focus();
+        }
+
+        function editBlock(id, title, actionId, startTime, endTime, blockType, description) {
+            document.getElementById('id_block_id').value = id;
+            document.getElementById('id_title').value = title;
+
+            const startInput = document.getElementById('id_start_time');
+            const endInput = document.getElementById('id_end_time');
+            if (startInput && startInput._flatpickr) startInput._flatpickr.setDate(startTime);
+            else if (startInput) startInput.value = startTime;
+
+            if (endInput && endInput._flatpickr) endInput._flatpickr.setDate(endTime);
+            else if (endInput) endInput.value = endTime;
+
+            const typeInput = document.getElementById('id_block_type');
+            if (typeInput) typeInput.value = blockType;
+
+            const descInput = document.getElementById('id_description');
+            if (descInput) descInput.value = description;
+
+            document.getElementById('modal-title').innerText = 'Edit_Block';
+
+            if (actionId) {
+                const btn = document.querySelector(`.action-select-btn[data-value="${actionId}"]`);
+                if (btn) selectAction(btn, actionId);
+            } else {
+                document.querySelectorAll('.action-select-btn').forEach(b => {
+                    b.classList.remove('opacity-100');
+                    b.classList.add('opacity-70');
+                    b.style.boxShadow = 'none';
+                });
+                const actionSelect = document.getElementById('id_action');
+                if (actionSelect) actionSelect.value = '';
+            }
+
+            document.getElementById('addBlockModal').classList.remove('hidden');
+        }
+
+        async function deleteBlock(id) {
+            if (!confirm('Are you sure you want to delete this block?')) return;
+
+            try {
+                const response = await fetch(window.location.href, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({
+                        action: 'delete_block',
+                        block_id: id
+                    })
+                });
+
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    alert('Failed to delete block');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('An error occurred');
+            }
         }
 
         function closeModal() {
@@ -468,6 +659,15 @@
 
             const newActionModal = document.getElementById('newActionModal');
             if (e.target === newActionModal) closeNewActionModal();
+
+            const settingsModal = document.getElementById('settingsModal');
+            if (e.target === settingsModal) closeSettingsModal();
+
+            const convertTemplateModal = document.getElementById('convertTemplateModal');
+            if (e.target === convertTemplateModal) closeConvertTemplateModal();
+
+            const applyTemplateModal = document.getElementById('applyTemplateModal');
+            if (e.target === applyTemplateModal) closeApplyTemplateModal();
         });
 
         function selectAction(btn, actionId) {
@@ -556,6 +756,96 @@
                 } else {
                     const err = await response.json();
                     alert(err.error || 'Failed to create action');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('An error occurred');
+            }
+        }
+
+        function openSettingsModal() {
+            document.getElementById('settingsModal').classList.remove('hidden');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').classList.add('hidden');
+        }
+
+        function openConvertTemplateModal() {
+            closeSettingsModal();
+            document.getElementById('convertTemplateModal').classList.remove('hidden');
+        }
+
+        function closeConvertTemplateModal() {
+            document.getElementById('convertTemplateModal').classList.add('hidden');
+        }
+
+        function openApplyTemplateModal() {
+            closeSettingsModal();
+            document.getElementById('applyTemplateModal').classList.remove('hidden');
+        }
+
+        function closeApplyTemplateModal() {
+            document.getElementById('applyTemplateModal').classList.add('hidden');
+        }
+
+        async function convertToTemplate() {
+            const name = document.getElementById('newTemplateName').value;
+            if (!name) {
+                alert('Template name is required');
+                return;
+            }
+
+            try {
+                const response = await fetch(window.location.href, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({
+                        action: 'convert_to_template',
+                        template_name: name
+                    })
+                });
+
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    const err = await response.json();
+                    alert(err.error || 'Failed to convert to template');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('An error occurred');
+            }
+        }
+
+        async function applyTemplate() {
+            const templateId = document.getElementById('selectTemplateId').value;
+            if (!templateId) {
+                alert('Please select a template');
+                return;
+            }
+
+            try {
+                const response = await fetch(window.location.href, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({
+                        action: 'apply_template',
+                        template_id: templateId
+                    })
+                });
+
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    const err = await response.json();
+                    alert(err.error || 'Failed to apply template');
                 }
             } catch (e) {
                 console.error(e);

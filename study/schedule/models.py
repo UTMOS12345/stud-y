@@ -39,6 +39,41 @@ class DaySchedule(models.Model):
         ]
         ordering = ['-date']
 
+    # --- ADD THIS METHOD HERE ---
+    def create_template_from_day(self, template_name, description=""):
+        """
+        Takes all blocks from this day and saves them as a new DayTemplate.
+        """
+        with transaction.atomic():
+            # 1. Create the Template header
+            new_template = DayTemplate.objects.create(
+                user=self.user,
+                name=template_name,
+                description=description
+            )
+
+            # 2. Copy each ScheduleBlock into a TemplateBlock
+            # We use enumerate to handle the 'order' field automatically
+            for index, block in enumerate(self.blocks.all()):
+                
+                # Safety check: TemplateBlock requires an action (PROTECT), 
+                # but ScheduleBlock allows null. We skip blocks without actions 
+                # or you can assign a default.
+                if block.action is None:
+                    continue 
+
+                TemplateBlock.objects.create(
+                    template=new_template,
+                    action=block.action,
+                    title=block.title,
+                    description=block.description,
+                    start_time=block.start_time,
+                    end_time=block.end_time,
+                    order=index
+                )
+            
+            return new_template
+
 class ScheduleBlock(models.Model):
     class BlockType(models.TextChoices):
         FIXED = 'fixed', 'Fixed'
@@ -132,15 +167,38 @@ class BlockSession(models.Model):
         if self.start_time and self.end_time:
             return self.end_time - self.start_time
         return None
-
 class DayTemplate(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='day_templates')
-    name = models.CharField(max_length=255)
-    description = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    # ... (your existing fields) ...
 
-    def __str__(self):
-        return f"{self.name} ({self.user.email})"
+    def apply_to_date_merge(self, target_date):
+        with transaction.atomic():
+            schedule, _ = DaySchedule.objects.get_or_create(user=self.user, date=target_date)
+
+            applied_count = 0
+            skipped_count = 0
+
+            for t_block in self.template_blocks.all():
+                new_block = ScheduleBlock(
+                    schedule=schedule,
+                    action=t_block.action,
+                    title=t_block.title,
+                    description=t_block.description,
+                    start_time=t_block.start_time,
+                    end_time=t_block.end_time,
+                )
+            
+                try:
+                    # full_clean() triggers your overlap logic in models.py
+                    new_block.full_clean() 
+                    new_block.save()
+                    applied_count += 1
+                except ValidationError:
+                    # If it overlaps with an existing block, we just skip this one
+                    skipped_count += 1
+                    continue
+        
+            return applied_count, skipped_count
+
 
 class TemplateBlock(models.Model):
     template = models.ForeignKey(
