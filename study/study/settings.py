@@ -124,8 +124,8 @@ LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'Asia/Tashkent'   
 
-USE_I18N = True
-
+USE_I18N = False
+TIME_FORMAT = 'H:i'
 USE_TZ = True
 
 

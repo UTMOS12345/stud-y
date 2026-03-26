@@ -1,17 +1,31 @@
+import datetime
 from django.db import models
 from accounts.models import User
-from django.db.models import CheckConstraint , Q , F
-from django.core.validators import MinValueValidator , MaxValueValidator
-from django.contrib.postgres.constraints import ExclusionConstraint
-from django.contrib.postgres.fields import RangeOperators
-from django.contrib.postgres.operations import BtreeGistExtension
+from django.db.models import CheckConstraint, Q, F
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
-from django.db import transaction
 
-# Create your models here.
+class Action(models.Model):
+    """
+    Presets that define the look and feel of a block.
+    Example: 'Gym' with a 'dumbbell' icon and 'red' color.
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='actions')
+    name = models.CharField(max_length=100)
+    icon_name = models.CharField(max_length=50, default='activity', help_text="Lucide or FontAwesome icon name")
+    color = models.CharField(max_length=7, default='#3B82F6')
+
+    class Meta:
+        unique_together = ('user', 'name')
+        verbose_name = "Action"
+        verbose_name_plural = "Actions"
+
+    def __str__(self):
+        return self.name
+
 class DaySchedule(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='day_schedules')
-    date = models.DateField(db_index = True)
+    date = models.DateField(db_index=True)
     template = models.ForeignKey(
         'DayTemplate', 
         on_delete=models.SET_NULL, 
@@ -35,16 +49,21 @@ class ScheduleBlock(models.Model):
         on_delete=models.CASCADE,
         related_name='blocks'
     )
-    title = models.CharField(max_length=200)
+    # Linked Action
+    action = models.ForeignKey(Action, on_delete=models.PROTECT, null=True, blank=True)
+
+    
+    # Custom fields for this specific instance
+    title = models.CharField(max_length=200, help_text="Specific title for this session")
+    description = models.TextField(blank=True, null=True)
     
     start_time = models.TimeField()
     end_time = models.TimeField()
     
-    color = models.CharField(max_length=7, default='#3B82F6')
     block_type = models.CharField(
-        max_length = 20,
-        choices = BlockType.choices,
-        default = BlockType.FIXED
+        max_length=20,
+        choices=BlockType.choices,
+        default=BlockType.FIXED
     )
 
     @property
@@ -56,7 +75,6 @@ class ScheduleBlock(models.Model):
 
     @property
     def duration_display(self):
-        """Returns formatted string like '2 h. 30 m.'"""
         total_mins = self.duration_minutes
         h = total_mins // 60
         m = total_mins % 60
@@ -69,7 +87,8 @@ class ScheduleBlock(models.Model):
             if self.start_time >= self.end_time:
                 raise ValidationError("End time must be after start time.")
             
-            if hasattr(self, 'schedule') and self.schedule:
+            # Use self.schedule_id to check if schedule is assigned without triggering query
+            if self.schedule_id:
                 overlapping_blocks = ScheduleBlock.objects.filter(
                     schedule=self.schedule,
                     start_time__lt=self.end_time,
@@ -85,11 +104,10 @@ class ScheduleBlock(models.Model):
                         f"Overlaps with existing block: '{conflict.title}' "
                         f"({conflict.start_time} - {conflict.end_time})"
                     )
+
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
-
-
 
     class Meta:
         ordering = ['start_time']
@@ -100,51 +118,45 @@ class ScheduleBlock(models.Model):
             ),
         ]
 
-
 class BlockSession(models.Model):
     block = models.ForeignKey(
         ScheduleBlock,
         on_delete=models.CASCADE,
         related_name='sessions'
     )
-
-    start_time = models.DateTimeField(db_index = True)
-    end_time = models.DateTimeField(null = True, blank = True)
+    start_time = models.DateTimeField(db_index=True)
+    end_time = models.DateTimeField(null=True, blank=True)
     
     @property
     def duration(self):
         if self.start_time and self.end_time:
             return self.end_time - self.start_time
         return None
-    
-    
+
 class DayTemplate(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='day_templates')
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    
-
-    
     def __str__(self):
         return f"{self.name} ({self.user.email})"
-    
 
-    
 class TemplateBlock(models.Model):
     template = models.ForeignKey(
         DayTemplate, 
         on_delete=models.CASCADE, 
         related_name="template_blocks" 
     )
+    # Linked Action
+    action = models.ForeignKey(Action, on_delete=models.PROTECT, related_name='template_blocks')
+    
     title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    
     start_time = models.TimeField()
     end_time = models.TimeField()
-    color = models.CharField(max_length=7, default="#3B82F6")
     order = models.PositiveSmallIntegerField(default=0)
+
     class Meta:
         ordering = ['order', 'start_time']
-
-    
-    

@@ -7,7 +7,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
     <style type="text/tailwindcss">
+        .time-field::-webkit-calendar-picker-indicator,
+        .time-field::-webkit-inner-spin-button,
+        .time-field::-webkit-clear-button {
+            display: none;
+            -webkit-appearance: none;
+        }
+        .time-field {
+            letter-spacing: 0.1em;
+        }
+
+        .time-field:focus {
+            background-color: var(--color-base-300);
+        }
+
         @layer components {
             .solid-card {
                 @apply rounded-[2rem] p-8 border border-white/5 transition-all duration-300 w-full shadow-2xl;
@@ -15,7 +31,7 @@
             
             /* Active highlight: Bright white border */
             .solid-card.active {
-                @apply border-white ring-4 ring-white/10 bg-[#334155];
+                @apply border-white ring-4 ring-white/10 bg-slate-700;
             }
 
             .scrollbar-hide::-webkit-scrollbar { display: none; }
@@ -39,18 +55,18 @@
     </style>
 </head>
 
-<body class="min-h-screen bg-slate-950 text-slate-200">
+<body class="min-h-screen bg-base-900 text-base-200">
     <main class="relative z-10 flex flex-col h-screen w-full">
 
         <!-- Header -->
         <header class="px-8 py-8 flex items-center justify-between w-full">
-            <button class="text-primary-400 hover:text-white transition-opacity" aria-label="Go back">
+            <button class="text-primary hover:text-primary-focus transition-opacity" aria-label="Go back">
                 <i data-lucide="chevron-left" class="w-8 h-8"></i>
             </button>
-            <div class="bg-primary text-primary-content px-10 py-3 rounded-2xl border border-primary-400/10 shadow-lg">
+            <div class="bg-primary text-primary-content px-10 py-3 rounded-2xl border border-primary/10 shadow-lg">
                 <span class="text-primary-content font-bold tracking-[0.3em] uppercase">{% now "D, d M. Y г." %}</span>
             </div>
-            <button class="text-primary-400 hover:text-white transition-opacity" aria-label="Settings">
+            <button class="text-primary hover:text-primary-focus transition-opacity" aria-label="Settings">
                 <i data-lucide="settings" class="w-8 h-8"></i>
             </button>
         </header>
@@ -64,38 +80,61 @@
 
                     <!-- Time Column -->
                     <div class="w-24 flex-shrink-0 flex flex-col justify-between py-2 text-right">
-                        <span class="text-xl font-bold text-primary-400 tracking-tighter">
+                        <span class="text-xl font-bold text-base-content tracking-tighter">
                             {{ block.start_time|time:"H:i" }}
                         </span>
-                        <span class="text-xl font-bold text-primary-500/40 tracking-tighter">
+                        <span class="text-xl font-bold text-base-content/40 tracking-tighter">
                             {{ block.end_time|time:"H:i" }}
                         </span>
                     </div>
 
                     <!-- Card Column -->
                     <div class="flex-1">
-                        <!-- Use base-200 for background to match original -->
+                        <!-- Card using bg-base utility -->
                         <div data-block-card
-                            class="bg-base-200 rounded-2xl p-12 border border-neutral/20 transition-all duration-300 opacity-100">
+                            class="bg-base-200 rounded-2xl p-12 border border-base-300/50 transition-all duration-300 opacity-100">
 
-                            <!-- Top Row: Badge + Status Dot -->
-                            <div class="flex justify-between items-center mb-6">
-                                <div class="inline-flex items-center gap-3 px-6 py-2 rounded-full text-sm font-black text-white uppercase tracking-widest shadow-md"
-                                    style="background-color: {{ block.color|default:'#3B82F6' }};">
-                                    {% if block.block_type == 'fixed' %}
-                                    <i data-lucide="lock" class="w-5 h-5"></i>
+                            <!-- Top Row: Action Bubble + Title + Status Dot -->
+                            <div class="flex justify-between items-start gap-4 mb-8">
+                                <div class="flex items-center gap-4">
+                                    <!-- Action Bubble with Icon and Name -->
+                                    {% if block.action %}
+                                    <div class="action-bubble flex-shrink-0 px-6 py-3 rounded-full flex items-center justify-center gap-3 font-black shadow-lg transition-all duration-300 border-2"
+                                        style="background-color: {{ block.action.color|default:'#3B82F6' }}20; border-color: {{ block.action.color|default:'#3B82F6' }}; color: {{ block.action.color|default:'#3B82F6' }};"
+                                        data-action-color="{{ block.action.color|default:'#3B82F6' }}">
+                                        <i data-lucide="{{ block.action.icon_name|default:'activity' }}"
+                                            class="w-6 h-6"></i>
+                                        <span class="text-lg tracking-widest uppercase">{{ block.action.name }}</span>
+                                    </div>
                                     {% else %}
-                                    <i data-lucide="activity" class="w-5 h-5"></i>
+                                    <div class="action-bubble flex-shrink-0 px-6 py-3 rounded-full flex items-center justify-center gap-3 font-black shadow-lg transition-all duration-300 border-2"
+                                        style="background-color: #3B82F620; border-color: #3B82F6; color: #3B82F6;"
+                                        data-action-color="#3B82F6">
+                                        <i data-lucide="activity" class="w-6 h-6"></i>
+                                        <span class="text-lg tracking-widest uppercase">Activity</span>
+                                    </div>
                                     {% endif %}
-                                    {{ block.title|truncatechars:50 }}
+
+                                    <!-- Block Title -->
+                                    <div>
+                                        <h3 class="text-2xl font-bold tracking-wide"
+                                            style="color: {% if block.action %}{{ block.action.color|default:'#3B82F6' }}{% else %}#3B82F6{% endif %};">
+                                            {{ block.title }}
+                                        </h3>
+                                        <p class="text-xs uppercase tracking-widest text-base-500 font-bold mt-1">
+                                            {% if block.block_type == 'fixed' %}Fixed{% else %}Flexible{% endif %}
+                                        </p>
+                                    </div>
                                 </div>
-                                <!-- Data attribute stores color for JS to use safely -->
-                                <div class="status-dot w-6 h-6 rounded-full border-2 border-orange-400 transition-colors duration-500"
-                                    data-active-color="{{ block.color|default:'#3B82F6' }}"></div>
+
+                                <!-- Status Dot -->
+                                <div class="status-dot w-6 h-6 rounded-full border-2 border-warning transition-colors duration-500 flex-shrink-0"
+                                    data-active-color="{% if block.action %}{{ block.action.color|default:'#3B82F6' }}{% else %}#3B82F6{% endif %}">
+                                </div>
                             </div>
 
                             <!-- Stats Row: Total Time | Time Left -->
-                            <div class="flex justify-between items-end mb-4">
+                            <div class="flex justify-between items-end mb-6">
                                 <div>
                                     <p class="text-xs uppercase tracking-widest text-primary font-bold">Total Duration
                                     </p>
@@ -103,106 +142,208 @@
                                 </div>
                                 <div class="text-right opacity-0 transition-opacity duration-500 active-info">
                                     <p class="text-xs uppercase tracking-widest font-bold opacity-80"
-                                        style="color: {{ block.color|default:'#3B82F6' }};">Time Left</p>
+                                        style="color: {% if block.action %}{{ block.action.color|default:'#3B82F6' }}{% else %}#3B82F6{% endif %};">
+                                        Time Left</p>
                                     <p class="text-xl font-bold remaining-area"
-                                        style="color: {{ block.color|default:'#3B82F6' }};">--</p>
+                                        style="color: {% if block.action %}{{ block.action.color|default:'#3B82F6' }}{% else %}#3B82F6{% endif %};">
+                                        --</p>
                                 </div>
                             </div>
 
                             <!-- Progress Bar -->
-                            <div class="progress-container opacity-0 transition-opacity duration-500 active-info">
-                                <div class="w-full h-4 bg-slate-900 rounded-full overflow-hidden border border-white/5">
+                            <div class="progress-container opacity-0 transition-opacity duration-500 active-info mb-6">
+                                <div
+                                    class="w-full h-3 bg-base-300 rounded-full overflow-hidden border border-base-400/50">
                                     <div class="progress-bar-fill w-0"
-                                        style="background-color: {{ block.color|default:'#3B82F6' }}; shadow: 0 0 10px {{ block.color|default:'#3B82F6' }}80;">
+                                        style="background-color: {% if block.action %}{{ block.action.color|default:'#3B82F6' }}{% else %}#3B82F6{% endif %};">
                                     </div>
                                 </div>
                             </div>
 
+
+
+                            <!-- Description -->
                             {% if block.description %}
-                            <p class="text-lg text-slate-300 mt-6 leading-relaxed">{{ block.description|linebreaksbr }}
+                            <p class="text-base text-base-content/80 leading-relaxed">
+                                {{ block.description|linebreaksbr }}
                             </p>
                             {% endif %}
                         </div>
                     </div>
                 </div>
                 {% empty %}
-                <div class="text-center py-40 opacity-20 italic tracking-[0.5em] text-2xl text-slate-400">
+                <div class="text-center py-40 opacity-20 italic tracking-[0.5em] text-2xl text-base-500">
                     NO_SCHEDULED_EVENTS</div>
                 {% endfor %}
             </div>
         </div>
 
-        <!-- Modal for Adding Block -->
+        <!-- Modal Container -->
         <div id="addBlockModal"
-            class="fixed inset-0 z-[100] {% if not form.errors %}hidden{% endif %} flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div class="bg-slate-900 border border-white/10 w-full max-w-md rounded-[2rem] p-8 shadow-2xl">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-white uppercase tracking-widest">New Block</h2>
-                    <button onclick="closeModal()" class="text-slate-400 hover:text-white">✕</button>
+            class="fixed inset-0 z-[1000] {% if not form.errors %}hidden{% endif %} flex items-center justify-center bg-base-100/90 backdrop-blur-md p-4">
+
+            <!-- Modal Box -->
+            <div
+                class="bg-base-200 border-2 border-primary/20 w-full max-w-md rounded-[2.5rem] p-10 shadow-[0_0_50px_rgba(77,255,170,0.15)] animate-up">
+
+                <!-- Header -->
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="text-2xl font-bold text-primary uppercase tracking-[0.3em] font-mono">Add_Block</h2>
+                    <button onclick="closeModal()" class="text-base-content hover:text-primary transition-colors">
+                        <i data-lucide="x-circle" class="w-8 h-8"></i>
+                    </button>
                 </div>
 
                 <form method="POST">
                     {% csrf_token %}
 
                     {% if form.non_field_errors %}
-                    <div class="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-xl text-red-200 text-sm">
+                    <div
+                        class="mb-6 p-4 bg-error/20 border border-error/50 rounded-xl text-error text-[10px] font-black uppercase tracking-tighter">
                         {{ form.non_field_errors.0 }}
                     </div>
                     {% endif %}
 
-                    <div class="space-y-4">
+                    <div class="space-y-6">
+                        <!-- Action Selection -->
                         <div>
                             <label
-                                class="text-[10px] uppercase text-slate-400 font-black tracking-widest ml-1">Title</label>
+                                class="text-[10px] uppercase text-base-content font-black tracking-[0.2em] mb-2 block ml-1">Action</label>
+
+                            <div class="flex flex-wrap gap-3 mb-2" id="action-bubbles-container">
+                                {% for action in actions %}
+                                <button type="button"
+                                    class="action-select-btn flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all duration-300 opacity-70 hover:opacity-100"
+                                    style="border-color: {{ action.color }}; color: {{ action.color }};"
+                                    data-value="{{ action.id }}" onclick="selectAction(this, '{{ action.id }}')">
+                                    <i data-lucide="{{ action.icon_name }}" class="w-4 h-4"></i>
+                                    <span class="font-bold text-sm">{{ action.name }}</span>
+                                </button>
+                                {% endfor %}
+
+                                <button type="button" onclick="openNewActionModal()"
+                                    class="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-dashed border-base-content/30 text-base-content/50 hover:border-primary hover:text-primary transition-all duration-300">
+                                    <i data-lucide="plus" class="w-4 h-4"></i>
+                                    <span class="font-bold text-sm">New</span>
+                                </button>
+                            </div>
+
+                            <div class="hidden">
+                                {{ form.action }}
+                            </div>
+                        </div>
+
+                        <!-- Title -->
+                        <div>
+                            <label
+                                class="text-[10px] uppercase text-base-content font-black tracking-[0.2em] mb-2 block ml-1">Title</label>
                             {{ form.title }}
                         </div>
 
-                        <div class="grid grid-cols-2 gap-4">
+                        <!-- Time Grid -->
+                        <div class="grid grid-cols-2 gap-6">
                             <div>
                                 <label
-                                    class="text-[10px] uppercase text-slate-400 font-black tracking-widest ml-1">Start</label>
-                                {{ form.start_time }}
+                                    class="text-[10px] uppercase text-base-content font-black tracking-[0.2em] mb-2 block text-center">T_START</label>
+                                <div class="relative">
+                                    {{ form.start_time }}
+                                </div>
                             </div>
                             <div>
                                 <label
-                                    class="text-[10px] uppercase text-slate-400 font-black tracking-widest ml-1">End</label>
-                                {{ form.end_time }}
+                                    class="text-[10px] uppercase text-base-content font-black tracking-[0.2em] mb-2 block text-center">T_END</label>
+                                <div class="relative">
+                                    {{ form.end_time }}
+                                </div>
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label
-                                    class="text-[10px] uppercase text-slate-400 font-black tracking-widest ml-1">Type</label>
-                                {{ form.block_type }}
-                            </div>
-                            <div>
-                                <label
-                                    class="text-[10px] uppercase text-slate-400 font-black tracking-widest ml-1">Color</label>
-                                {{ form.color }}
-                            </div>
+                        <!-- Block Type -->
+                        <div>
+                            <label
+                                class="text-[10px] uppercase text-base-content font-black tracking-[0.2em] mb-2 block ml-1">Type</label>
+                            {{ form.block_type }}
+                        </div>
+
+                        <!-- Description -->
+                        <div>
+                            <label
+                                class="text-[10px] uppercase text-base-content font-black tracking-[0.2em] mb-2 block ml-1">Description</label>
+                            {{ form.description }}
                         </div>
                     </div>
 
-                    <div class="flex gap-4 mt-8">
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col gap-3 mt-10">
                         <button type="submit"
-                            class="flex-1 px-6 py-4 rounded-2xl bg-white text-slate-900 font-black uppercase tracking-tighter hover:bg-slate-200 transition-all">
-                            Create Block
+                            class="w-full py-4 rounded-2xl border border-primary text-primary-content font-bold uppercase tracking-[0.2em] hover:bg-primary/10 transition-all bg-primary">
+                            Save
+                        </button>
+                        <button type="button" onclick="closeModal()"
+                            class="w-full py-4 rounded-2xl border border-base-400 text-base-content font-bold uppercase tracking-[0.2em] hover:bg-base-300/10 transition-all">
+                            Cancel
                         </button>
                     </div>
                 </form>
             </div>
         </div>
 
+        <!-- New Action Modal -->
+        <div id="newActionModal"
+            class="fixed inset-0 z-[1010] hidden flex items-center justify-center bg-base-100/90 backdrop-blur-md p-4">
+            <div
+                class="bg-base-200 border-2 border-primary/20 w-full max-w-sm rounded-[2.5rem] p-8 shadow-[0_0_50px_rgba(77,255,170,0.15)] animate-up">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-primary uppercase tracking-[0.2em] font-mono">New_Action</h2>
+                    <button type="button" onclick="closeNewActionModal()"
+                        class="text-base-content hover:text-primary transition-colors">
+                        <i data-lucide="x-circle" class="w-6 h-6"></i>
+                    </button>
+                </div>
 
+                <div class="space-y-4">
+                    <div>
+                        <label
+                            class="text-[10px] uppercase text-base-content font-black tracking-[0.2em] mb-2 block ml-1">Name</label>
+                        <input type="text" id="newActionName"
+                            class="w-full bg-base-300 border border-neutral/20 rounded-lg p-3 text-primary font-mono focus:outline-none focus:ring-1 focus:ring-primary/50"
+                            placeholder="ACTION_NAME">
+                    </div>
+
+                    <div>
+                        <label
+                            class="text-[10px] uppercase text-base-content font-black tracking-[0.2em] mb-2 block ml-1">Color</label>
+                        <input type="color" id="newActionColor" value="#3B82F6"
+                            class="w-full h-12 bg-base-300 border border-neutral/20 rounded-lg p-1 cursor-pointer">
+                    </div>
+
+                    <div>
+                        <label
+                            class="text-[10px] uppercase text-base-content font-black tracking-[0.2em] mb-2 block ml-1">Icon
+                            (Lucide)</label>
+                        <input type="text" id="newActionIcon" value="activity"
+                            class="w-full bg-base-300 border border-neutral/20 rounded-lg p-3 text-primary font-mono focus:outline-none focus:ring-1 focus:ring-primary/50"
+                            placeholder="e.g. activity, book, dumbbell">
+                    </div>
+
+                    <button type="button" onclick="saveNewAction()"
+                        class="w-full py-3 mt-4 rounded-xl border border-primary text-primary-content font-bold uppercase tracking-[0.2em] hover:bg-primary/10 transition-all bg-primary">
+                        Create Action
+                    </button>
+                </div>
+            </div>
+        </div>
 
     </main>
+
     <!-- Floating Action Button - Placed outside the <main> tag -->
     <button onclick="openModal()"
-        class="fixed bottom-10 right-10 w-20 h-20 rounded-[24px] bg-[#FF9F9F] text-black flex items-center justify-center shadow-[0_12px_40px_rgba(0,0,0,0.5)] active:scale-95 hover:scale-105 transition-all z-[9999] cursor-pointer text-4xl font-bold">
+        class="fixed bottom-10 right-10 w-20 h-20 rounded-[24px] bg-[#fe9e9f] text-base-900 flex items-center justify-center shadow-[0_12px_40px_rgba(0,0,0,0.5)] active:scale-95 hover:scale-105 transition-all z-[9999] cursor-pointer text-4xl font-bold">
         +
     </button>
+
     <script src="https://cdn.jsdelivr.net/npm/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
         // Use a self-invoking function to avoid global scope pollution
         (function () {
@@ -298,14 +439,22 @@
                 lucide.createIcons();
                 updateUI();
                 setInterval(updateUI, 15000);
+
+                flatpickr("input[type=time]", {
+                    enableTime: true,
+                    noCalendar: true,
+                    dateFormat: "H:i",
+                    time_24hr: true
+                });
             });
         })();
+
         function openModal() {
             const modal = document.getElementById('addBlockModal');
             modal.classList.remove('hidden');
-            // Focus the title input automatically
-            const titleInput = modal.querySelector('input[name="title"]');
-            if (titleInput) titleInput.focus();
+            // Focus the action input automatically
+            const actionInput = modal.querySelector('select[name="action"]');
+            if (actionInput) actionInput.focus();
         }
 
         function closeModal() {
@@ -316,8 +465,113 @@
         window.addEventListener('click', (e) => {
             const modal = document.getElementById('addBlockModal');
             if (e.target === modal) closeModal();
+
+            const newActionModal = document.getElementById('newActionModal');
+            if (e.target === newActionModal) closeNewActionModal();
         });
 
+        function selectAction(btn, actionId) {
+            document.querySelectorAll('.action-select-btn').forEach(b => {
+                b.classList.remove('opacity-100');
+                b.classList.add('opacity-70');
+                b.style.boxShadow = 'none';
+            });
+
+            btn.classList.remove('opacity-70');
+            btn.classList.add('opacity-100');
+            btn.style.boxShadow = `0 0 15px ${btn.style.borderColor}`;
+
+            const select = document.getElementById('id_action');
+            if (select) {
+                select.value = actionId;
+            }
+        }
+
+        function openNewActionModal() {
+            document.getElementById('newActionModal').classList.remove('hidden');
+        }
+
+        function closeNewActionModal() {
+            document.getElementById('newActionModal').classList.add('hidden');
+        }
+
+        async function saveNewAction() {
+            const name = document.getElementById('newActionName').value;
+            const color = document.getElementById('newActionColor').value;
+            const icon = document.getElementById('newActionIcon').value || 'activity';
+
+            if (!name) {
+                alert('Name is required');
+                return;
+            }
+
+            try {
+                const response = await fetch(window.location.href, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({
+                        action: 'create_action',
+                        name: name,
+                        color: color,
+                        icon_name: icon
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    const select = document.getElementById('id_action');
+                    const option = document.createElement('option');
+                    option.value = data.id;
+                    option.text = data.name;
+                    select.appendChild(option);
+
+                    const container = document.getElementById('action-bubbles-container');
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'action-select-btn flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all duration-300 opacity-70 hover:opacity-100';
+                    btn.style.borderColor = data.color;
+                    btn.style.color = data.color;
+                    btn.dataset.value = data.id;
+                    btn.onclick = function () { selectAction(this, data.id); };
+
+                    btn.innerHTML = `
+                        <i data-lucide="${data.icon_name}" class="w-4 h-4"></i>
+                        <span class="font-bold text-sm">${data.name}</span>
+                    `;
+
+                    container.insertBefore(btn, container.lastElementChild);
+
+                    lucide.createIcons();
+
+                    selectAction(btn, data.id);
+
+                    closeNewActionModal();
+                    document.getElementById('newActionName').value = '';
+                    document.getElementById('newActionColor').value = '#3B82F6';
+                    document.getElementById('newActionIcon').value = 'activity';
+                } else {
+                    const err = await response.json();
+                    alert(err.error || 'Failed to create action');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('An error occurred');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const select = document.getElementById('id_action');
+            if (select && select.value) {
+                const btn = document.querySelector(`.action-select-btn[data-value="${select.value}"]`);
+                if (btn) {
+                    selectAction(btn, select.value);
+                }
+            }
+        });
     </script>
 
 </body>
