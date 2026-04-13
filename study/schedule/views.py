@@ -9,9 +9,13 @@ from datetime import date
 
 @login_required
 def schedule_view(request):
-    today = date.today()
-    # Logic: Get or create today's schedule for this user
-    schedule, created = DaySchedule.objects.get_or_create(user=request.user, date=today)
+    date_str = request.GET.get('date')
+    try:
+        selected_date = date.fromisoformat(date_str) if date_str else date.today()
+    except (ValueError, TypeError):
+        selected_date = date.today()
+
+    schedule, created = DaySchedule.objects.get_or_create(user=request.user, date=selected_date)
     
     if request.method == 'POST':
         if request.headers.get('Content-Type') == 'application/json':

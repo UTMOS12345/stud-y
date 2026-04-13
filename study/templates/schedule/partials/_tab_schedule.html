@@ -63,9 +63,18 @@
             <button class="text-primary hover:text-primary-focus transition-opacity" aria-label="Go back">
                 <i data-lucide="chevron-left" class="w-8 h-8"></i>
             </button>
-            <div class="bg-primary text-primary-content px-10 py-3 rounded-2xl border border-primary/10 shadow-lg">
-                <span class="text-primary-content font-bold tracking-[0.3em] uppercase">{% now "D, d M. Y г." %}</span>
+
+            <input type="hidden" id="date-picker-input" value="{{ schedule.date|date:'Y-m-d' }}">
+
+            <div id="date-display-btn"
+                class="bg-primary text-primary-content px-10 py-3 rounded-2xl border border-primary/10 shadow-lg cursor-pointer">
+
+                <span class="text-primary-content font-bold tracking-[0.3em] uppercase">
+                    {{ schedule.date|date:"D, d M. Y" }}
+                </span>
+
             </div>
+
             <button onclick="openSettingsModal()" class="text-primary hover:text-primary-focus transition-opacity"
                 aria-label="Settings">
                 <i data-lucide="settings" class="w-8 h-8"></i>
@@ -552,6 +561,23 @@
                     dateFormat: "H:i",
                     time_24hr: true
                 });
+
+                // Date picker — attaches to hidden input, opened by clicking the date bubble
+                const dateBtn = document.getElementById('date-display-btn');
+                const dateInput = document.getElementById('date-picker-input');
+                if (dateBtn && dateInput) {
+                    const fp = flatpickr(dateInput, {
+                        dateFormat: "Y-m-d",
+                        defaultDate: dateInput.value || new Date(),
+                        onChange(selectedDates, dateStr) {
+                            // Preserve any existing query params except 'date'
+                            const params = new URLSearchParams(window.location.search);
+                            params.set('date', dateStr);
+                            window.location.href = window.location.pathname + '?' + params.toString();
+                        }
+                    });
+                    dateBtn.addEventListener('click', () => fp.open());
+                }
             });
         })();
 
