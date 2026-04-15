@@ -64,15 +64,16 @@
                 <i data-lucide="chevron-left" class="w-8 h-8"></i>
             </button>
 
-            <input type="hidden" id="date-picker-input" value="{{ schedule.date|date:'Y-m-d' }}">
-
-            <div id="date-display-btn"
-                class="bg-primary text-primary-content px-10 py-3 rounded-2xl border border-primary/10 shadow-lg cursor-pointer">
-
-                <span class="text-primary-content font-bold tracking-[0.3em] uppercase">
-                    {{ schedule.date|date:"D, d M. Y" }}
-                </span>
-
+            <!-- Centered Date Picker Bubble -->
+            <div class="relative flex items-center justify-center">
+                <input type="text" id="date-picker-input" class="hidden absolute"
+                    value="{{ schedule.date|date:'Y-m-d' }}">
+                <div id="date-display-btn"
+                    class="bg-primary text-primary-content px-10 py-3 rounded-2xl border border-primary/10 shadow-lg cursor-pointer hover:scale-105 transition-transform">
+                    <span class="text-primary-content font-bold tracking-[0.3em] uppercase">
+                        {{ schedule.date|date:"D, d M. Y" }}
+                    </span>
+                </div>
             </div>
 
             <button onclick="openSettingsModal()" class="text-primary hover:text-primary-focus transition-opacity"
@@ -199,7 +200,7 @@
             </div>
         </div>
 
-        <!-- Modal Container -->
+        <!-- Add/Edit Block Modal -->
         <div id="addBlockModal"
             class="fixed inset-0 z-[1000] {% if not form.errors %}hidden{% endif %} flex items-center justify-center bg-base-100/90 backdrop-blur-md p-4">
 
@@ -235,13 +236,21 @@
 
                             <div class="flex flex-wrap gap-3 mb-2" id="action-bubbles-container">
                                 {% for action in actions %}
-                                <button type="button"
-                                    class="action-select-btn flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all duration-300 opacity-70 hover:opacity-100"
-                                    style="border-color: {{ action.color }}; color: {{ action.color }};"
-                                    data-value="{{ action.id }}" onclick="selectAction(this, '{{ action.id }}')">
-                                    <i data-lucide="{{ action.icon_name }}" class="w-4 h-4"></i>
-                                    <span class="font-bold text-sm">{{ action.name }}</span>
-                                </button>
+                                <div class="relative group">
+                                    <button type="button"
+                                        class="action-select-btn flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all duration-300 opacity-70 hover:opacity-100"
+                                        style="border-color: {{ action.color }}; color: {{ action.color }};"
+                                        data-value="{{ action.id }}" onclick="selectAction(this, '{{ action.id }}')">
+                                        <i data-lucide="{{ action.icon_name }}" class="w-4 h-4"></i>
+                                        <span class="font-bold text-sm">{{ action.name }}</span>
+                                    </button>
+                                    <!-- EDIT ACTION ICON -->
+                                    <button type="button"
+                                        onclick="openEditActionModal('{{ action.id }}', '{{ action.name|escapejs }}', '{{ action.color }}', '{{ action.icon_name }}')"
+                                        class="absolute -top-2 -right-2 bg-base-100 rounded-full p-1 border border-base-content/20 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <i data-lucide="edit-3" class="w-3 h-3"></i>
+                                    </button>
+                                </div>
                                 {% endfor %}
 
                                 <button type="button" onclick="openNewActionModal()"
@@ -311,24 +320,26 @@
             </div>
         </div>
 
-        <!-- New Action Modal -->
-        <div id="newActionModal"
+        <!-- Action Management Modal (Create/Edit) -->
+        <div id="actionModal"
             class="fixed inset-0 z-[1010] hidden flex items-center justify-center bg-base-100/90 backdrop-blur-md p-4">
             <div
                 class="bg-base-200 border-2 border-primary/20 w-full max-w-sm rounded-[2.5rem] p-8 shadow-[0_0_50px_rgba(77,255,170,0.15)] animate-up">
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-bold text-primary uppercase tracking-[0.2em] font-mono">New_Action</h2>
-                    <button type="button" onclick="closeNewActionModal()"
+                    <h2 id="action-modal-title"
+                        class="text-xl font-bold text-primary uppercase tracking-[0.2em] font-mono">New_Action</h2>
+                    <button type="button" onclick="closeActionModal()"
                         class="text-base-content hover:text-primary transition-colors">
                         <i data-lucide="x-circle" class="w-6 h-6"></i>
                     </button>
                 </div>
 
                 <div class="space-y-4">
+                    <input type="hidden" id="manageActionId">
                     <div>
                         <label
                             class="text-[10px] uppercase text-base-content font-black tracking-[0.2em] mb-2 block ml-1">Name</label>
-                        <input type="text" id="newActionName"
+                        <input type="text" id="actionNameInput"
                             class="w-full bg-base-300 border border-neutral/20 rounded-lg p-3 text-primary font-mono focus:outline-none focus:ring-1 focus:ring-primary/50"
                             placeholder="ACTION_NAME">
                     </div>
@@ -336,7 +347,7 @@
                     <div>
                         <label
                             class="text-[10px] uppercase text-base-content font-black tracking-[0.2em] mb-2 block ml-1">Color</label>
-                        <input type="color" id="newActionColor" value="#3B82F6"
+                        <input type="color" id="actionColorInput" value="#3B82F6"
                             class="w-full h-12 bg-base-300 border border-neutral/20 rounded-lg p-1 cursor-pointer">
                     </div>
 
@@ -344,14 +355,14 @@
                         <label
                             class="text-[10px] uppercase text-base-content font-black tracking-[0.2em] mb-2 block ml-1">Icon
                             (Lucide)</label>
-                        <input type="text" id="newActionIcon" value="activity"
+                        <input type="text" id="actionIconInput" value="activity"
                             class="w-full bg-base-300 border border-neutral/20 rounded-lg p-3 text-primary font-mono focus:outline-none focus:ring-1 focus:ring-primary/50"
                             placeholder="e.g. activity, book, dumbbell">
                     </div>
 
-                    <button type="button" onclick="saveNewAction()"
+                    <button type="button" onclick="saveActionData()"
                         class="w-full py-3 mt-4 rounded-xl border border-primary text-primary-content font-bold uppercase tracking-[0.2em] hover:bg-primary/10 transition-all bg-primary">
-                        Create Action
+                        Confirm
                     </button>
                 </div>
             </div>
@@ -451,29 +462,22 @@
 
     </main>
 
-    <!-- Floating Action Button - Placed outside the <main> tag -->
+    <!-- Floating Action Button - Fixed and Z-indexed high
     <button onclick="openModal()"
         class="fixed bottom-10 right-10 w-20 h-20 rounded-[24px] bg-[#fe9e9f] text-base-900 flex items-center justify-center shadow-[0_12px_40px_rgba(0,0,0,0.5)] active:scale-95 hover:scale-105 transition-all z-[9999] cursor-pointer text-4xl font-bold">
         +
-    </button>
+    </button> -->
 
     <script src="https://cdn.jsdelivr.net/npm/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
-        // Use a self-invoking function to avoid global scope pollution
         (function () {
-            /**
-             * Converts HH:mm to minutes from start of day
-             */
             function timeToMinutes(timeStr) {
                 if (!timeStr || !timeStr.includes(':')) return 0;
                 const parts = timeStr.split(':');
                 return (parseInt(parts[0], 10) * 60) + parseInt(parts[1], 10);
             }
 
-            /**
-             * Formats minutes into human readable string
-             */
             function formatDuration(minutes) {
                 if (isNaN(minutes) || minutes <= 0) return "0 m.";
                 const h = Math.floor(minutes / 60);
@@ -487,7 +491,6 @@
                 const currentMinutes = (now.getHours() * 60) + now.getMinutes();
 
                 document.querySelectorAll('[data-block-start]').forEach(block => {
-                    // Safe element selection
                     const card = block.querySelector('[data-block-card]');
                     const totalLabel = block.querySelector('.total-duration-label');
                     const remainingArea = block.querySelector('.remaining-area');
@@ -501,76 +504,57 @@
                     const end = timeToMinutes(block.dataset.blockEnd);
                     const total = end - start;
 
-                    // 1. Always display Total Duration
                     if (totalLabel) totalLabel.innerText = formatDuration(total);
-
-                    // 2. SAFETY: Ensure card stays normal (no transparency for finished blocks)
                     card.style.opacity = "1";
 
-                    // 3. Logic for Active State
                     if (currentMinutes >= start && currentMinutes < end) {
                         card.classList.add('active');
-
                         if (statusDot) {
                             const activeColor = statusDot.dataset.activeColor;
                             statusDot.style.backgroundColor = activeColor;
                             statusDot.style.borderColor = activeColor;
                             statusDot.classList.add('animate-pulse');
                         }
-
-                        activeInfos.forEach(el => {
-                            el.classList.remove('opacity-0');
-                            el.classList.add('opacity-100');
-                        });
-
+                        activeInfos.forEach(el => { el.classList.remove('opacity-0'); el.classList.add('opacity-100'); });
                         if (fill && total > 0) {
                             const elapsed = currentMinutes - start;
                             const progress = Math.min(100, Math.max(0, (elapsed / total) * 100));
                             fill.style.width = `${progress}%`;
                         }
-
-                        if (remainingArea) {
-                            const remaining = end - currentMinutes;
-                            remainingArea.innerText = formatDuration(remaining);
-                        }
+                        if (remainingArea) remainingArea.innerText = formatDuration(end - currentMinutes);
                     } else {
-                        // Inactive State
                         card.classList.remove('active');
-                        if (statusDot) {
-                            statusDot.style.backgroundColor = 'transparent';
-                            statusDot.style.borderColor = ''; // Reset to CSS default
-                            statusDot.classList.remove('animate-pulse');
-                        }
-                        activeInfos.forEach(el => {
-                            el.classList.remove('opacity-100');
-                            el.classList.add('opacity-0');
-                        });
+                        if (statusDot) { statusDot.style.backgroundColor = 'transparent'; statusDot.classList.remove('animate-pulse'); }
+                        activeInfos.forEach(el => { el.classList.remove('opacity-100'); el.classList.add('opacity-0'); });
                     }
                 });
             }
 
-            // Run on load and every 15 seconds
             document.addEventListener('DOMContentLoaded', () => {
                 lucide.createIcons();
                 updateUI();
                 setInterval(updateUI, 15000);
 
-                flatpickr("input[type=time]", {
-                    enableTime: true,
-                    noCalendar: true,
-                    dateFormat: "H:i",
-                    time_24hr: true
-                });
-
-                // Date picker — attaches to hidden input, opened by clicking the date bubble
+                // DATE PERSISTENCE LOGIC
                 const dateBtn = document.getElementById('date-display-btn');
                 const dateInput = document.getElementById('date-picker-input');
+                const urlParams = new URLSearchParams(window.location.search);
+                const dateParam = urlParams.get('date');
+                const lastDate = localStorage.getItem('lastDateViewed');
+
+                // Redirect if date in localStorage but not in URL
+                if (!dateParam && lastDate) {
+                    window.location.href = window.location.pathname + '?date=' + lastDate;
+                    return;
+                }
+
                 if (dateBtn && dateInput) {
                     const fp = flatpickr(dateInput, {
                         dateFormat: "Y-m-d",
-                        defaultDate: dateInput.value || new Date(),
+                        defaultDate: dateParam || new Date(),
+                        positionElement: dateBtn,
                         onChange(selectedDates, dateStr) {
-                            // Preserve any existing query params except 'date'
+                            localStorage.setItem('lastDateViewed', dateStr); // SAVE DATE
                             const params = new URLSearchParams(window.location.search);
                             params.set('date', dateStr);
                             window.location.href = window.location.pathname + '?' + params.toString();
@@ -578,318 +562,138 @@
                     });
                     dateBtn.addEventListener('click', () => fp.open());
                 }
+
+                flatpickr("input[type=time]", {
+                    enableTime: true,
+                    noCalendar: true,
+                    dateFormat: "H:i",
+                    time_24hr: true
+                });
             });
         })();
+
+        // ACTION MANAGEMENT
+        function openNewActionModal() {
+            document.getElementById('action-modal-title').innerText = "New_Action";
+            document.getElementById('manageActionId').value = "";
+            document.getElementById('actionNameInput').value = "";
+            document.getElementById('actionColorInput').value = "#3B82F6";
+            document.getElementById('actionIconInput').value = "activity";
+            document.getElementById('actionModal').classList.remove('hidden');
+        }
+
+        function openEditActionModal(id, name, color, icon) {
+            document.getElementById('action-modal-title').innerText = "Edit_Action";
+            document.getElementById('manageActionId').value = id;
+            document.getElementById('actionNameInput').value = name;
+            document.getElementById('actionColorInput').value = color;
+            document.getElementById('actionIconInput').value = icon;
+            document.getElementById('actionModal').classList.remove('hidden');
+        }
+
+        function closeActionModal() {
+            document.getElementById('actionModal').classList.add('hidden');
+        }
+
+        async function saveActionData() {
+            const id = document.getElementById('manageActionId').value;
+            const name = document.getElementById('actionNameInput').value;
+            const color = document.getElementById('actionColorInput').value;
+            const icon = document.getElementById('actionIconInput').value || 'activity';
+
+            if (!name) { alert('Name is required'); return; }
+
+            const type = id ? 'update_action' : 'create_action';
+            const body = { action: type, name: name, color: color, icon_name: icon };
+            if (id) body.action_id = id;
+
+            try {
+                const response = await fetch(window.location.href, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                    body: JSON.stringify(body)
+                });
+                if (response.ok) window.location.reload();
+                else alert('Error saving action');
+            } catch (e) { console.error(e); }
+        }
 
         function openModal() {
             document.getElementById('id_block_id').value = '';
             document.getElementById('id_title').value = '';
-
-            const startInput = document.getElementById('id_start_time');
-            const endInput = document.getElementById('id_end_time');
-            if (startInput && startInput._flatpickr) startInput._flatpickr.clear();
-            else if (startInput) startInput.value = '';
-
-            if (endInput && endInput._flatpickr) endInput._flatpickr.clear();
-            else if (endInput) endInput.value = '';
-
-            const descInput = document.getElementById('id_description');
-            if (descInput) descInput.value = '';
-
             document.getElementById('modal-title').innerText = 'Add_Block';
-
-            // Deselect actions
-            document.querySelectorAll('.action-select-btn').forEach(b => {
-                b.classList.remove('opacity-100');
-                b.classList.add('opacity-70');
-                b.style.boxShadow = 'none';
-            });
-            const actionSelect = document.getElementById('id_action');
-            if (actionSelect) actionSelect.value = '';
-
-            const modal = document.getElementById('addBlockModal');
-            modal.classList.remove('hidden');
+            document.getElementById('addBlockModal').classList.remove('hidden');
         }
 
         function editBlock(id, title, actionId, startTime, endTime, blockType, description) {
             document.getElementById('id_block_id').value = id;
             document.getElementById('id_title').value = title;
-
-            const startInput = document.getElementById('id_start_time');
-            const endInput = document.getElementById('id_end_time');
-            if (startInput && startInput._flatpickr) startInput._flatpickr.setDate(startTime);
-            else if (startInput) startInput.value = startTime;
-
-            if (endInput && endInput._flatpickr) endInput._flatpickr.setDate(endTime);
-            else if (endInput) endInput.value = endTime;
-
-            const typeInput = document.getElementById('id_block_type');
-            if (typeInput) typeInput.value = blockType;
-
-            const descInput = document.getElementById('id_description');
-            if (descInput) descInput.value = description;
-
+            document.getElementById('id_start_time')._flatpickr.setDate(startTime);
+            document.getElementById('id_end_time')._flatpickr.setDate(endTime);
+            document.getElementById('id_block_type').value = blockType;
+            document.getElementById('id_description').value = description;
             document.getElementById('modal-title').innerText = 'Edit_Block';
-
             if (actionId) {
                 const btn = document.querySelector(`.action-select-btn[data-value="${actionId}"]`);
                 if (btn) selectAction(btn, actionId);
-            } else {
-                document.querySelectorAll('.action-select-btn').forEach(b => {
-                    b.classList.remove('opacity-100');
-                    b.classList.add('opacity-70');
-                    b.style.boxShadow = 'none';
-                });
-                const actionSelect = document.getElementById('id_action');
-                if (actionSelect) actionSelect.value = '';
             }
-
             document.getElementById('addBlockModal').classList.remove('hidden');
         }
 
         async function deleteBlock(id) {
-            if (!confirm('Are you sure you want to delete this block?')) return;
-
-            try {
-                const response = await fetch(window.location.href, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                    },
-                    body: JSON.stringify({
-                        action: 'delete_block',
-                        block_id: id
-                    })
-                });
-
-                if (response.ok) {
-                    window.location.reload();
-                } else {
-                    alert('Failed to delete block');
-                }
-            } catch (e) {
-                console.error(e);
-                alert('An error occurred');
-            }
+            if (!confirm('Are you sure?')) return;
+            const response = await fetch(window.location.href, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                body: JSON.stringify({ action: 'delete_block', block_id: id })
+            });
+            if (response.ok) window.location.reload();
         }
 
-        function closeModal() {
-            document.getElementById('addBlockModal').classList.add('hidden');
-        }
-
-        // Close modal when clicking outside the box
-        window.addEventListener('click', (e) => {
-            const modal = document.getElementById('addBlockModal');
-            if (e.target === modal) closeModal();
-
-            const newActionModal = document.getElementById('newActionModal');
-            if (e.target === newActionModal) closeNewActionModal();
-
-            const settingsModal = document.getElementById('settingsModal');
-            if (e.target === settingsModal) closeSettingsModal();
-
-            const convertTemplateModal = document.getElementById('convertTemplateModal');
-            if (e.target === convertTemplateModal) closeConvertTemplateModal();
-
-            const applyTemplateModal = document.getElementById('applyTemplateModal');
-            if (e.target === applyTemplateModal) closeApplyTemplateModal();
-        });
-
+        function closeModal() { document.getElementById('addBlockModal').classList.add('hidden'); }
         function selectAction(btn, actionId) {
             document.querySelectorAll('.action-select-btn').forEach(b => {
-                b.classList.remove('opacity-100');
                 b.classList.add('opacity-70');
                 b.style.boxShadow = 'none';
             });
-
             btn.classList.remove('opacity-70');
-            btn.classList.add('opacity-100');
             btn.style.boxShadow = `0 0 15px ${btn.style.borderColor}`;
-
-            const select = document.getElementById('id_action');
-            if (select) {
-                select.value = actionId;
-            }
+            document.getElementById('id_action').value = actionId;
         }
 
-        function openNewActionModal() {
-            document.getElementById('newActionModal').classList.remove('hidden');
-        }
-
-        function closeNewActionModal() {
-            document.getElementById('newActionModal').classList.add('hidden');
-        }
-
-        async function saveNewAction() {
-            const name = document.getElementById('newActionName').value;
-            const color = document.getElementById('newActionColor').value;
-            const icon = document.getElementById('newActionIcon').value || 'activity';
-
-            if (!name) {
-                alert('Name is required');
-                return;
-            }
-
-            try {
-                const response = await fetch(window.location.href, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                    },
-                    body: JSON.stringify({
-                        action: 'create_action',
-                        name: name,
-                        color: color,
-                        icon_name: icon
-                    })
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-
-                    const select = document.getElementById('id_action');
-                    const option = document.createElement('option');
-                    option.value = data.id;
-                    option.text = data.name;
-                    select.appendChild(option);
-
-                    const container = document.getElementById('action-bubbles-container');
-                    const btn = document.createElement('button');
-                    btn.type = 'button';
-                    btn.className = 'action-select-btn flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all duration-300 opacity-70 hover:opacity-100';
-                    btn.style.borderColor = data.color;
-                    btn.style.color = data.color;
-                    btn.dataset.value = data.id;
-                    btn.onclick = function () { selectAction(this, data.id); };
-
-                    btn.innerHTML = `
-                        <i data-lucide="${data.icon_name}" class="w-4 h-4"></i>
-                        <span class="font-bold text-sm">${data.name}</span>
-                    `;
-
-                    container.insertBefore(btn, container.lastElementChild);
-
-                    lucide.createIcons();
-
-                    selectAction(btn, data.id);
-
-                    closeNewActionModal();
-                    document.getElementById('newActionName').value = '';
-                    document.getElementById('newActionColor').value = '#3B82F6';
-                    document.getElementById('newActionIcon').value = 'activity';
-                } else {
-                    const err = await response.json();
-                    alert(err.error || 'Failed to create action');
-                }
-            } catch (e) {
-                console.error(e);
-                alert('An error occurred');
-            }
-        }
-
-        function openSettingsModal() {
-            document.getElementById('settingsModal').classList.remove('hidden');
-        }
-
-        function closeSettingsModal() {
-            document.getElementById('settingsModal').classList.add('hidden');
-        }
-
-        function openConvertTemplateModal() {
-            closeSettingsModal();
-            document.getElementById('convertTemplateModal').classList.remove('hidden');
-        }
-
-        function closeConvertTemplateModal() {
-            document.getElementById('convertTemplateModal').classList.add('hidden');
-        }
-
-        function openApplyTemplateModal() {
-            closeSettingsModal();
-            document.getElementById('applyTemplateModal').classList.remove('hidden');
-        }
-
-        function closeApplyTemplateModal() {
-            document.getElementById('applyTemplateModal').classList.add('hidden');
-        }
+        function openSettingsModal() { document.getElementById('settingsModal').classList.remove('hidden'); }
+        function closeSettingsModal() { document.getElementById('settingsModal').classList.add('hidden'); }
+        function openConvertTemplateModal() { closeSettingsModal(); document.getElementById('convertTemplateModal').classList.remove('hidden'); }
+        function closeConvertTemplateModal() { document.getElementById('convertTemplateModal').classList.add('hidden'); }
+        function openApplyTemplateModal() { closeSettingsModal(); document.getElementById('applyTemplateModal').classList.remove('hidden'); }
+        function closeApplyTemplateModal() { document.getElementById('applyTemplateModal').classList.add('hidden'); }
 
         async function convertToTemplate() {
             const name = document.getElementById('newTemplateName').value;
-            if (!name) {
-                alert('Template name is required');
-                return;
-            }
-
-            try {
-                const response = await fetch(window.location.href, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                    },
-                    body: JSON.stringify({
-                        action: 'convert_to_template',
-                        template_name: name
-                    })
-                });
-
-                if (response.ok) {
-                    window.location.reload();
-                } else {
-                    const err = await response.json();
-                    alert(err.error || 'Failed to convert to template');
-                }
-            } catch (e) {
-                console.error(e);
-                alert('An error occurred');
-            }
+            const response = await fetch(window.location.href, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                body: JSON.stringify({ action: 'convert_to_template', template_name: name })
+            });
+            if (response.ok) window.location.reload();
         }
 
         async function applyTemplate() {
             const templateId = document.getElementById('selectTemplateId').value;
-            if (!templateId) {
-                alert('Please select a template');
-                return;
-            }
-
-            try {
-                const response = await fetch(window.location.href, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                    },
-                    body: JSON.stringify({
-                        action: 'apply_template',
-                        template_id: templateId
-                    })
-                });
-
-                if (response.ok) {
-                    window.location.reload();
-                } else {
-                    const err = await response.json();
-                    alert(err.error || 'Failed to apply template');
-                }
-            } catch (e) {
-                console.error(e);
-                alert('An error occurred');
-            }
+            const response = await fetch(window.location.href, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                body: JSON.stringify({ action: 'apply_template', template_id: templateId })
+            });
+            if (response.ok) window.location.reload();
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const select = document.getElementById('id_action');
-            if (select && select.value) {
-                const btn = document.querySelector(`.action-select-btn[data-value="${select.value}"]`);
-                if (btn) {
-                    selectAction(btn, select.value);
-                }
-            }
+        window.addEventListener('click', (e) => {
+            if (e.target.id === 'addBlockModal') closeModal();
+            if (e.target.id === 'actionModal') closeActionModal();
+            if (e.target.id === 'settingsModal') closeSettingsModal();
         });
     </script>
-
 </body>
 
 </html>

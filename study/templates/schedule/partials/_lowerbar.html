@@ -3,25 +3,27 @@
     <button type="button" onclick="switchTab('schedule')"
         class="tab-btn flex flex-col items-center gap-2 flex-1 py-2 text-primary cursor-pointer active:scale-95 transition-transform"
         data-tab="schedule">
-        <div class="icon-container p-3 rounded-2xl bg-primary/10 transition-all">
-            <i data-lucide="calendar" class="w-7 h-7"></i>
-        </div>
+        <div class="icon-container p-3 rounded-2xl bg-primary/10 transition-all"><i data-lucide="calendar"
+                class="w-7 h-7"></i></div>
         <span class="text-[11px] font-bold uppercase tracking-widest">Schedule</span>
     </button>
     <button type="button" onclick="switchTab('templates')"
         class="tab-btn flex flex-col items-center gap-2 flex-1 py-2 text-neutral-content opacity-40 cursor-pointer active:scale-95 transition-transform"
         data-tab="templates">
-        <div class="icon-container p-3 rounded-2xl hover:bg-neutral/40 transition-all">
-            <i data-lucide="layout" class="w-7 h-7"></i>
-        </div>
+        <div class="icon-container p-3 rounded-2xl transition-all"><i data-lucide="layout" class="w-7 h-7"></i></div>
         <span class="text-[11px] font-bold uppercase tracking-widest">Templates</span>
     </button>
     <button type="button" onclick="switchTab('statistics')"
         class="tab-btn flex flex-col items-center gap-2 flex-1 py-2 text-neutral-content opacity-40 cursor-pointer active:scale-95 transition-transform"
         data-tab="statistics">
-        <div class="icon-container p-3 rounded-2xl hover:bg-neutral/40 transition-all">
-            <i data-lucide="bar-chart-3" class="w-7 h-7"></i>
+        <div class="icon-container p-3 rounded-2xl transition-all"><i data-lucide="bar-chart-3" class="w-7 h-7"></i>
         </div>
         <span class="text-[11px] font-bold uppercase tracking-widest">Statistics</span>
     </button>
 </nav>
+
+<!-- Floating button stays pinned above the bar -->
+<button id="floating-add-btn" onclick="openModal()"
+    class="fixed bottom-28 right-8 w-20 h-20 rounded-[24px] bg-[#fe9e9f] text-base-900 flex items-center justify-center shadow-[0_12px_40px_rgba(0,0,0,0.5)] active:scale-95 hover:scale-105 transition-all z-[9999] text-4xl font-bold">
+    +
+</button>
