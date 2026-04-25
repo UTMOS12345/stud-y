@@ -4,35 +4,29 @@
 {% block title %}stud-y — schedule{% endblock %}
 
 {% block content %}
-<div class="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden">
+<div class="h-full w-full flex flex-col min-w-0 relative overflow-hidden">
 
-    <!-- Main Scrollable Area -->
-    <main class="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide">
+    <div class="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide">
 
-        <!-- 1. Schedule Tab -->
         <section id="tab-schedule" class="p-10 animate-up">
             {% include "schedule/partials/_tab_schedule.html" %}
         </section>
 
-        <!-- 2. Templates Tab -->
         <section id="tab-templates" class="p-10 animate-up hidden">
             {% include "schedule/partials/_tab_templates.html" %}
         </section>
 
-        <!-- 3. Statistics Tab -->
         <section id="tab-statistics" class="p-10 animate-up hidden">
             {% include "schedule/partials/_tab_statistics.html" %}
         </section>
 
+    </div>
 
-    </main>
-
-    <!-- Lowerbar -->
     {% include "schedule/partials/_lowerbar.html" %}
+
 </div>
 
 <script>
-    // 1. Helper Functions (Essential for updateUI)
     function timeToMinutes(timeStr) {
         if (!timeStr || !timeStr.includes(':')) return 0;
         const [h, m] = timeStr.split(':').map(Number);
@@ -46,18 +40,15 @@
         return h > 0 ? `${h}h ${m}m` : `${m}m`;
     }
 
-    // 2. Unified switchTab Function
     function switchTab(tabId) {
         console.log('Switching to tab:', tabId);
         const tabs = ['schedule', 'templates', 'statistics'];
 
-        // Toggle Content Sections
         tabs.forEach(id => {
             const el = document.getElementById(`tab-${id}`);
             if (el) el.classList.toggle('hidden', id !== tabId);
         });
 
-        // Update Nav Button Styles
         document.querySelectorAll('.tab-btn').forEach(btn => {
             const isTarget = btn.getAttribute('data-tab') === tabId;
             const iconContainer = btn.querySelector('.icon-container');
@@ -73,14 +64,12 @@
             }
         });
 
-        // Handle Floating Add Button visibility
         const fab = document.getElementById('floating-add-btn');
         if (fab) {
             fab.style.display = (tabId === 'schedule') ? 'flex' : 'none';
         }
     }
 
-    // 3. UI Update Logic for Progress Bars
     function updateUI() {
         const now = new Date();
         const currentMinutes = now.getHours() * 60 + now.getMinutes();
@@ -98,7 +87,7 @@
             if (!card) return;
 
             if (currentMinutes >= start && currentMinutes < end) {
-                card.classList.add('active'); // CSS Handles the rest
+                card.classList.add('active');
                 if (progressContainer) progressContainer.classList.remove('hidden', 'opacity-0');
                 if (fill) fill.style.width = ((currentMinutes - start) / total * 100) + '%';
                 if (remainingArea) remainingArea.innerText = `(Remaining: ${formatDuration(end - currentMinutes)})`;
@@ -106,16 +95,13 @@
                 card.classList.remove('active');
                 if (progressContainer) progressContainer.classList.add('hidden', 'opacity-0');
                 if (remainingArea) remainingArea.innerText = '';
-                card.style.opacity = (currentMinutes >= end) ? "1" : "1";
             }
         });
     }
 
-    // 4. Initialization
     document.addEventListener('DOMContentLoaded', () => {
         if (window.lucide) window.lucide.createIcons();
 
-        // Date Persistence
         const urlParams = new URLSearchParams(window.location.search);
         const lastDate = localStorage.getItem('last_visited_date');
         if (!urlParams.get('date') && lastDate) {
@@ -125,8 +111,8 @@
         updateUI();
         setInterval(updateUI, 15000);
 
-        // Set initial FAB state
         switchTab('schedule');
     });
 </script>
+
 {% endblock %}

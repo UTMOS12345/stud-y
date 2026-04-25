@@ -1,15 +1,11 @@
 import datetime
-from django.db import models
 from accounts.models import User
 from django.db.models import CheckConstraint, Q, F
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
+from django.db import models, transaction 
 
 class Action(models.Model):
-    """
-    Presets that define the look and feel of a block.
-    Example: 'Gym' with a 'dumbbell' icon and 'red' color.
-    """
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='actions')
     name = models.CharField(max_length=100)
     icon_name = models.CharField(max_length=50, default='activity', help_text="Lucide or FontAwesome icon name")
@@ -39,26 +35,19 @@ class DaySchedule(models.Model):
         ]
         ordering = ['-date']
 
-    # --- ADD THIS METHOD HERE ---
+    
     def create_template_from_day(self, template_name, description=""):
-        """
-        Takes all blocks from this day and saves them as a new DayTemplate.
-        """
+        
         with transaction.atomic():
-            # 1. Create the Template header
+            
             new_template = DayTemplate.objects.create(
                 user=self.user,
                 name=template_name,
                 description=description
             )
 
-            # 2. Copy each ScheduleBlock into a TemplateBlock
-            # We use enumerate to handle the 'order' field automatically
             for index, block in enumerate(self.blocks.all()):
                 
-                # Safety check: TemplateBlock requires an action (PROTECT), 
-                # but ScheduleBlock allows null. We skip blocks without actions 
-                # or you can assign a default.
                 if block.action is None:
                     continue 
 
@@ -69,7 +58,8 @@ class DaySchedule(models.Model):
                     description=block.description,
                     start_time=block.start_time,
                     end_time=block.end_time,
-                    order=index
+                    order=index,
+                    block_type=block.block_type
                 )
             
             return new_template
@@ -84,11 +74,9 @@ class ScheduleBlock(models.Model):
         on_delete=models.CASCADE,
         related_name='blocks'
     )
-    # Linked Action
     action = models.ForeignKey(Action, on_delete=models.PROTECT, null=True, blank=True)
 
     
-    # Custom fields for this specific instance
     title = models.CharField(max_length=200, help_text="Specific title for this session")
     description = models.TextField(blank=True, null=True)
     
@@ -122,7 +110,6 @@ class ScheduleBlock(models.Model):
             if self.start_time >= self.end_time:
                 raise ValidationError("End time must be after start time.")
             
-            # Use self.schedule_id to check if schedule is assigned without triggering query
             if self.schedule_id:
                 overlapping_blocks = ScheduleBlock.objects.filter(
                     schedule=self.schedule,
@@ -168,10 +155,15 @@ class BlockSession(models.Model):
             return self.end_time - self.start_time
         return None
 class DayTemplate(models.Model):
-    # ... (your existing fields) ...
+    # ADD THESE FIELDS:
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='templates', null=True, blank=True)
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True, null=True)
 
     def apply_to_date_merge(self, target_date):
         with transaction.atomic():
+            # Get the schedule for that specific day
+            from .models import DaySchedule, ScheduleBlock # local import to avoid circularity if needed
             schedule, _ = DaySchedule.objects.get_or_create(user=self.user, date=target_date)
 
             applied_count = 0
@@ -185,19 +177,22 @@ class DayTemplate(models.Model):
                     description=t_block.description,
                     start_time=t_block.start_time,
                     end_time=t_block.end_time,
+                    block_type=t_block.block_type # Ensure this matches
                 )
             
                 try:
-                    # full_clean() triggers your overlap logic in models.py
                     new_block.full_clean() 
                     new_block.save()
                     applied_count += 1
                 except ValidationError:
-                    # If it overlaps with an existing block, we just skip this one
                     skipped_count += 1
                     continue
         
             return applied_count, skipped_count
+
+    def __str__(self):
+        return self.name
+
 
 
 class TemplateBlock(models.Model):
@@ -206,7 +201,6 @@ class TemplateBlock(models.Model):
         on_delete=models.CASCADE, 
         related_name="template_blocks" 
     )
-    # Linked Action
     action = models.ForeignKey(Action, on_delete=models.PROTECT, related_name='template_blocks')
     
     title = models.CharField(max_length=255)
@@ -214,6 +208,10 @@ class TemplateBlock(models.Model):
     
     start_time = models.TimeField()
     end_time = models.TimeField()
+    
+    # ADD THIS FIELD so it matches ScheduleBlock:
+    block_type = models.CharField(max_length=20, default='fixed')
+    
     order = models.PositiveSmallIntegerField(default=0)
 
     class Meta:

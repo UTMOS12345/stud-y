@@ -670,22 +670,40 @@
 
         async function convertToTemplate() {
             const name = document.getElementById('newTemplateName').value;
+            if (!name) { alert("Please enter a template name"); return; }
+
             const response = await fetch(window.location.href, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
                 body: JSON.stringify({ action: 'convert_to_template', template_name: name })
             });
-            if (response.ok) window.location.reload();
+
+            if (response.ok) {
+                alert("Template saved successfully!");
+                window.location.reload();
+            } else {
+                const err = await response.json();
+                alert("Error: " + err.error);
+            }
         }
 
         async function applyTemplate() {
             const templateId = document.getElementById('selectTemplateId').value;
+            if (!templateId) { alert("Please select a template"); return; }
+
             const response = await fetch(window.location.href, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
                 body: JSON.stringify({ action: 'apply_template', template_id: templateId })
             });
-            if (response.ok) window.location.reload();
+
+            if (response.ok) {
+                const result = await response.json();
+                alert(result.message); // Shows how many were applied/skipped
+                window.location.reload();
+            } else {
+                alert("Error applying template");
+            }
         }
 
         window.addEventListener('click', (e) => {
