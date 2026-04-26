@@ -696,7 +696,7 @@
                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
                 body: JSON.stringify({ action: 'apply_template', template_id: templateId })
             });
-
+            
             if (response.ok) {
                 const result = await response.json();
                 alert(result.message); // Shows how many were applied/skipped

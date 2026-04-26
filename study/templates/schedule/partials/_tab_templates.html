@@ -1,4 +1,4 @@
-<!-- Heading -->
+<!-- Heading Section -->
 <div class="flex justify-between items-end mb-12">
     <div>
         <h2 class="font-serif italic font-bold text-base-content" style="font-size: 42px; letter-spacing: -1px;">
@@ -7,103 +7,90 @@
     </div>
 </div>
 
-<!-- Template Grid -->
+<!-- Template List -->
 <div class="grid grid-cols-1 gap-6 w-full max-w-5xl mx-auto">
     {% for template in templates %}
     <div class="group bg-base-200 border border-base-300 rounded-[2.5rem] overflow-hidden transition-all duration-300 hover:border-primary/30 shadow-xl"
         id="template-card-{{ template.id }}">
 
-        <!-- Main Card Header (Clickable to expand) -->
-        <div onclick="toggleTemplateDetails('{{ template.id }}')"
-            class="p-8 flex items-center justify-between cursor-pointer hover:bg-base-300/40 transition-colors">
+        <!-- Main Card Body -->
+        <div class="p-8 flex items-center justify-between">
 
             <div class="flex items-center gap-6">
                 <!-- Icon Bubble -->
-                <div
-                    class="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                <div class="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
                     <i data-lucide="layout-template" class="w-8 h-8"></i>
                 </div>
 
                 <div>
-                    <h3 class="text-2xl font-bold text-base-content group-hover:text-primary transition-colors">{{
-                        template.name }}</h3>
+                    <!-- CLICKABLE TITLE: Redirects to Template Editor -->
+                    <a href="{% url 'template_detail' template.id %}" class="block group/title">
+                        <h3
+                            class="text-2xl font-bold text-base-content group-hover/title:text-primary transition-colors flex items-center gap-3">
+                            {{ template.name }}
+                            <i data-lucide="external-link"
+                                class="w-4 h-4 opacity-0 group-hover/title:opacity-100 transition-all"></i>
+                        </h3>
+                    </a>
+
                     <div class="flex items-center gap-4 mt-1">
                         <span class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-base-500">
                             <i data-lucide="layers" class="w-3 h-3"></i>
                             {{ template.template_blocks.count }} Blocks
                         </span>
                         <span class="w-1 h-1 rounded-full bg-base-500"></span>
-                        <span class="text-xs font-bold uppercase tracking-widest text-base-500">Saved Structure</span>
+                        <!-- Quick Preview Trigger -->
+                        <button onclick="toggleTemplatePreview('{{ template.id }}')"
+                            class="text-xs font-bold uppercase tracking-widest text-primary hover:underline">
+                            Quick Preview
+                        </button>
                     </div>
                 </div>
             </div>
 
             <div class="flex items-center gap-3">
-                <!-- Apply Button -->
-                <button onclick="event.stopPropagation(); applySpecificTemplate('{{ template.id }}')"
-                    class="hidden md:flex items-center gap-2 bg-primary text-primary-content px-6 py-3 rounded-2xl font-bold uppercase text-[10px] tracking-[0.2em] hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary/20">
+                <!-- Quick Apply Button -->
+                <button onclick="applySpecificTemplate('{{ template.id }}')"
+                    class="hidden md:flex items-center gap-2 bg-primary text-primary-content px-6 py-3 rounded-2xl font-bold uppercase text-[10px] tracking-[0.2em] hover:brightness-110 active:scale-95 transition-all">
                     <i data-lucide="play" class="w-4 h-4"></i>
                     Apply
                 </button>
 
                 <!-- Delete Button -->
-                <button onclick="event.stopPropagation(); deleteTemplate('{{ template.id }}')"
+                <button onclick="deleteTemplate('{{ template.id }}')"
                     class="p-4 text-base-content/30 hover:text-error hover:bg-error/10 rounded-2xl transition-all">
                     <i data-lucide="trash-2" class="w-5 h-5"></i>
                 </button>
-
-                <!-- Chevron Toggle -->
-                <div class="p-2 ml-2 transition-transform duration-500 text-base-content/20"
-                    id="chevron-{{ template.id }}">
-                    <i data-lucide="chevron-down" class="w-6 h-6"></i>
-                </div>
             </div>
         </div>
 
-        <!-- Expansion Area: Template Preview -->
-        <div id="details-{{ template.id }}" class="hidden border-t border-base-300 bg-base-300/20 p-8">
-            <div class="space-y-4">
-                <div class="flex justify-between items-center mb-6">
-                    <span class="text-[10px] uppercase font-black tracking-[0.4em] text-primary">Sequence_Preview</span>
-                    <button onclick="applySpecificTemplate('{{ template.id }}')"
-                        class="md:hidden text-primary font-bold text-xs uppercase">Apply Template</button>
+        <!-- Expansion Area: Quick Preview (Hidden by default) -->
+        <div id="preview-{{ template.id }}" class="hidden border-t border-base-300 bg-base-300/20 p-8 animate-up">
+            <div class="space-y-3">
+                <div class="flex justify-between items-center mb-4">
+                    <span
+                        class="text-[9px] uppercase font-black tracking-[0.4em] text-primary/60">Structure_Preview</span>
+                    <a href="{% url 'template_detail' template.id %}"
+                        class="text-[9px] uppercase font-black tracking-[0.2em] text-primary hover:underline">Open Full
+                        Editor</a>
                 </div>
 
                 {% for t_block in template.template_blocks.all %}
-                <div
-                    class="flex gap-6 items-center bg-base-200/80 p-5 rounded-[1.5rem] border border-white/5 group/block">
-                    <!-- Time Column -->
-                    <div
-                        class="w-16 flex-shrink-0 flex flex-col justify-center text-right border-r border-base-content/5 pr-6">
-                        <span class="text-sm font-bold text-base-content">{{ t_block.start_time|time:"H:i" }}</span>
-                        <span class="text-[10px] font-bold text-base-content/40">{{ t_block.end_time|time:"H:i"
-                            }}</span>
+                <div class="flex gap-4 items-center bg-base-200/50 p-4 rounded-2xl border border-white/5">
+                    <div class="w-12 text-right">
+                        <div class="text-xs font-bold text-base-content">{{ t_block.start_time|time:"H:i" }}</div>
                     </div>
-
-                    <!-- Color Indicator -->
-                    <div class="w-1.5 h-10 rounded-full"
+                    <div class="w-1 h-6 rounded-full"
                         style="background-color: {{ t_block.action.color|default:'#3B82F6' }};"></div>
-
-                    <!-- Content -->
                     <div class="flex-1">
-                        <div class="flex items-center gap-3">
-                            <i data-lucide="{{ t_block.action.icon_name|default:'activity' }}"
-                                class="w-3 h-3 opacity-50"
-                                style="color: {{ t_block.action.color|default:'#3B82F6' }};"></i>
-                            <span class="font-bold text-base-content">{{ t_block.title }}</span>
-                        </div>
-                        <div class="text-[9px] uppercase tracking-widest font-black opacity-30 mt-1">{{
-                            t_block.action.name }}</div>
+                        <div class="text-sm font-bold text-base-content">{{ t_block.title }}</div>
                     </div>
-
-                    <!-- Type Badge -->
-                    <div
-                        class="px-3 py-1 rounded-full bg-base-300 text-[8px] font-black uppercase tracking-widest opacity-40">
-                        {{ t_block.block_type }}
+                    <div class="text-[9px] uppercase tracking-widest font-black opacity-20">{{ t_block.action.name }}
                     </div>
                 </div>
                 {% empty %}
-                <div class="text-center py-10 opacity-30 text-xs uppercase tracking-widest">Template has no blocks</div>
+                <div class="text-center py-6 opacity-30 text-xs uppercase tracking-widest">No blocks in this template
+                </div>
                 {% endfor %}
             </div>
         </div>
@@ -118,99 +105,53 @@
 
 <script>
     /**
-     * Toggles the detailed block view for a specific template
+     * Toggles the quick preview section
      */
-    function toggleTemplateDetails(id) {
-        const details = document.getElementById(`details-${id}`);
-        const chevron = document.getElementById(`chevron-${id}`);
-        const card = document.getElementById(`template-card-${id}`);
-        const isHidden = details.classList.contains('hidden');
-
-        // Hide all other open templates for focus (Optional)
-        /*
-        document.querySelectorAll('[id^="details-"]').forEach(el => {
-            if (el.id !== `details-${id}`) el.classList.add('hidden');
-        });
-        document.querySelectorAll('[id^="chevron-"]').forEach(el => {
-             if (el.id !== `chevron-${id}`) el.style.transform = 'rotate(0deg)';
-        });
-        */
+    function toggleTemplatePreview(id) {
+        const preview = document.getElementById(`preview-${id}`);
+        const isHidden = preview.classList.contains('hidden');
 
         if (isHidden) {
-            details.classList.remove('hidden');
-            chevron.style.transform = 'rotate(180deg)';
-            chevron.classList.add('text-primary');
-            card.classList.add('ring-2', 'ring-primary/20');
+            preview.classList.remove('hidden');
         } else {
-            details.classList.add('hidden');
-            chevron.style.transform = 'rotate(0deg)';
-            chevron.classList.remove('text-primary');
-            card.classList.remove('ring-2', 'ring-primary/20');
+            preview.classList.add('hidden');
         }
-
-        // Refresh icons for new content
         if (window.lucide) window.lucide.createIcons();
     }
 
     /**
-     * Sends AJAX request to apply template to current viewed date
+     * AJAX: Apply Template
      */
     async function applySpecificTemplate(id) {
-        if (!confirm("Apply this sequence to your current schedule? Existing blocks in these time slots will be skipped.")) return;
+        if (!confirm("Apply this template to your current schedule?")) return;
 
-        try {
-            const response = await fetch(window.location.href, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
-                body: JSON.stringify({
-                    action: 'apply_template',
-                    template_id: id
-                })
-            });
+        const response = await fetch(window.location.href, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+            body: JSON.stringify({ action: 'apply_template', template_id: id })
+        });
 
-            if (response.ok) {
-                const data = await response.json();
-                // Visual feedback then switch tab
-                alert(data.message || "Template applied successfully!");
-                switchTab('schedule'); // Assuming switchTab exists in schedule.html
-                window.location.reload();
-            } else {
-                alert("Failed to apply template.");
-            }
-        } catch (e) {
-            console.error("Apply Template Error:", e);
+        if (response.ok) {
+            const data = await response.json();
+            alert(data.message);
+            window.location.reload();
         }
     }
 
     /**
-     * Sends AJAX request to delete the template
+     * AJAX: Delete Template
      */
     async function deleteTemplate(id) {
-        if (!confirm("Are you sure? This template will be deleted permanently.")) return;
+        if (!confirm("Delete this template permanently?")) return;
 
-        try {
-            const response = await fetch(window.location.href, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
-                body: JSON.stringify({
-                    action: 'delete_template',
-                    template_id: id
-                })
-            });
+        const response = await fetch(window.location.href, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+            body: JSON.stringify({ action: 'delete_template', template_id: id })
+        });
 
-            if (response.ok) {
-                window.location.reload();
-            } else {
-                alert("Error deleting template.");
-            }
-        } catch (e) {
-            console.error("Delete Template Error:", e);
+        if (response.ok) {
+            window.location.reload();
         }
     }
 </script>
