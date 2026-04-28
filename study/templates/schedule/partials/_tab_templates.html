@@ -3,7 +3,7 @@
     <div>
         <h2 class="font-serif italic font-bold text-base-content" style="font-size: 42px; letter-spacing: -1px;">
             Templates</h2>
-        <p class="text-sm uppercase tracking-[0.2em] text-primary font-bold mt-2">Manage your daily structures</p>
+
     </div>
 </div>
 
@@ -23,28 +23,30 @@
                 </div>
 
                 <div>
-                    <!-- CLICKABLE TITLE: Redirects to Template Editor -->
-                    <a href="{% url 'template_detail' template.id %}" class="block group/title">
+                    <!-- CLICKABLE TITLE: -->
+                    <a href="{% url 'template_detail' template.id %}">
                         <h3
                             class="text-2xl font-bold text-base-content group-hover/title:text-primary transition-colors flex items-center gap-3">
                             {{ template.name }}
                             <i data-lucide="external-link"
                                 class="w-4 h-4 opacity-0 group-hover/title:opacity-100 transition-all"></i>
                         </h3>
-                    </a>
 
-                    <div class="flex items-center gap-4 mt-1">
-                        <span class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-base-500">
-                            <i data-lucide="layers" class="w-3 h-3"></i>
-                            {{ template.template_blocks.count }} Blocks
-                        </span>
-                        <span class="w-1 h-1 rounded-full bg-base-500"></span>
-                        <!-- Quick Preview Trigger -->
-                        <button onclick="toggleTemplatePreview('{{ template.id }}')"
-                            class="text-xs font-bold uppercase tracking-widest text-primary hover:underline">
-                            Quick Preview
-                        </button>
-                    </div>
+
+
+                        <div class="flex items-center gap-4 mt-1">
+                            <span
+                                class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-base-500">
+                                <i data-lucide="layers" class="w-3 h-3"></i>
+                                {{ template.template_blocks.count }} Blocks
+                            </span>
+                            <span class="w-1 h-1 rounded-full bg-base-500"></span>
+                            <!-- Quick Preview Trigger -->
+                            <button onclick="toggleTemplatePreview('{{ template.id }}')"
+                                class="text-xs font-bold uppercase tracking-widest text-primary hover:underline">
+                                Quick Preview
+                            </button>
+                        </div>
                 </div>
             </div>
 
