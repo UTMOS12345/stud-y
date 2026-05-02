@@ -1,0 +1,592 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block content %}
+<!DOCTYPE html>
+<html lang="en-GB" data-theme="studyTheme">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
+    <style type="text/tailwindcss">
+        .time-field::-webkit-calendar-picker-indicator,
+        .time-field::-webkit-inner-spin-button,
+        .time-field::-webkit-clear-button {
+            display: none;
+            -webkit-appearance: none;
+        }
+        .time-field {
+            letter-spacing: 0.1em;
+        }
+        .time-field:focus {
+            background-color: var(--color-base-300);
+        }
+
+        @layer components {
+            .solid-card {
+                @apply rounded-[2rem] p-8 border border-white/5 transition-all duration-300 w-full shadow-2xl;
+            }
+            .scrollbar-hide::-webkit-scrollbar { display: none; }
+            .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+            .progress-bar-fill {
+                @apply h-full transition-all duration-1000 ease-in-out;
+            }
+        }
+
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+        }
+        input[type="time"] {
+            position: relative;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen bg-base-900 text-base-200">
+    <main class="relative z-10 flex flex-col h-screen w-full">
+
+        <!-- Header — same structure as _tab_schedule.html, date bubble → template name bubble -->
+        <header class="px-8 py-8 flex items-center justify-between w-full">
+
+            <!-- Back to schedule -->
+            <a href="{% url 'schedule' %}" class="text-primary hover:text-primary-focus transition-opacity"
+                aria-label="Go back">
+                <i data-lucide="chevron-left" class="w-8 h-8"></i>
+            </a>
+
+            <!-- Template Name Bubble (replaces date picker) -->
+            <div class="relative flex items-center justify-center">
+                <div id="template-title-btn"
+                    class="bg-primary text-primary-content px-10 py-3 rounded-2xl border border-primary/10 shadow-lg cursor-pointer hover:scale-105 transition-transform"
+                    onclick="openRenameModal()">
+                    <span class="text-primary-content font-bold tracking-[0.3em] uppercase">
+                        {{ template.name }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Settings icon → opens add block (same position as settings in _tab_schedule) -->
+            <button onclick="openSettingsModal()" class="text-primary hover:text-primary-focus transition-opacity"
+                aria-label="Settings">
+                <i data-lucide="settings" class="w-8 h-8"></i>
+            </button>
+        </header>
+
+        <!-- Blocks Container — identical structure to _tab_schedule.html -->
+        <div class="flex-1 overflow-y-auto px-8 pb-32 scrollbar-hide">
+            <div class="space-y-12 w-full max-w-7xl mx-auto">
+
+                {% for block in template.template_blocks.all %}
+                <div class="flex gap-8 group min-h-[160px] w-full" data-block-start="{{ block.start_time|time:'H:i' }}"
+                    data-block-end="{{ block.end_time|time:'H:i' }}">
+
+                    <!-- Time Column -->
+                    <div class="w-24 flex-shrink-0 flex flex-col justify-between py-2 text-right">
+                        <span class="text-xl font-bold text-base-content tracking-tighter">
+                            {{ block.start_time|time:"H:i" }}
+                        </span>
+                        <span class="text-xl font-bold text-base-content/40 tracking-tighter">
+                            {{ block.end_time|time:"H:i" }}
+                        </span>
+                    </div>
+
+                    <!-- Card Column -->
+                    <div class="flex-1">
+                        <div data-block-card
+                            class="bg-base-200 rounded-2xl p-12 border border-base-300/50 transition-all duration-300 opacity-100">
+
+                            <!-- Top Row: Action Bubble + Title + Edit/Delete -->
+                            <div class="flex justify-between items-start gap-4 mb-8">
+                                <div class="flex items-center gap-4">
+
+                                    <!-- Action Bubble -->
+                                    {% if block.action %}
+                                    <div class="action-bubble flex-shrink-0 px-6 py-3 rounded-full flex items-center justify-center gap-3 font-black shadow-lg transition-all duration-300 border-2"
+                                        style="background-color: {{ block.action.color|default:'#3B82F6' }}20; border-color: {{ block.action.color|default:'#3B82F6' }}; color: {{ block.action.color|default:'#3B82F6' }};"
+                                        data-action-color="{{ block.action.color|default:'#3B82F6' }}">
+                                        <i data-lucide="{{ block.action.icon_name|default:'activity' }}"
+                                            class="w-6 h-6"></i>
+                                        <span class="text-lg tracking-widest uppercase">{{ block.action.name }}</span>
+                                    </div>
+                                    {% else %}
+                                    <div class="action-bubble flex-shrink-0 px-6 py-3 rounded-full flex items-center justify-center gap-3 font-black shadow-lg transition-all duration-300 border-2"
+                                        style="background-color: #3B82F620; border-color: #3B82F6; color: #3B82F6;"
+                                        data-action-color="#3B82F6">
+                                        <i data-lucide="activity" class="w-6 h-6"></i>
+                                        <span class="text-lg tracking-widest uppercase">Activity</span>
+                                    </div>
+                                    {% endif %}
+
+                                    <!-- Block Title -->
+                                    <div>
+                                        <h3 class="text-2xl font-bold tracking-wide"
+                                            style="color: {% if block.action %}{{ block.action.color|default:'#3B82F6' }}{% else %}#3B82F6{% endif %};">
+                                            {{ block.title }}
+                                        </h3>
+                                        <p class="text-xs uppercase tracking-widest text-base-500 font-bold mt-1">
+                                            {% if block.block_type == 'fixed' %}Fixed{% else %}Flexible{% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Actions & Status Dot — same layout as schedule -->
+                                <div class="flex items-center gap-4 flex-shrink-0">
+                                    <button
+                                        onclick="editBlock({{ block.id }}, '{{ block.title|escapejs }}', '{{ block.action_id|default_if_none:'' }}', '{{ block.start_time|time:'H:i' }}', '{{ block.end_time|time:'H:i' }}', '{{ block.block_type|escapejs }}', '{{ block.description|escapejs }}')"
+                                        class="text-base-content/40 hover:text-primary transition-colors" title="Edit">
+                                        <i data-lucide="edit-2" class="w-5 h-5"></i>
+                                    </button>
+                                    <button onclick="deleteBlock({{ block.id }})"
+                                        class="text-base-content/40 hover:text-error transition-colors" title="Delete">
+                                        <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                    </button>
+                                    <!-- Status dot: static for templates (no live clock), same visual -->
+                                    <div class="status-dot w-6 h-6 rounded-full border-2 border-warning transition-colors duration-500"
+                                        data-active-color="{% if block.action %}{{ block.action.color|default:'#3B82F6' }}{% else %}#3B82F6{% endif %}">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Stats Row: Total Duration (no live countdown for templates) -->
+                            <div class="flex justify-between items-end mb-6">
+                                <div>
+                                    <p class="text-xs uppercase tracking-widest text-primary font-bold">Total Duration
+                                    </p>
+                                    <p class="text-xl font-bold text-primary total-duration-label">--</p>
+                                </div>
+                                <!-- Time Left slot kept but hidden — keeps layout identical -->
+                                <div class="text-right opacity-0 transition-opacity duration-500">
+                                    <p class="text-xs uppercase tracking-widest font-bold opacity-80"
+                                        style="color: {% if block.action %}{{ block.action.color|default:'#3B82F6' }}{% else %}#3B82F6{% endif %};">
+                                        Time Left</p>
+                                    <p class="text-xl font-bold remaining-area"
+                                        style="color: {% if block.action %}{{ block.action.color|default:'#3B82F6' }}{% else %}#3B82F6{% endif %};">
+                                        --</p>
+                                </div>
+                            </div>
+
+                            <!-- Progress Bar slot — hidden for templates, keeps layout identical -->
+                            <div class="progress-container opacity-0 mb-6">
+                                <div
+                                    class="w-full h-3 bg-base-300 rounded-full overflow-hidden border border-base-400/50">
+                                    <div class="progress-bar-fill w-0"
+                                        style="background-color: {% if block.action %}{{ block.action.color|default:'#3B82F6' }}{% else %}#3B82F6{% endif %};">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Description -->
+                            {% if block.description %}
+                            <p class="text-base text-base-content/80 leading-relaxed">
+                                {{ block.description|linebreaksbr }}
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-40 opacity-20 italic tracking-[0.5em] text-2xl text-base-500">
+                    NO_TEMPLATE_BLOCKS</div>
+                {% endfor %}
+
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- MODALS — identical to _tab_schedule.html                   -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+
+        <!-- Add/Edit Block Modal -->
+        <div id="addBlockModal"
+            class="fixed inset-0 z-[1000] {% if form.errors %}{% else %}hidden{% endif %} flex items-center justify-center bg-base-100/90 backdrop-blur-md p-4">
+            <div
+                class="bg-base-200 border-2 border-primary/20 w-full max-w-md rounded-[2.5rem] p-10 shadow-[0_0_50px_rgba(77,255,170,0.15)] animate-up">
+
+                <div class="flex justify-between items-center mb-8">
+                    <h2 id="modal-title" class="text-2xl font-bold text-primary uppercase tracking-[0.3em] font-mono">
+                        Add_Block</h2>
+                    <button onclick="closeModal()" class="text-base-content hover:text-primary transition-colors">
+                        <i data-lucide="x-circle" class="w-8 h-8"></i>
+                    </button>
+                </div>
+
+                <form method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="block_id" id="id_block_id" value="">
+
+                    {% if form.non_field_errors %}
+                    <div
+                        class="mb-6 p-4 bg-error/20 border border-error/50 rounded-xl text-error text-[10px] font-black uppercase tracking-tighter">
+                        {{ form.non_field_errors.0 }}
+                    </div>
+                    {% endif %}
+
+                    <div class="space-y-6">
+
+                        <!-- Action Selection -->
+                        <div>
+                            <label
+                                class="text-[10px] uppercase text-base-content font-black tracking-[0.2em] mb-2 block ml-1">Action</label>
+                            <div class="flex flex-wrap gap-3 mb-2" id="action-bubbles-container">
+                                {% for action in actions %}
+                                <div class="relative group">
+                                    <button type="button"
+                                        class="action-select-btn flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all duration-300 opacity-70 hover:opacity-100"
+                                        style="border-color: {{ action.color }}; color: {{ action.color }};"
+                                        data-value="{{ action.id }}" onclick="selectAction(this, '{{ action.id }}')">
+                                        <i data-lucide="{{ action.icon_name }}" class="w-4 h-4"></i>
+                                        <span class="font-bold text-sm">{{ action.name }}</span>
+                                    </button>
+                                    <button type="button"
+                                        onclick="openEditActionModal('{{ action.id }}', '{{ action.name|escapejs }}', '{{ action.color }}', '{{ action.icon_name }}')"
+                                        class="absolute -top-2 -right-2 bg-base-100 rounded-full p-1 border border-base-content/20 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <i data-lucide="edit-3" class="w-3 h-3"></i>
+                                    </button>
+                                </div>
+                                {% endfor %}
+                                <button type="button" onclick="openNewActionModal()"
+                                    class="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-dashed border-base-content/30 text-base-content/50 hover:border-primary hover:text-primary transition-all duration-300">
+                                    <i data-lucide="plus" class="w-4 h-4"></i>
+                                    <span class="font-bold text-sm">New</span>
+                                </button>
+                            </div>
+                            <div class="hidden">{{ form.action }}</div>
+                        </div>
+
+                        <!-- Title -->
+                        <div>
+                            <label
+                                class="text-[10px] uppercase text-base-content font-black tracking-[0.2em] mb-2 block ml-1">Title</label>
+                            {{ form.title }}
+                        </div>
+
+                        <!-- Time Grid -->
+                        <div class="grid grid-cols-2 gap-6">
+                            <div>
+                                <label
+                                    class="text-[10px] uppercase text-base-content font-black tracking-[0.2em] mb-2 block text-center">T_START</label>
+                                <div class="relative">{{ form.start_time }}</div>
+                            </div>
+                            <div>
+                                <label
+                                    class="text-[10px] uppercase text-base-content font-black tracking-[0.2em] mb-2 block text-center">T_END</label>
+                                <div class="relative">{{ form.end_time }}</div>
+                            </div>
+                        </div>
+
+                        <!-- Block Type -->
+                        <div>
+                            <label
+                                class="text-[10px] uppercase text-base-content font-black tracking-[0.2em] mb-2 block ml-1">Type</label>
+                            {{ form.block_type }}
+                        </div>
+
+                        <!-- Description -->
+                        <div>
+                            <label
+                                class="text-[10px] uppercase text-base-content font-black tracking-[0.2em] mb-2 block ml-1">Description</label>
+                            {{ form.description }}
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-3 mt-10">
+                        <button type="submit"
+                            class="w-full py-4 rounded-2xl border border-primary text-primary-content font-bold uppercase tracking-[0.2em] hover:bg-primary/10 transition-all bg-primary">
+                            Save
+                        </button>
+                        <button type="button" onclick="closeModal()"
+                            class="w-full py-4 rounded-2xl border border-base-400 text-base-content font-bold uppercase tracking-[0.2em] hover:bg-base-300/10 transition-all">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Action Management Modal -->
+        <div id="actionModal"
+            class="fixed inset-0 z-[1010] hidden flex items-center justify-center bg-base-100/90 backdrop-blur-md p-4">
+            <div
+                class="bg-base-200 border-2 border-primary/20 w-full max-w-sm rounded-[2.5rem] p-8 shadow-[0_0_50px_rgba(77,255,170,0.15)] animate-up">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 id="action-modal-title"
+                        class="text-xl font-bold text-primary uppercase tracking-[0.2em] font-mono">New_Action</h2>
+                    <button type="button" onclick="closeActionModal()"
+                        class="text-base-content hover:text-primary transition-colors">
+                        <i data-lucide="x-circle" class="w-6 h-6"></i>
+                    </button>
+                </div>
+                <div class="space-y-4">
+                    <input type="hidden" id="manageActionId">
+                    <div>
+                        <label
+                            class="text-[10px] uppercase text-base-content font-black tracking-[0.2em] mb-2 block ml-1">Name</label>
+                        <input type="text" id="actionNameInput"
+                            class="w-full bg-base-300 border border-neutral/20 rounded-lg p-3 text-primary font-mono focus:outline-none focus:ring-1 focus:ring-primary/50"
+                            placeholder="ACTION_NAME">
+                    </div>
+                    <div>
+                        <label
+                            class="text-[10px] uppercase text-base-content font-black tracking-[0.2em] mb-2 block ml-1">Color</label>
+                        <input type="color" id="actionColorInput" value="#3B82F6"
+                            class="w-full h-12 bg-base-300 border border-neutral/20 rounded-lg p-1 cursor-pointer">
+                    </div>
+                    <div>
+                        <label
+                            class="text-[10px] uppercase text-base-content font-black tracking-[0.2em] mb-2 block ml-1">Icon
+                            (Lucide)</label>
+                        <input type="text" id="actionIconInput" value="activity"
+                            class="w-full bg-base-300 border border-neutral/20 rounded-lg p-3 text-primary font-mono focus:outline-none focus:ring-1 focus:ring-primary/50"
+                            placeholder="e.g. activity, book, dumbbell">
+                    </div>
+                    <button type="button" onclick="saveActionData()"
+                        class="w-full py-3 mt-4 rounded-xl border border-primary text-primary-content font-bold uppercase tracking-[0.2em] hover:bg-primary/10 transition-all bg-primary">
+                        Confirm
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Modal — "Add Block" + "Rename Template" (replaces Convert/Apply) -->
+        <div id="settingsModal"
+            class="fixed inset-0 z-[1010] hidden flex items-center justify-center bg-base-100/90 backdrop-blur-md p-4">
+            <div
+                class="bg-base-200 border-2 border-primary/20 w-full max-w-sm rounded-[2.5rem] p-8 shadow-[0_0_50px_rgba(77,255,170,0.15)] animate-up">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-primary uppercase tracking-[0.2em] font-mono">Options</h2>
+                    <button type="button" onclick="closeSettingsModal()"
+                        class="text-base-content hover:text-primary transition-colors">
+                        <i data-lucide="x-circle" class="w-6 h-6"></i>
+                    </button>
+                </div>
+                <div class="space-y-4">
+                    <button type="button" onclick="closeSettingsModal(); openModal();"
+                        class="w-full py-4 rounded-xl border border-primary text-primary-content font-bold uppercase tracking-[0.1em] hover:bg-primary/10 transition-all">
+                        Add Block
+                    </button>
+                    <button type="button" onclick="closeSettingsModal(); openRenameModal();"
+                        class="w-full py-4 rounded-xl border border-primary text-primary-content font-bold uppercase tracking-[0.1em] hover:bg-primary/10 transition-all">
+                        Rename Template
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rename Template Modal (replaces Convert to Template modal) -->
+        <div id="renameModal"
+            class="fixed inset-0 z-[1020] hidden flex items-center justify-center bg-base-100/90 backdrop-blur-md p-4">
+            <div
+                class="bg-base-200 border-2 border-primary/20 w-full max-w-sm rounded-[2.5rem] p-8 shadow-[0_0_50px_rgba(77,255,170,0.15)] animate-up">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-primary uppercase tracking-[0.2em] font-mono">Rename_Template</h2>
+                    <button type="button" onclick="closeRenameModal()"
+                        class="text-base-content hover:text-primary transition-colors">
+                        <i data-lucide="x-circle" class="w-6 h-6"></i>
+                    </button>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label
+                            class="text-[10px] uppercase text-base-content font-black tracking-[0.2em] mb-2 block ml-1">Template
+                            Name</label>
+                        <input type="text" id="renameTemplateInput" value="{{ template.name }}"
+                            class="w-full bg-base-300 border border-neutral/20 rounded-lg p-3 text-primary font-mono focus:outline-none focus:ring-1 focus:ring-primary/50"
+                            placeholder="TEMPLATE_NAME">
+                    </div>
+                    <button type="button" onclick="saveRename()"
+                        class="w-full py-3 mt-4 rounded-xl border border-primary text-primary-content font-bold uppercase tracking-[0.2em] hover:bg-primary/10 transition-all bg-primary">
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Floating Add Block Button — same position/style as schedule's FAB -->
+    <button onclick="openModal()"
+        class="fixed bottom-28 right-8 w-20 h-20 rounded-[24px] bg-[#fe9e9f] text-base-900 flex items-center justify-center shadow-[0_12px_40px_rgba(0,0,0,0.5)] active:scale-95 hover:scale-105 transition-all z-[9999] text-4xl font-bold">
+        +
+    </button>
+
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        (function () {
+            function timeToMinutes(timeStr) {
+                if (!timeStr || !timeStr.includes(':')) return 0;
+                const parts = timeStr.split(':');
+                return (parseInt(parts[0], 10) * 60) + parseInt(parts[1], 10);
+            }
+
+            function formatDuration(minutes) {
+                if (isNaN(minutes) || minutes <= 0) return "0 m.";
+                const h = Math.floor(minutes / 60);
+                const m = minutes % 60;
+                if (h > 0) return m > 0 ? `${h} h. ${m} m.` : `${h} h.`;
+                return `${m} m.`;
+            }
+
+            // Compute static durations only — no live clock needed for templates
+            function updateDurations() {
+                document.querySelectorAll('[data-block-start]').forEach(block => {
+                    const totalLabel = block.querySelector('.total-duration-label');
+                    const start = timeToMinutes(block.dataset.blockStart);
+                    const end = timeToMinutes(block.dataset.blockEnd);
+                    if (totalLabel) totalLabel.innerText = formatDuration(end - start);
+                });
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                lucide.createIcons();
+                updateDurations();
+
+                flatpickr("input[type=time]", {
+                    enableTime: true,
+                    noCalendar: true,
+                    dateFormat: "H:i",
+                    time_24hr: true
+                });
+            });
+        })();
+
+        // ── ACTION MANAGEMENT (identical to _tab_schedule.html) ──────────────────
+
+        function openNewActionModal() {
+            document.getElementById('action-modal-title').innerText = "New_Action";
+            document.getElementById('manageActionId').value = "";
+            document.getElementById('actionNameInput').value = "";
+            document.getElementById('actionColorInput').value = "#3B82F6";
+            document.getElementById('actionIconInput').value = "activity";
+            document.getElementById('actionModal').classList.remove('hidden');
+        }
+
+        function openEditActionModal(id, name, color, icon) {
+            document.getElementById('action-modal-title').innerText = "Edit_Action";
+            document.getElementById('manageActionId').value = id;
+            document.getElementById('actionNameInput').value = name;
+            document.getElementById('actionColorInput').value = color;
+            document.getElementById('actionIconInput').value = icon;
+            document.getElementById('actionModal').classList.remove('hidden');
+        }
+
+        function closeActionModal() {
+            document.getElementById('actionModal').classList.add('hidden');
+        }
+
+        async function saveActionData() {
+            const id = document.getElementById('manageActionId').value;
+            const name = document.getElementById('actionNameInput').value;
+            const color = document.getElementById('actionColorInput').value;
+            const icon = document.getElementById('actionIconInput').value || 'activity';
+            if (!name) { alert('Name is required'); return; }
+
+            const type = id ? 'update_action' : 'create_action';
+            const body = { action: type, name, color, icon_name: icon };
+            if (id) body.action_id = id;
+
+            try {
+                const res = await fetch(window.location.href, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                    body: JSON.stringify(body)
+                });
+                if (res.ok) window.location.reload();
+                else alert('Error saving action');
+            } catch (e) { console.error(e); }
+        }
+
+        // ── BLOCK MODAL ──────────────────────────────────────────────────────────
+
+        function openModal() {
+            document.getElementById('id_block_id').value = '';
+            document.getElementById('id_title').value = '';
+            document.getElementById('modal-title').innerText = 'Add_Block';
+            // Clear action selection
+            document.querySelectorAll('.action-select-btn').forEach(b => {
+                b.classList.add('opacity-70');
+                b.style.boxShadow = 'none';
+            });
+            document.getElementById('id_action').value = '';
+            document.getElementById('addBlockModal').classList.remove('hidden');
+        }
+
+        function editBlock(id, title, actionId, startTime, endTime, blockType, description) {
+            document.getElementById('id_block_id').value = id;
+            document.getElementById('id_title').value = title;
+            document.getElementById('id_start_time')._flatpickr.setDate(startTime);
+            document.getElementById('id_end_time')._flatpickr.setDate(endTime);
+            document.getElementById('id_block_type').value = blockType;
+            document.getElementById('id_description').value = description;
+            document.getElementById('modal-title').innerText = 'Edit_Block';
+            if (actionId) {
+                const btn = document.querySelector(`.action-select-btn[data-value="${actionId}"]`);
+                if (btn) selectAction(btn, actionId);
+            }
+            document.getElementById('addBlockModal').classList.remove('hidden');
+        }
+
+        async function deleteBlock(id) {
+            if (!confirm('Are you sure?')) return;
+            const res = await fetch(window.location.href, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                body: JSON.stringify({ action: 'delete_template_block', block_id: id })
+            });
+            if (res.ok) window.location.reload();
+        }
+
+        function closeModal() { document.getElementById('addBlockModal').classList.add('hidden'); }
+
+        function selectAction(btn, actionId) {
+            document.querySelectorAll('.action-select-btn').forEach(b => {
+                b.classList.add('opacity-70');
+                b.style.boxShadow = 'none';
+            });
+            btn.classList.remove('opacity-70');
+            btn.style.boxShadow = `0 0 15px ${btn.style.borderColor}`;
+            document.getElementById('id_action').value = actionId;
+        }
+
+        // ── SETTINGS MODAL ───────────────────────────────────────────────────────
+
+        function openSettingsModal() { document.getElementById('settingsModal').classList.remove('hidden'); }
+        function closeSettingsModal() { document.getElementById('settingsModal').classList.add('hidden'); }
+
+        // ── RENAME MODAL ─────────────────────────────────────────────────────────
+
+        function openRenameModal() {
+            document.getElementById('renameTemplateInput').value = '{{ template.name|escapejs }}';
+            document.getElementById('renameModal').classList.remove('hidden');
+        }
+        function closeRenameModal() { document.getElementById('renameModal').classList.add('hidden'); }
+
+        async function saveRename() {
+            const name = document.getElementById('renameTemplateInput').value.trim();
+            if (!name) { alert('Name is required'); return; }
+            const res = await fetch(window.location.href, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                body: JSON.stringify({ action: 'rename_template', name })
+            });
+            if (res.ok) window.location.reload();
+            else alert('Error renaming template');
+        }
+
+        // ── CLICK-OUTSIDE CLOSE ──────────────────────────────────────────────────
+
+        window.addEventListener('click', (e) => {
+            if (e.target.id === 'addBlockModal') closeModal();
+            if (e.target.id === 'actionModal') closeActionModal();
+            if (e.target.id === 'settingsModal') closeSettingsModal();
+            if (e.target.id === 'renameModal') closeRenameModal();
+        });
+    </script>
+</body>
+
+</html>
+{% endblock %}

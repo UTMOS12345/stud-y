@@ -1,159 +1,145 @@
-<!-- Heading Section -->
-<div class="flex justify-between items-end mb-12">
-    <div>
-        <h2 class="font-serif italic font-bold text-base-content" style="font-size: 42px; letter-spacing: -1px;">
-            Templates</h2>
+<!-- schedule/partials/_tab_templates.html -->
+<div class="w-full max-w-7xl mx-auto space-y-12">
 
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
+        <div>
+            <h2 class="text-4xl font-bold tracking-[0.2em] uppercase text-primary font-mono">My_Templates</h2>
+            <p class="text-base-500 font-bold tracking-widest uppercase mt-2">Saved Routines & Frameworks</p>
+        </div>
+
+        <!-- Redirects user to schedule tab and opens the modal to save current day as template -->
+        <button onclick="switchTab('schedule'); openConvertTemplateModal();"
+            class="group flex items-center gap-3 px-8 py-4 rounded-2xl border-2 border-primary text-primary font-black uppercase tracking-widest hover:bg-primary hover:text-primary-content transition-all duration-300 shadow-lg shadow-primary/10">
+            <i data-lucide="plus-circle" class="w-6 h-6"></i>
+            Create From Today
+        </button>
     </div>
-</div>
 
-<!-- Template List -->
-<div class="grid grid-cols-1 gap-6 w-full max-w-5xl mx-auto">
-    {% for template in templates %}
-    <div class="group bg-base-200 border border-base-300 rounded-[2.5rem] overflow-hidden transition-all duration-300 hover:border-primary/30 shadow-xl"
-        id="template-card-{{ template.id }}">
+    <!-- Templates Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {% for template in templates %}
+        <div
+            class="bg-base-200 rounded-[2.5rem] p-10 border border-base-300/50 hover:border-primary/40 transition-all duration-500 group shadow-xl flex flex-col h-full">
 
-        <!-- Main Card Body -->
-        <div class="p-8 flex items-center justify-between">
-
-            <div class="flex items-center gap-6">
-                <!-- Icon Bubble -->
-                <div class="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+            <!-- Card Header -->
+            <div class="flex justify-between items-start mb-8">
+                <div
+                    class="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary border border-primary/20 group-hover:scale-110 transition-transform duration-500">
                     <i data-lucide="layout-template" class="w-8 h-8"></i>
                 </div>
 
-                <div>
-                    <!-- CLICKABLE TITLE: -->
-                    <a href="{% url 'template_detail' template.id %}">
-                        <h3
-                            class="text-2xl font-bold text-base-content group-hover/title:text-primary transition-colors flex items-center gap-3">
-                            {{ template.name }}
-                            <i data-lucide="external-link"
-                                class="w-4 h-4 opacity-0 group-hover/title:opacity-100 transition-all"></i>
-                        </h3>
+                <button onclick="deleteTemplate({{ template.id }}, '{{ template.name|escapejs }}')"
+                    class="p-3 bg-base-300 rounded-xl text-base-content/20 hover:text-error hover:bg-error/10 transition-all"
+                    title="Delete Template">
+                    <i data-lucide="trash-2" class="w-6 h-6"></i>
+                </button>
+            </div>
 
+            <!-- Template Info -->
+            <div class="flex-1">
+                <h3 class="text-3xl font-bold text-base-content tracking-tight mb-3">
+                    {{ template.name }}
+                </h3>
 
-
-                        <div class="flex items-center gap-4 mt-1">
-                            <span
-                                class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-base-500">
-                                <i data-lucide="layers" class="w-3 h-3"></i>
-                                {{ template.template_blocks.count }} Blocks
-                            </span>
-                            <span class="w-1 h-1 rounded-full bg-base-500"></span>
-                            <!-- Quick Preview Trigger -->
-                            <button onclick="toggleTemplatePreview('{{ template.id }}')"
-                                class="text-xs font-bold uppercase tracking-widest text-primary hover:underline">
-                                Quick Preview
-                            </button>
-                        </div>
+                <div class="flex items-center gap-4 text-base-500 font-bold uppercase tracking-[0.1em] text-sm">
+                    <span class="flex items-center gap-2">
+                        <i data-lucide="layers" class="w-4 h-4"></i>
+                        {{ template.template_blocks.count }} Blocks
+                    </span>
                 </div>
             </div>
 
-            <div class="flex items-center gap-3">
-                <!-- Quick Apply Button -->
-                <button onclick="applySpecificTemplate('{{ template.id }}')"
-                    class="hidden md:flex items-center gap-2 bg-primary text-primary-content px-6 py-3 rounded-2xl font-bold uppercase text-[10px] tracking-[0.2em] hover:brightness-110 active:scale-95 transition-all">
-                    <i data-lucide="play" class="w-4 h-4"></i>
-                    Apply
-                </button>
+            <!-- Action Buttons -->
+            <div class="mt-10 flex gap-3">
+                <a href="{% url 'template_detail' template.id %}"
+                    class="flex-1 text-center py-4 rounded-2xl bg-primary text-primary-content font-bold uppercase tracking-[0.2em] hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-primary/20">
+                    Edit Editor
+                </a>
 
-                <!-- Delete Button -->
-                <button onclick="deleteTemplate('{{ template.id }}')"
-                    class="p-4 text-base-content/30 hover:text-error hover:bg-error/10 rounded-2xl transition-all">
-                    <i data-lucide="trash-2" class="w-5 h-5"></i>
+                <button onclick="applyTemplateNow({{ template.id }})"
+                    class="px-5 rounded-2xl border border-primary/30 text-primary hover:bg-primary/10 transition-all"
+                    title="Apply to today">
+                    <i data-lucide="calendar-check" class="w-6 h-6"></i>
                 </button>
             </div>
         </div>
-
-        <!-- Expansion Area: Quick Preview (Hidden by default) -->
-        <div id="preview-{{ template.id }}" class="hidden border-t border-base-300 bg-base-300/20 p-8 animate-up">
-            <div class="space-y-3">
-                <div class="flex justify-between items-center mb-4">
-                    <span
-                        class="text-[9px] uppercase font-black tracking-[0.4em] text-primary/60">Structure_Preview</span>
-                    <a href="{% url 'template_detail' template.id %}"
-                        class="text-[9px] uppercase font-black tracking-[0.2em] text-primary hover:underline">Open Full
-                        Editor</a>
-                </div>
-
-                {% for t_block in template.template_blocks.all %}
-                <div class="flex gap-4 items-center bg-base-200/50 p-4 rounded-2xl border border-white/5">
-                    <div class="w-12 text-right">
-                        <div class="text-xs font-bold text-base-content">{{ t_block.start_time|time:"H:i" }}</div>
-                    </div>
-                    <div class="w-1 h-6 rounded-full"
-                        style="background-color: {{ t_block.action.color|default:'#3B82F6' }};"></div>
-                    <div class="flex-1">
-                        <div class="text-sm font-bold text-base-content">{{ t_block.title }}</div>
-                    </div>
-                    <div class="text-[9px] uppercase tracking-widest font-black opacity-20">{{ t_block.action.name }}
-                    </div>
-                </div>
-                {% empty %}
-                <div class="text-center py-6 opacity-30 text-xs uppercase tracking-widest">No blocks in this template
-                </div>
-                {% endfor %}
+        {% empty %}
+        <!-- Empty State -->
+        <div
+            class="col-span-full py-40 text-center bg-base-200/30 rounded-[3rem] border-2 border-dashed border-base-300">
+            <div class="opacity-20 italic tracking-[0.5em] text-2xl text-base-500 mb-6 uppercase">No_Templates_Found
             </div>
+            <button onclick="switchTab('schedule')"
+                class="text-primary font-black uppercase tracking-widest border-b-2 border-primary/30 hover:border-primary transition-all pb-1">
+                Go to schedule to save your first template
+            </button>
         </div>
+        {% endfor %}
     </div>
-    {% empty %}
-    <div class="col-span-full flex flex-col items-center justify-center py-40 opacity-20 font-mono gap-6">
-        <i data-lucide="layout-template" class="w-20 h-20"></i>
-        <span class="text-xl tracking-[0.4em] uppercase">No_Templates_Found</span>
-    </div>
-    {% endfor %}
 </div>
 
 <script>
-    /**
-     * Toggles the quick preview section
-     */
-    function toggleTemplatePreview(id) {
-        const preview = document.getElementById(`preview-${id}`);
-        const isHidden = preview.classList.contains('hidden');
-
-        if (isHidden) {
-            preview.classList.remove('hidden');
-        } else {
-            preview.classList.add('hidden');
-        }
-        if (window.lucide) window.lucide.createIcons();
-    }
+    // Re-initialize icons when this partial is rendered or tab is switched
+    if (window.lucide) { lucide.createIcons(); }
 
     /**
-     * AJAX: Apply Template
+     * Delete a template via JSON POST
      */
-    async function applySpecificTemplate(id) {
-        if (!confirm("Apply this template to your current schedule?")) return;
+    async function deleteTemplate(id, name) {
+        if (!confirm(`Permanently delete "${name}"?`)) return;
 
-        const response = await fetch(window.location.href, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
-            body: JSON.stringify({ action: 'apply_template', template_id: id })
-        });
+        try {
+            const response = await fetch(window.location.href, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    action: 'delete_template',
+                    template_id: id
+                })
+            });
 
-        if (response.ok) {
-            const data = await response.json();
-            alert(data.message);
-            window.location.reload();
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert("Error deleting template.");
+            }
+        } catch (e) {
+            console.error("Delete error:", e);
         }
     }
 
     /**
-     * AJAX: Delete Template
+     * Apply a template to the current day immediately
      */
-    async function deleteTemplate(id) {
-        if (!confirm("Delete this template permanently?")) return;
+    async function applyTemplateNow(id) {
+        if (!confirm("Apply this template to today's schedule? (Overlapping blocks will be skipped)")) return;
 
-        const response = await fetch(window.location.href, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
-            body: JSON.stringify({ action: 'delete_template', template_id: id })
-        });
+        try {
+            const response = await fetch(window.location.href, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    action: 'apply_template',
+                    template_id: id
+                })
+            });
 
-        if (response.ok) {
-            window.location.reload();
+            if (response.ok) {
+                const data = await response.json();
+                alert(data.message || "Template applied successfully!");
+                // Switch back to schedule tab to see changes
+                switchTab('schedule');
+                window.location.reload();
+            }
+        } catch (e) {
+            console.error("Apply error:", e);
         }
     }
 </script>
