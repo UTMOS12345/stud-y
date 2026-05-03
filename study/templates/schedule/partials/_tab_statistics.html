@@ -1,154 +1,370 @@
-<h2 class="font-serif italic font-bold text-base-content mb-12" style="font-size: 42px; letter-spacing: -1px;">
-    Statistics</h2>
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-    <div
-        class="bg-base-300 border border-neutral p-8 rounded-2xl shadow-lg hover:border-primary/20 transition-colors group">
-        <div class="flex items-center justify-between mb-4">
-            <p class="text-[10px] text-neutral-content uppercase tracking-[0.2em] font-bold">Total Time</p>
-            <i data-lucide="clock"
-                class="w-4 h-4 text-primary opacity-40 group-hover:opacity-100 transition-opacity"></i>
-        </div>
-        <p class="text-4xl font-mono font-bold text-base-content mb-2">124h</p>
-        <div class="flex items-center gap-2">
-            <span class="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">+5.2%</span>
-            <span class="text-[10px] text-neutral-content/60 font-medium uppercase tracking-widest">this month</span>
-        </div>
-    </div>
-    <div
-        class="bg-base-300 border border-neutral p-8 rounded-2xl shadow-lg hover:border-primary/20 transition-colors group">
-        <div class="flex items-center justify-between mb-4">
-            <p class="text-[10px] text-neutral-content uppercase tracking-[0.2em] font-bold">Daily Average</p>
-            <i data-lucide="trending-up"
-                class="w-4 h-4 text-primary opacity-40 group-hover:opacity-100 transition-opacity"></i>
-        </div>
-        <p class="text-4xl font-mono font-bold text-base-content mb-2">6.2h</p>
-        <div class="flex items-center gap-2">
-            <span class="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">+12%</span>
-            <span class="text-[10px] text-neutral-content/60 font-medium uppercase tracking-widest">vs last week</span>
-        </div>
-    </div>
-</div>
+{% load static %}
 
-<!-- Chart Placeholder -->
-<div class="bg-base-300 border border-neutral p-10 rounded-2xl shadow-lg relative overflow-hidden">
-    <div class="flex items-center justify-between mb-12">
-        <div>
-            <h3 class="text-sm font-bold text-base-content uppercase tracking-widest mb-1">Weekly Activity</h3>
-            <p class="text-xs text-neutral-content font-mono opacity-60">Distribution of study hours by day</p>
+{# ─── JS data — pure server-side serialisation, zero template filter tricks ─── #}
+<script>
+    const SCHEDULE_BLOCKS = {{ blocks_json| safe }};
+    const SELECTED_DATE = "{{ selected_date|date:'Y-m-d' }}";
+    const WEEK_HOURS = {{ week_hours| safe }};
+</script>
+
+<div class="animate-up max-w-4xl mx-auto px-4 py-8">
+
+    {# ── PAGE TITLE ── #}
+    <h2 class="font-serif italic font-bold text-base-content mb-8" style="font-size:42px;letter-spacing:-1px;">
+        Statistics</h2>
+
+    {# ── DATE NAVIGATION ── #}
+    <div class="flex items-center justify-between mb-8">
+        <a id="prev-day-link" href="#" class="flex items-center gap-2 px-4 py-2 rounded-xl border border-neutral
+              text-neutral-content hover:border-primary/30 hover:text-primary
+              transition-all text-xs font-bold uppercase tracking-widest">
+            <i data-lucide="chevron-left" class="w-3 h-3"></i> Prev
+        </a>
+
+        <div class="flex items-center gap-3 px-6 py-2.5 rounded-xl border border-neutral bg-base-300">
+            <i data-lucide="calendar" class="w-3.5 h-3.5 text-primary opacity-60"></i>
+            <span class="text-sm font-bold text-base-content tracking-wide">
+                {{ selected_date|date:"D, d M Y" }}
+            </span>
         </div>
-        <div class="flex items-center gap-2">
+
+        <a id="next-day-link" href="#" class="flex items-center gap-2 px-4 py-2 rounded-xl border border-neutral
+              text-neutral-content hover:border-primary/30 hover:text-primary
+              transition-all text-xs font-bold uppercase tracking-widest">
+            Next <i data-lucide="chevron-right" class="w-3 h-3"></i>
+        </a>
+    </div>
+
+    {# ── STAT CARDS ── #}
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8" id="stat-cards">
+        {% if not schedule.blocks.all %}
+        <div class="col-span-4 text-center py-8 text-neutral-content text-sm opacity-60">
+            No blocks scheduled for this day.
+        </div>
+        {% endif %}
+    </div>
+
+    {# ── DONUT + ACTION LIST ── #}
+    <div class="bg-base-300 border border-neutral rounded-2xl p-8 mb-6 shadow-lg">
+
+        <div class="flex items-start justify-between mb-6 flex-wrap gap-4">
+            <div>
+                <h3 class="text-[10px] font-bold text-base-content uppercase tracking-[0.2em] mb-1">
+                    Today's Distribution
+                </h3>
+                <p class="text-[10px] text-neutral-content font-mono opacity-60">
+                    {{ schedule.blocks.count }} block{{ schedule.blocks.count|pluralize }} scheduled
+                </p>
+            </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-8 items-center">
+
+            {# Donut canvas #}
+            <div class="relative flex-shrink-0" style="width:220px;height:220px;">
+                <canvas id="donut-chart" width="220" height="220" role="img"
+                    aria-label="Donut chart showing time distribution across activities today">
+                </canvas>
+                <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <span class="text-2xl font-bold font-mono text-base-content" id="donut-total">—</span>
+                    <span class="text-[9px] uppercase tracking-[0.18em] text-neutral-content mt-1">total</span>
+                </div>
+            </div>
+
+            {# Action rows — populated by JS #}
+            <div class="flex-1 w-full" id="action-list">
+                {% if not schedule.blocks.all %}
+                <p class="text-sm text-neutral-content opacity-50 text-center py-8">
+                    No activities recorded yet.
+                </p>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+
+    {# ── WEEKLY BARS ── #}
+    <div class="bg-base-300 border border-neutral rounded-2xl p-8 shadow-lg">
+
+        <div class="flex items-start justify-between mb-8 flex-wrap gap-4">
+            <div>
+                <h3 class="text-[10px] font-bold text-base-content uppercase tracking-[0.2em] mb-1">
+                    Weekly Activity
+                </h3>
+                <p class="text-[10px] text-neutral-content font-mono opacity-60">
+                    Scheduled hours by day this week
+                </p>
+            </div>
             <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral/20 border border-neutral/40">
                 <div class="w-2 h-2 rounded-full bg-primary"></div>
-                <span class="text-[10px] font-bold uppercase tracking-widest text-neutral-content">Study</span>
+                <span class="text-[10px] font-bold uppercase tracking-widest text-neutral-content">Scheduled</span>
             </div>
         </div>
+
+        <div class="flex items-end justify-between gap-4 px-2" style="height:180px;" id="week-bars"></div>
+
     </div>
 
-    <div class="flex items-end justify-between h-64 gap-6 px-4">
-        <!-- Monday -->
-        <div class="flex-1 flex flex-col items-center gap-6 group/bar">
-            <div class="relative w-full">
-                <div class="w-full bg-primary/10 rounded-xl hover:bg-primary/30 transition-all cursor-pointer relative z-10"
-                    style="height: 120px;">
-                    <div
-                        class="absolute -top-10 left-1/2 -translate-x-1/2 bg-base-100 border border-neutral px-2 py-1 rounded text-[10px] font-bold text-primary opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none">
-                        4.2h
-                    </div>
-                </div>
-                <div class="absolute bottom-0 left-0 right-0 bg-primary/5 rounded-xl h-full opacity-20"></div>
-            </div>
-            <span
-                class="text-[11px] text-neutral-content font-mono font-bold group-hover/bar:text-primary transition-colors">M</span>
-        </div>
-        <!-- Tuesday -->
-        <div class="flex-1 flex flex-col items-center gap-6 group/bar">
-            <div class="relative w-full">
-                <div class="w-full bg-primary/10 rounded-xl hover:bg-primary/30 transition-all cursor-pointer relative z-10"
-                    style="height: 180px;">
-                    <div
-                        class="absolute -top-10 left-1/2 -translate-x-1/2 bg-base-100 border border-neutral px-2 py-1 rounded text-[10px] font-bold text-primary opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none">
-                        6.8h
-                    </div>
-                </div>
-                <div class="absolute bottom-0 left-0 right-0 bg-primary/5 rounded-xl h-full opacity-20"></div>
-            </div>
-            <span
-                class="text-[11px] text-neutral-content font-mono font-bold group-hover/bar:text-primary transition-colors">T</span>
-        </div>
-        <!-- Wednesday -->
-        <div class="flex-1 flex flex-col items-center gap-6 group/bar">
-            <div class="relative w-full">
-                <div class="w-full bg-primary/10 rounded-xl hover:bg-primary/30 transition-all cursor-pointer relative z-10"
-                    style="height: 140px;">
-                    <div
-                        class="absolute -top-10 left-1/2 -translate-x-1/2 bg-base-100 border border-neutral px-2 py-1 rounded text-[10px] font-bold text-primary opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none">
-                        5.1h
-                    </div>
-                </div>
-                <div class="absolute bottom-0 left-0 right-0 bg-primary/5 rounded-xl h-full opacity-20"></div>
-            </div>
-            <span
-                class="text-[11px] text-neutral-content font-mono font-bold group-hover/bar:text-primary transition-colors">W</span>
-        </div>
-        <!-- Thursday -->
-        <div class="flex-1 flex flex-col items-center gap-6 group/bar">
-            <div class="relative w-full">
-                <div class="w-full bg-primary/10 rounded-xl hover:bg-primary/30 transition-all cursor-pointer relative z-10"
-                    style="height: 220px;">
-                    <div
-                        class="absolute -top-10 left-1/2 -translate-x-1/2 bg-base-100 border border-neutral px-2 py-1 rounded text-[10px] font-bold text-primary opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none">
-                        8.4h
-                    </div>
-                </div>
-                <div class="absolute bottom-0 left-0 right-0 bg-primary/5 rounded-xl h-full opacity-20"></div>
-            </div>
-            <span
-                class="text-[11px] text-neutral-content font-mono font-bold group-hover/bar:text-primary transition-colors">T</span>
-        </div>
-        <!-- Friday -->
-        <div class="flex-1 flex flex-col items-center gap-6 group/bar">
-            <div class="relative w-full">
-                <div class="w-full bg-primary/10 rounded-xl hover:bg-primary/30 transition-all cursor-pointer relative z-10"
-                    style="height: 160px;">
-                    <div
-                        class="absolute -top-10 left-1/2 -translate-x-1/2 bg-base-100 border border-neutral px-2 py-1 rounded text-[10px] font-bold text-primary opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none">
-                        6.1h
-                    </div>
-                </div>
-                <div class="absolute bottom-0 left-0 right-0 bg-primary/5 rounded-xl h-full opacity-20"></div>
-            </div>
-            <span
-                class="text-[11px] text-neutral-content font-mono font-bold group-hover/bar:text-primary transition-colors">F</span>
-        </div>
-        <!-- Saturday -->
-        <div class="flex-1 flex flex-col items-center gap-6 group/bar">
-            <div class="relative w-full">
-                <div class="w-full bg-primary/10 rounded-xl hover:bg-primary/30 transition-all cursor-pointer relative z-10"
-                    style="height: 80px;">
-                    <div
-                        class="absolute -top-10 left-1/2 -translate-x-1/2 bg-base-100 border border-neutral px-2 py-1 rounded text-[10px] font-bold text-primary opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none">
-                        3.2h
-                    </div>
-                </div>
-                <div class="absolute bottom-0 left-0 right-0 bg-primary/5 rounded-xl h-full opacity-20"></div>
-            </div>
-            <span
-                class="text-[11px] text-neutral-content font-mono font-bold group-hover/bar:text-primary transition-colors">S</span>
-        </div>
-        <!-- Sunday -->
-        <div class="flex-1 flex flex-col items-center gap-6 group/bar">
-            <div class="relative w-full">
-                <div class="w-full bg-primary/10 rounded-xl hover:bg-primary/30 transition-all cursor-pointer relative z-10"
-                    style="height: 100px;">
-                    <div
-                        class="absolute -top-10 left-1/2 -translate-x-1/2 bg-base-100 border border-neutral px-2 py-1 rounded text-[10px] font-bold text-primary opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none">
-                        4.0h
-                    </div>
-                </div>
-                <div class="absolute bottom-0 left-0 right-0 bg-primary/5 rounded-xl h-full opacity-20"></div>
-            </div>
-            <span
-                class="text-[11px] text-neutral-content font-mono font-bold group-hover/bar:text-primary transition-colors">S</span>
-        </div>
-    </div>
 </div>
+
+{# ─── STYLES ─── #}
+<style>
+    #action-list .a-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 12px;
+        border-radius: 10px;
+        border: 1px solid transparent;
+        transition: border-color .15s, background .15s;
+        margin-bottom: 2px;
+    }
+
+    #action-list .a-row:hover {
+        background: rgba(77, 255, 170, .04);
+        border-color: rgba(77, 255, 170, .12);
+    }
+
+    #action-list .a-bar-wrap {
+        height: 3px;
+        background: rgba(122, 170, 150, .18);
+        border-radius: 99px;
+        overflow: hidden;
+        margin: 0 12px 6px;
+    }
+
+    #action-list .a-bar-fill {
+        height: 100%;
+        border-radius: 99px;
+        transition: width .7s cubic-bezier(.16, 1, .3, 1);
+    }
+
+    #stat-cards .s-card {
+        background: #121f1b;
+        border: 1px solid #26403a;
+        border-radius: 16px;
+        padding: 1.25rem 1.5rem;
+        transition: border-color .2s;
+    }
+
+    #stat-cards .s-card:hover {
+        border-color: rgba(77, 255, 170, .22);
+    }
+
+    .wbc {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .wbc .wb {
+        width: 100%;
+        border-radius: 8px;
+        background: rgba(77, 255, 170, .1);
+        transition: background .2s;
+        cursor: pointer;
+        position: relative;
+    }
+
+    .wbc .wb:hover {
+        background: rgba(77, 255, 170, .26);
+    }
+
+    .wbc.today .wb {
+        background: rgba(77, 255, 170, .22);
+    }
+
+    .wbc .wl {
+        font-size: 10px;
+        color: #7aaa96;
+        font-weight: 700;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+    }
+
+    .wbc.today .wl {
+        color: #4dffaa;
+    }
+
+    .wb-tip {
+        position: absolute;
+        bottom: calc(100% + 5px);
+        left: 50%;
+        transform: translateX(-50%);
+        background: #09100e;
+        border: 1px solid #26403a;
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 10px;
+        font-weight: 700;
+        color: #4dffaa;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .15s;
+        font-family: 'Share Tech Mono', monospace;
+    }
+
+    .wbc:hover .wb-tip {
+        opacity: 1;
+    }
+</style>
+
+{# ─── SCRIPTS ─── #}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+    (function () {
+
+        /* helpers */
+        function fmtDuration(mins) {
+            const h = Math.floor(mins / 60), m = mins % 60;
+            if (h > 0 && m > 0) return h + 'h ' + m + 'm';
+            return h > 0 ? h + 'h' : m + 'm';
+        }
+        function fmtH(mins) { return (mins / 60).toFixed(1) + 'h'; }
+
+        /* date nav */
+        (function () {
+            const base = new Date(SELECTED_DATE + 'T00:00:00');
+            const prev = new Date(base); prev.setDate(prev.getDate() - 1);
+            const next = new Date(base); next.setDate(next.getDate() + 1);
+            const iso = d => d.toISOString().slice(0, 10);
+            document.getElementById('prev-day-link').href = '?date=' + iso(prev);
+            document.getElementById('next-day-link').href = '?date=' + iso(next);
+        })();
+
+        /* derived */
+        const blocks = SCHEDULE_BLOCKS;
+        const totalMins = blocks.reduce((s, b) => s + (b.endMins - b.startMins), 0);
+        const sorted = [...blocks].sort((a, b) => (b.endMins - b.startMins) - (a.endMins - a.startMins));
+
+        /* stat cards */
+        (function () {
+            const el = document.getElementById('stat-cards');
+            if (!blocks.length) return;
+            const avg = Math.round(totalMins / blocks.length);
+            const top = sorted[0];
+            el.innerHTML = [
+                { label: 'Total Tracked', value: fmtH(totalMins), badge: 'today' },
+                { label: 'Activities', value: blocks.length, badge: 'blocks' },
+                { label: 'Avg per Block', value: fmtDuration(avg), badge: 'avg' },
+                {
+                    label: 'Top Activity', value: top ? top.action : '—',
+                    badge: top ? fmtDuration(top.endMins - top.startMins) : ''
+                },
+            ].map(c => `
+      <div class="s-card">
+        <p style="font-size:9px;color:#7aaa96;text-transform:uppercase;
+                  letter-spacing:.2em;font-weight:700;margin-bottom:.6rem;">${c.label}</p>
+        <p style="font-size:26px;font-weight:700;color:#f0faf5;
+                  line-height:1;margin-bottom:.4rem;">${c.value}</p>
+        <span style="font-size:9px;padding:2px 8px;border-radius:999px;
+                     background:rgba(77,255,170,.1);color:#4dffaa;font-weight:700;">
+          ${c.badge}
+        </span>
+      </div>`).join('');
+        })();
+
+        /* donut */
+        (function () {
+            document.getElementById('donut-total').textContent = totalMins ? fmtH(totalMins) : '0h';
+            if (!sorted.length) return;
+            new Chart(document.getElementById('donut-chart'), {
+                type: 'doughnut',
+                data: {
+                    labels: sorted.map(b => b.action),
+                    datasets: [{
+                        data: sorted.map(b => b.endMins - b.startMins),
+                        backgroundColor: sorted.map(b => b.color),
+                        borderColor: '#09100e',
+                        borderWidth: 3,
+                        hoverOffset: 8,
+                    }],
+                },
+                options: {
+                    responsive: false,
+                    cutout: '68%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => {
+                                    const pct = Math.round(ctx.parsed / totalMins * 100);
+                                    return '  ' + fmtDuration(ctx.parsed) + ' (' + pct + '%)';
+                                },
+                            },
+                            backgroundColor: '#09100e',
+                            borderColor: '#26403a',
+                            borderWidth: 1,
+                            titleColor: '#f0faf5',
+                            bodyColor: '#7aaa96',
+                            padding: 10,
+                            titleFont: { family: 'Share Tech Mono,monospace', size: 12, weight: 'bold' },
+                            bodyFont: { family: 'Share Tech Mono,monospace', size: 11 },
+                        },
+                    },
+                    animation: { animateRotate: true, duration: 700 },
+                },
+            });
+        })();
+
+        /* action list */
+        (function () {
+            const el = document.getElementById('action-list');
+            if (!sorted.length) return;
+            el.innerHTML = sorted.map(b => {
+                const mins = b.endMins - b.startMins;
+                const pct = Math.round(mins / totalMins * 100);
+                return `
+        <div class="a-row">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:10px;height:10px;border-radius:50%;flex-shrink:0;
+                        background:${b.color};box-shadow:0 0 6px ${b.color}66;"></div>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:#f0faf5;">${b.action}</div>
+              <div style="font-size:10px;color:#7aaa96;">${pct}%</div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:#7aaa96;">${fmtDuration(mins)}</div>
+        </div>
+        <div class="a-bar-wrap">
+          <div class="a-bar-fill" style="width:0%;background:${b.color};"
+               data-target="${pct}"></div>
+        </div>`;
+            }).join('');
+
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                document.querySelectorAll('.a-bar-fill').forEach(el => {
+                    el.style.width = el.dataset.target + '%';
+                });
+            }));
+        })();
+
+        /* weekly bars */
+        (function () {
+            const hours = Array.isArray(WEEK_HOURS) ? WEEK_HOURS : [0, 0, 0, 0, 0, 0, 0];
+            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            const maxH = Math.max(...hours, 0.1);
+            const MAX_PX = 130;
+            const jsDay = new Date(SELECTED_DATE + 'T00:00:00').getDay();
+            const todayIdx = jsDay === 0 ? 6 : jsDay - 1;
+
+            document.getElementById('week-bars').innerHTML = days.map((d, i) => {
+                const barH = Math.max(Math.round((hours[i] / maxH) * MAX_PX), 4);
+                const cls = i === todayIdx ? 'wbc today' : 'wbc';
+                return `
+        <div class="${cls}">
+          <div style="height:${MAX_PX}px;width:100%;display:flex;align-items:flex-end;">
+            <div class="wb" style="height:${barH}px;width:100%;">
+              <div class="wb-tip">${hours[i].toFixed(1)}h</div>
+            </div>
+          </div>
+          <span class="wl">${d}</span>
+        </div>`;
+            }).join('');
+        })();
+
+    })();
+</script>
