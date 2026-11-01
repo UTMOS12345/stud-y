@@ -39,6 +39,93 @@ def _week_hours(user, selected_date):
     return hours
 
 
+def _format_duration(minutes):
+    """Format duration in minutes to readable string."""
+    if minutes <= 0:
+        return "0 m."
+    h = minutes // 60
+    m = minutes % 60
+    if h > 0 and m > 0:
+        return f"{h} h. {m} m."
+    elif h > 0:
+        return f"{h} h."
+    else:
+        return f"{m} m."
+
+
+def _build_schedule_with_gaps(schedule):
+    """
+    Return schedule blocks with empty gaps inserted between them.
+    Used to visualize idle time in the schedule view.
+    """
+    blocks = list(schedule.blocks.select_related('action').all())
+    
+    if not blocks:
+        return []
+    
+    # Sort blocks by start time
+    blocks.sort(key=lambda b: b.start_time)
+    
+    result = []
+    
+    # Check if there's a gap before the first block
+    first_start_mins = blocks[0].start_time.hour * 60 + blocks[0].start_time.minute
+    if first_start_mins > 0:
+        result.append({
+            'is_empty': True,
+            'start_time': datetime.time(0, 0),
+            'end_time': blocks[0].start_time,
+            'title': 'Empty',
+            'duration_mins': first_start_mins,
+            'duration_formatted': _format_duration(first_start_mins),
+        })
+    
+    # Add blocks and gaps between them
+    for i, block in enumerate(blocks):
+        block_mins = _block_minutes(block)
+        result.append({
+            'is_empty': False,
+            'block': block,
+            'start_time': block.start_time,
+            'end_time': block.end_time,
+            'title': block.title,
+            'duration_mins': block_mins,
+            'duration_formatted': _format_duration(block_mins),
+        })
+        
+        # Check for gap to next block
+        if i < len(blocks) - 1:
+            next_block = blocks[i + 1]
+            gap_mins = (
+                (next_block.start_time.hour * 60 + next_block.start_time.minute) -
+                (block.end_time.hour * 60 + block.end_time.minute)
+            )
+            if gap_mins > 0:
+                result.append({
+                    'is_empty': True,
+                    'start_time': block.end_time,
+                    'end_time': next_block.start_time,
+                    'title': 'Empty',
+                    'duration_mins': gap_mins,
+                    'duration_formatted': _format_duration(gap_mins),
+                })
+    
+    # Check if there's a gap after the last block
+    last_end_mins = blocks[-1].end_time.hour * 60 + blocks[-1].end_time.minute
+    if last_end_mins < 1440:  # 24 * 60
+        remaining_mins = 1440 - last_end_mins
+        result.append({
+            'is_empty': True,
+            'start_time': blocks[-1].end_time,
+            'end_time': datetime.time(23, 59),
+            'title': 'Empty',
+            'duration_mins': remaining_mins,
+            'duration_formatted': _format_duration(remaining_mins),
+        })
+    
+    return result
+
+
 # ─── schedule view ─────────────────────────────────────────────────────────────
 
 @login_required
@@ -139,8 +226,12 @@ def schedule_view(request):
             'blockType': b.block_type,
         })
 
+    # Build schedule with gaps for display
+    schedule_with_gaps = _build_schedule_with_gaps(schedule)
+
     context = {
         'schedule':      schedule,
+        'schedule_with_gaps': schedule_with_gaps,
         'form':          form,
         'templates':     DayTemplate.objects.filter(user=request.user),
         'actions':       Action.objects.filter(user=request.user),

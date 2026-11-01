@@ -1,6 +1,6 @@
 {% load static %}
 
-{# ─── JS data — pure server-side serialisation, zero template filter tricks ─── #}
+{# ─── JS data ─── #}
 <script>
     const SCHEDULE_BLOCKS = {{ blocks_json| safe }};
     const SELECTED_DATE = "{{ selected_date|date:'Y-m-d' }}";
@@ -20,14 +20,12 @@
               transition-all text-xs font-bold uppercase tracking-widest">
             <i data-lucide="chevron-left" class="w-3 h-3"></i> Prev
         </a>
-
         <div class="flex items-center gap-3 px-6 py-2.5 rounded-xl border border-neutral bg-base-300">
             <i data-lucide="calendar" class="w-3.5 h-3.5 text-primary opacity-60"></i>
             <span class="text-sm font-bold text-base-content tracking-wide">
                 {{ selected_date|date:"D, d M Y" }}
             </span>
         </div>
-
         <a id="next-day-link" href="#" class="flex items-center gap-2 px-4 py-2 rounded-xl border border-neutral
               text-neutral-content hover:border-primary/30 hover:text-primary
               transition-all text-xs font-bold uppercase tracking-widest">
@@ -56,6 +54,23 @@
                     {{ schedule.blocks.count }} block{{ schedule.blocks.count|pluralize }} scheduled
                 </p>
             </div>
+
+            {# ── FULL DAY TOGGLE ── #}
+            <label class="flex items-center gap-2.5 cursor-pointer select-none group" id="fullday-label">
+                <div class="relative">
+                    <input type="checkbox" id="fullday-toggle" class="sr-only peer">
+                    <div class="w-9 h-5 rounded-full border border-neutral bg-base-200
+                      peer-checked:bg-primary/20 peer-checked:border-primary/40
+                      transition-all duration-200"></div>
+                    <div class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-neutral-content/40
+                      peer-checked:bg-primary peer-checked:translate-x-4
+                      transition-all duration-200"></div>
+                </div>
+                <span class="text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-content
+                     group-hover:text-primary transition-colors">
+                    Full Day
+                </span>
+            </label>
         </div>
 
         <div class="flex flex-col md:flex-row gap-8 items-center">
@@ -85,7 +100,6 @@
 
     {# ── WEEKLY BARS ── #}
     <div class="bg-base-300 border border-neutral rounded-2xl p-8 shadow-lg">
-
         <div class="flex items-start justify-between mb-8 flex-wrap gap-4">
             <div>
                 <h3 class="text-[10px] font-bold text-base-content uppercase tracking-[0.2em] mb-1">
@@ -100,9 +114,7 @@
                 <span class="text-[10px] font-bold uppercase tracking-widest text-neutral-content">Scheduled</span>
             </div>
         </div>
-
         <div class="flex items-end justify-between gap-4 px-2" style="height:180px;" id="week-bars"></div>
-
     </div>
 
 </div>
@@ -123,6 +135,15 @@
     #action-list .a-row:hover {
         background: rgba(77, 255, 170, .04);
         border-color: rgba(77, 255, 170, .12);
+    }
+
+    #action-list .a-row.a-empty {
+        opacity: .65;
+    }
+
+    #action-list .a-row.a-empty:hover {
+        background: rgba(122, 170, 150, .04);
+        border-color: rgba(122, 170, 150, .15);
     }
 
     #action-list .a-bar-wrap {
@@ -210,6 +231,12 @@
     .wbc:hover .wb-tip {
         opacity: 1;
     }
+
+    /* toggle track/thumb — peer-* via JS since we can't rely on Tailwind JIT for peer inside label */
+    #fullday-toggle:checked~div {
+        background: rgba(77, 255, 170, .15);
+        border-color: rgba(77, 255, 170, .4);
+    }
 </style>
 
 {# ─── SCRIPTS ─── #}
@@ -217,7 +244,7 @@
 <script>
     (function () {
 
-        /* helpers */
+        /* ── helpers ── */
         function fmtDuration(mins) {
             const h = Math.floor(mins / 60), m = mins % 60;
             if (h > 0 && m > 0) return h + 'h ' + m + 'm';
@@ -225,7 +252,7 @@
         }
         function fmtH(mins) { return (mins / 60).toFixed(1) + 'h'; }
 
-        /* date nav */
+        /* ── date nav ── */
         (function () {
             const base = new Date(SELECTED_DATE + 'T00:00:00');
             const prev = new Date(base); prev.setDate(prev.getDate() - 1);
@@ -235,102 +262,163 @@
             document.getElementById('next-day-link').href = '?date=' + iso(next);
         })();
 
-        /* derived */
-        const blocks = SCHEDULE_BLOCKS;
-        const totalMins = blocks.reduce((s, b) => s + (b.endMins - b.startMins), 0);
-        const sorted = [...blocks].sort((a, b) => (b.endMins - b.startMins) - (a.endMins - a.startMins));
+        /* ── build dataset — optionally with empty gaps ── */
+        const DAY_MINS = 24 * 60; // 1440
 
-        /* stat cards */
-        (function () {
-            const el = document.getElementById('stat-cards');
-            if (!blocks.length) return;
-            const avg = Math.round(totalMins / blocks.length);
-            const top = sorted[0];
-            el.innerHTML = [
-                { label: 'Total Tracked', value: fmtH(totalMins), badge: 'today' },
-                { label: 'Activities', value: blocks.length, badge: 'blocks' },
-                { label: 'Avg per Block', value: fmtDuration(avg), badge: 'avg' },
-                {
-                    label: 'Top Activity', value: top ? top.action : '—',
-                    badge: top ? fmtDuration(top.endMins - top.startMins) : ''
-                },
-            ].map(c => `
-      <div class="s-card">
-        <p style="font-size:9px;color:#7aaa96;text-transform:uppercase;
-                  letter-spacing:.2em;font-weight:700;margin-bottom:.6rem;">${c.label}</p>
-        <p style="font-size:26px;font-weight:700;color:#f0faf5;
-                  line-height:1;margin-bottom:.4rem;">${c.value}</p>
-        <span style="font-size:9px;padding:2px 8px;border-radius:999px;
-                     background:rgba(77,255,170,.1);color:#4dffaa;font-weight:700;">
-          ${c.badge}
-        </span>
-      </div>`).join('');
-        })();
+        function buildDataset(withEmpty) {
+            if (!withEmpty) {
+                // original scheduled blocks only
+                const src = [...SCHEDULE_BLOCKS].sort((a, b) => a.startMins - b.startMins);
+                return src.map(b => ({
+                    action: b.action,
+                    color: b.color,
+                    startMins: b.startMins,
+                    endMins: b.endMins,
+                    mins: b.endMins - b.startMins,
+                    empty: false,
+                }));
+            }
 
-        /* donut */
-        (function () {
-            document.getElementById('donut-total').textContent = totalMins ? fmtH(totalMins) : '0h';
-            if (!sorted.length) return;
-            new Chart(document.getElementById('donut-chart'), {
-                type: 'doughnut',
-                data: {
-                    labels: sorted.map(b => b.action),
-                    datasets: [{
-                        data: sorted.map(b => b.endMins - b.startMins),
-                        backgroundColor: sorted.map(b => b.color),
-                        borderColor: '#09100e',
-                        borderWidth: 3,
-                        hoverOffset: 8,
-                    }],
-                },
-                options: {
-                    responsive: false,
-                    cutout: '68%',
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: ctx => {
-                                    const pct = Math.round(ctx.parsed / totalMins * 100);
-                                    return '  ' + fmtDuration(ctx.parsed) + ' (' + pct + '%)';
-                                },
-                            },
-                            backgroundColor: '#09100e',
-                            borderColor: '#26403a',
-                            borderWidth: 1,
-                            titleColor: '#f0faf5',
-                            bodyColor: '#7aaa96',
-                            padding: 10,
-                            titleFont: { family: 'Share Tech Mono,monospace', size: 12, weight: 'bold' },
-                            bodyFont: { family: 'Share Tech Mono,monospace', size: 11 },
-                        },
+            // insert empty gaps around scheduled blocks
+            const src = [...SCHEDULE_BLOCKS].sort((a, b) => a.startMins - b.startMins);
+            const result = [];
+            let cursor = 0;
+            let gapIdx = 1;
+
+            for (const b of src) {
+                if (b.startMins > cursor) {
+                    result.push({
+                        action: 'Empty',
+                        color: '#26403a',
+                        startMins: cursor,
+                        endMins: b.startMins,
+                        mins: b.startMins - cursor,
+                        empty: true,
+                        label: 'Empty #' + gapIdx++,
+                    });
+                }
+                result.push({
+                    action: b.action,
+                    color: b.color,
+                    startMins: b.startMins,
+                    endMins: b.endMins,
+                    mins: b.endMins - b.startMins,
+                    empty: false,
+                });
+                cursor = b.endMins;
+            }
+
+            // trailing gap to midnight
+            if (cursor < DAY_MINS) {
+                result.push({
+                    action: 'Empty',
+                    color: '#26403a',
+                    startMins: cursor,
+                    endMins: DAY_MINS,
+                    mins: DAY_MINS - cursor,
+                    empty: true,
+                    label: 'Empty #' + gapIdx++,
+                });
+            }
+
+            return result;
+        }
+
+        /* ── chart instance (kept so we can destroy & redraw) ── */
+        let donutChart = null;
+
+        /* ── render everything ── */
+        function render(withEmpty) {
+            const dataset = buildDataset(withEmpty);
+            const scheduled = dataset.filter(d => !d.empty);
+            const totalSched = scheduled.reduce((s, d) => s + d.mins, 0);
+            const totalAll = withEmpty ? DAY_MINS : totalSched;
+
+            /* centre label: always shows scheduled time */
+            document.getElementById('donut-total').textContent = totalSched ? fmtH(totalSched) : '0h';
+
+            /* ── donut ── */
+            if (donutChart) { donutChart.destroy(); donutChart = null; }
+            if (dataset.length) {
+                donutChart = new Chart(document.getElementById('donut-chart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: dataset.map(d => d.empty ? (d.label || 'Empty') : d.action),
+                        datasets: [{
+                            data: dataset.map(d => d.mins),
+                            backgroundColor: dataset.map(d => d.empty ? '#26403a' : d.color),
+                            borderColor: '#09100e',
+                            borderWidth: dataset.map(d => d.empty ? 1 : 3),
+                            hoverOffset: dataset.map(d => d.empty ? 2 : 8),
+                        }],
                     },
-                    animation: { animateRotate: true, duration: 700 },
-                },
-            });
-        })();
+                    options: {
+                        responsive: false,
+                        cutout: '68%',
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => {
+                                        const d = dataset[ctx.dataIndex];
+                                        const pct = Math.round(d.mins / totalAll * 100);
+                                        return '  ' + fmtDuration(d.mins) + ' (' + pct + '%)';
+                                    },
+                                },
+                                backgroundColor: '#09100e',
+                                borderColor: '#26403a',
+                                borderWidth: 1,
+                                titleColor: '#f0faf5',
+                                bodyColor: '#7aaa96',
+                                padding: 10,
+                                titleFont: { family: 'Share Tech Mono,monospace', size: 12, weight: 'bold' },
+                                bodyFont: { family: 'Share Tech Mono,monospace', size: 11 },
+                            },
+                        },
+                        animation: { animateRotate: true, duration: 600 },
+                    },
+                });
+            }
 
-        /* action list */
-        (function () {
+            /* ── action list ── */
             const el = document.getElementById('action-list');
-            if (!sorted.length) return;
-            el.innerHTML = sorted.map(b => {
-                const mins = b.endMins - b.startMins;
-                const pct = Math.round(mins / totalMins * 100);
+            if (!dataset.length) { el.innerHTML = ''; return; }
+
+            // sort: scheduled by duration desc, then empties at bottom
+            const listItems = [
+                ...scheduled.sort((a, b) => b.mins - a.mins),
+                ...(withEmpty ? dataset.filter(d => d.empty) : []),
+            ];
+
+            el.innerHTML = listItems.map(d => {
+                const pct = Math.round(d.mins / totalAll * 100);
+                const dot = d.empty
+                    ? `<div style="width:10px;height:10px;border-radius:2px;flex-shrink:0;
+                       background:#26403a;border:1px solid #3a5a52;"></div>`
+                    : `<div style="width:10px;height:10px;border-radius:50%;flex-shrink:0;
+                       background:${d.color};box-shadow:0 0 6px ${d.color}66;"></div>`;
+                const nameStyle = d.empty
+                    ? 'font-size:13px;font-weight:700;color:#7aaa96;'
+                    : 'font-size:13px;font-weight:700;color:#f0faf5;';
+                const timeStyle = d.empty
+                    ? 'font-size:12px;color:#3a5a52;'
+                    : 'font-size:12px;color:#7aaa96;';
+                const barColor = d.empty ? '#26403a' : d.color;
+                const rowCls = d.empty ? 'a-row a-empty' : 'a-row';
+
                 return `
-        <div class="a-row">
+        <div class="${rowCls}">
           <div style="display:flex;align-items:center;gap:10px;">
-            <div style="width:10px;height:10px;border-radius:50%;flex-shrink:0;
-                        background:${b.color};box-shadow:0 0 6px ${b.color}66;"></div>
+            ${dot}
             <div>
-              <div style="font-size:13px;font-weight:700;color:#f0faf5;">${b.action}</div>
+              <div style="${nameStyle}">${d.empty ? (d.label || 'Empty') : d.action}</div>
               <div style="font-size:10px;color:#7aaa96;">${pct}%</div>
             </div>
           </div>
-          <div style="font-size:12px;color:#7aaa96;">${fmtDuration(mins)}</div>
+          <div style="${timeStyle}">${fmtDuration(d.mins)}</div>
         </div>
         <div class="a-bar-wrap">
-          <div class="a-bar-fill" style="width:0%;background:${b.color};"
+          <div class="a-bar-fill" style="width:0%;background:${barColor};"
                data-target="${pct}"></div>
         </div>`;
             }).join('');
@@ -340,9 +428,37 @@
                     el.style.width = el.dataset.target + '%';
                 });
             }));
+        }
+
+        /* ── stat cards (always based on scheduled only) ── */
+        (function () {
+            const el = document.getElementById('stat-cards');
+            if (!SCHEDULE_BLOCKS.length) return;
+            const totalMins = SCHEDULE_BLOCKS.reduce((s, b) => s + (b.endMins - b.startMins), 0);
+            const sorted = [...SCHEDULE_BLOCKS].sort((a, b) => (b.endMins - b.startMins) - (a.endMins - a.startMins));
+            const avg = Math.round(totalMins / SCHEDULE_BLOCKS.length);
+            const top = sorted[0];
+            el.innerHTML = [
+                { label: 'Total Tracked', value: fmtH(totalMins), badge: 'today' },
+                { label: 'Activities', value: SCHEDULE_BLOCKS.length, badge: 'blocks' },
+                { label: 'Avg per Block', value: fmtDuration(avg), badge: 'avg' },
+                {
+                    label: 'Top Activity', value: top ? top.action : '—',
+                    badge: top ? fmtDuration(top.endMins - top.startMins) : ''
+                },
+            ].map(c => `
+      <div class="s-card">
+        <p style="font-size:9px;color:#7aaa96;text-transform:uppercase;
+                  letter-spacing:.2em;font-weight:700;margin-bottom:.6rem;">${c.label}</p>
+        <p style="font-size:26px;font-weight:700;color:#f0faf5;line-height:1;margin-bottom:.4rem;">${c.value}</p>
+        <span style="font-size:9px;padding:2px 8px;border-radius:999px;
+                     background:rgba(77,255,170,.1);color:#4dffaa;font-weight:700;">
+          ${c.badge}
+        </span>
+      </div>`).join('');
         })();
 
-        /* weekly bars */
+        /* ── weekly bars ── */
         (function () {
             const hours = Array.isArray(WEEK_HOURS) ? WEEK_HOURS : [0, 0, 0, 0, 0, 0, 0];
             const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -350,7 +466,6 @@
             const MAX_PX = 130;
             const jsDay = new Date(SELECTED_DATE + 'T00:00:00').getDay();
             const todayIdx = jsDay === 0 ? 6 : jsDay - 1;
-
             document.getElementById('week-bars').innerHTML = days.map((d, i) => {
                 const barH = Math.max(Math.round((hours[i] / maxH) * MAX_PX), 4);
                 const cls = i === todayIdx ? 'wbc today' : 'wbc';
@@ -365,6 +480,35 @@
         </div>`;
             }).join('');
         })();
+
+        /* ── toggle ── */
+        const toggle = document.getElementById('fullday-toggle');
+        const thumb = toggle.nextElementSibling && toggle.nextElementSibling.querySelector
+            ? toggle.nextElementSibling.querySelector('div')
+            : null;
+
+        function syncToggleStyle() {
+            const track = toggle.nextElementSibling;
+            if (!track) return;
+            const dot = track.querySelector('div');
+            if (toggle.checked) {
+                track.style.background = 'rgba(77,255,170,.15)';
+                track.style.borderColor = 'rgba(77,255,170,.4)';
+                if (dot) { dot.style.background = '#4dffaa'; dot.style.transform = 'translateX(16px)'; }
+            } else {
+                track.style.background = '';
+                track.style.borderColor = '';
+                if (dot) { dot.style.background = ''; dot.style.transform = ''; }
+            }
+        }
+
+        toggle.addEventListener('change', function () {
+            syncToggleStyle();
+            render(this.checked);
+        });
+
+        /* ── initial render ── */
+        render(false);
 
     })();
 </script>
