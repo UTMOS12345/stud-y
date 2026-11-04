@@ -1,14 +1,18 @@
 import json
+import logging
 import datetime
 from datetime import date, timedelta
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
-from django.db import transaction
+from django.db import transaction, IntegrityError
+from django.core.exceptions import ValidationError
 
 from .models import DaySchedule, DayTemplate, Action, ScheduleBlock, TemplateBlock
 from .forms import ScheduleBlockForm
+
+logger = logging.getLogger(__name__)
 
 
 # ─── helpers ──────────────────────────────────────────────────────────────────
@@ -136,13 +140,33 @@ def _save_action(user, action_type, data):
     action_id = data.get('action_id')
     if not name:
         return JsonResponse({'error': 'Name required'}, status=400)
-    if action_type == 'update_action' and action_id:
-        Action.objects.filter(id=action_id, user=user).update(
-            name=name, color=color, icon_name=icon
-        )
-    else:
-        Action.objects.create(user=user, name=name, color=color, icon_name=icon)
+    try:
+        with transaction.atomic():
+            if action_type == 'update_action' and action_id:
+                Action.objects.filter(id=action_id, user=user).update(
+                    name=name, color=color, icon_name=icon
+                )
+            else:
+                Action.objects.create(user=user, name=name, color=color, icon_name=icon)
+    except IntegrityError:
+        return JsonResponse({'error': f"You already have an action called '{name}'"}, status=400)
     return JsonResponse({'success': True})
+
+
+def _error_text(e):
+    """Readable text for a ValidationError, without the ['...'] list formatting."""
+    if isinstance(e, ValidationError):
+        return " ".join(e.messages)
+    return "Something went wrong, please try again."
+
+
+def _json_error(e):
+    if isinstance(e, json.JSONDecodeError):
+        return JsonResponse({'error': 'Bad request'}, status=400)
+    if isinstance(e, ValidationError):
+        return JsonResponse({'error': _error_text(e)}, status=400)
+    logger.exception("Schedule request failed")
+    return JsonResponse({'error': _error_text(e)}, status=500)
 
 
 # ─── schedule view ─────────────────────────────────────────────────────────────
@@ -203,8 +227,10 @@ def schedule_view(request):
                         'message': f"Applied {applied} blocks. {skipped} skipped (overlaps)."
                     })
 
+                return JsonResponse({'error': 'Unknown action'}, status=400)
+
             except Exception as e:
-                return JsonResponse({'error': str(e)}, status=400)
+                return _json_error(e)
 
         # Standard form submission (add / edit block)
         block_id = request.POST.get('block_id')
@@ -220,7 +246,9 @@ def schedule_view(request):
                     new_block.save()
                 return redirect(f"{request.path}?date={selected_date.isoformat()}")
             except Exception as e:
-                form.add_error(None, str(e))
+                if not isinstance(e, ValidationError):
+                    logger.exception("Could not save block")
+                form.add_error(None, _error_text(e))
 
     # ── GET ───────────────────────────────────────────────────────────────────
     else:
@@ -294,8 +322,10 @@ def template_detail_view(request, template_id):
                 elif action_type in ('create_action', 'update_action'):
                     return _save_action(request.user, action_type, data)
 
+                return JsonResponse({'error': 'Unknown action'}, status=400)
+
             except Exception as e:
-                return JsonResponse({'error': str(e)}, status=400)
+                return _json_error(e)
 
         # Standard form — add / edit TemplateBlock
         block_id = request.POST.get('block_id')
@@ -332,7 +362,9 @@ def template_detail_view(request, template_id):
                     )
                 return redirect('template_detail', template_id=template.id)
             except Exception as e:
-                form.add_error(None, str(e))
+                if not isinstance(e, ValidationError):
+                    logger.exception("Could not save block")
+                form.add_error(None, _error_text(e))
 
     # ── GET ───────────────────────────────────────────────────────────────────
     else:
