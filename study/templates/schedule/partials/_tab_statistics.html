@@ -35,7 +35,7 @@
 
     {# ── STAT CARDS ── #}
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8" id="stat-cards">
-        {% if not schedule.blocks.all %}
+        {% if not blocks %}
         <div class="col-span-4 text-center py-8 text-neutral-content text-sm opacity-60">
             No blocks scheduled for this day.
         </div>
@@ -51,7 +51,7 @@
                     Today's Distribution
                 </h3>
                 <p class="text-[10px] text-neutral-content font-mono opacity-60">
-                    {{ schedule.blocks.count }} block{{ schedule.blocks.count|pluralize }} scheduled
+                    {{ blocks|length }} block{{ blocks|length|pluralize }} scheduled
                 </p>
             </div>
 
@@ -88,7 +88,7 @@
 
             {# Action rows — populated by JS #}
             <div class="flex-1 w-full" id="action-list">
-                {% if not schedule.blocks.all %}
+                {% if not blocks %}
                 <p class="text-sm text-neutral-content opacity-50 text-center py-8">
                     No activities recorded yet.
                 </p>

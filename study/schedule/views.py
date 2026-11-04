@@ -56,18 +56,16 @@ def _format_duration(minutes):
         return f"{m} m."
 
 
-def _build_schedule_with_gaps(schedule):
+def _build_schedule_with_gaps(blocks):
     """
     Return schedule blocks with empty gaps inserted between them.
     Used to visualize idle time in the schedule view.
     """
-    blocks = list(schedule.blocks.select_related('action').all())
-    
     if not blocks:
         return []
     
     # Sort blocks by start time
-    blocks.sort(key=lambda b: b.start_time)
+    blocks = sorted(blocks, key=lambda b: b.start_time)
     
     result = []
     
@@ -216,9 +214,12 @@ def schedule_view(request):
     else:
         form = ScheduleBlockForm(user=request.user)
 
+    # Load the blocks once and reuse them for the list, gaps and statistics
+    blocks = list(schedule.blocks.select_related('action'))
+
     # Serialize blocks to JSON for the statistics template
     blocks_data = []
-    for b in schedule.blocks.select_related('action').all():
+    for b in blocks:
         blocks_data.append({
             'action':    b.action.name  if b.action else '',
             'color':     b.action.color if b.action else '#3B82F6',
@@ -230,10 +231,11 @@ def schedule_view(request):
         })
 
     # Build schedule with gaps for display
-    schedule_with_gaps = _build_schedule_with_gaps(schedule)
+    schedule_with_gaps = _build_schedule_with_gaps(blocks)
 
     context = {
         'schedule':      schedule,
+        'blocks':        blocks,
         'schedule_with_gaps': schedule_with_gaps,
         'form':          form,
         'templates':     DayTemplate.objects.filter(user=request.user),
