@@ -142,7 +142,6 @@ STATIC_URL = 'static/'
 
 STATICFILES_DIRS = [
     BASE_DIR / "static",
-    "/var/www/static/",
 ]
 
 AUTH_USER_MODEL = 'accounts.User'
@@ -157,9 +156,8 @@ SOCIALACCOUNT_ADAPTER = 'allauth.socialaccount.adapter.DefaultSocialAccountAdapt
 ACCOUNT_USER_MODEL_USERNAME_FIELD = 'username'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = True          # you have username in REQUIRED_FIELDS
-ACCOUNT_AUTHENTICATION_METHOD = 'email'   # already have this
+ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']  # username is in REQUIRED_FIELDS
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'  # set to 'mandatory' later with email backend
 
 LOGIN_URL = 'login'
