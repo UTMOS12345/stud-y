@@ -24,19 +24,22 @@ def _block_minutes(block):
 def _week_hours(user, selected_date):
     """
     Return a list of 7 floats (Mon–Sun) representing scheduled hours
-    for the week that contains selected_date.
+    for the week that contains selected_date. Uses one query for the whole week.
     """
     week_start = selected_date - timedelta(days=selected_date.weekday())
-    hours = []
-    for i in range(7):
-        day = week_start + timedelta(days=i)
-        sched = DaySchedule.objects.filter(user=user, date=day).first()
-        mins = 0
-        if sched:
-            for b in sched.blocks.select_related('action').all():
-                mins += _block_minutes(b)
-        hours.append(round(mins / 60, 1))
-    return hours
+    week_end = week_start + timedelta(days=6)
+
+    minutes_by_day = [0] * 7
+    rows = ScheduleBlock.objects.filter(
+        schedule__user=user,
+        schedule__date__range=(week_start, week_end),
+    ).values_list('schedule__date', 'start_time', 'end_time')
+
+    for day, start, end in rows:
+        mins = (end.hour * 60 + end.minute) - (start.hour * 60 + start.minute)
+        minutes_by_day[(day - week_start).days] += mins
+
+    return [round(m / 60, 1) for m in minutes_by_day]
 
 
 def _format_duration(minutes):
