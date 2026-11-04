@@ -5,6 +5,7 @@ from datetime import date, timedelta
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+from django.db import transaction
 
 from .models import DaySchedule, DayTemplate, Action, ScheduleBlock, TemplateBlock
 from .forms import ScheduleBlockForm
@@ -137,7 +138,9 @@ def schedule_view(request):
     except (ValueError, TypeError):
         selected_date = date.today()
 
-    schedule, _ = DaySchedule.objects.get_or_create(user=request.user, date=selected_date)
+    # Only look the day up here. A row is created when the first block is added,
+    # so just browsing dates doesn't fill the table with empty days.
+    schedule = DaySchedule.objects.filter(user=request.user, date=selected_date).first()
 
     # ── POST ──────────────────────────────────────────────────────────────────
     if request.method == 'POST':
@@ -166,7 +169,8 @@ def schedule_view(request):
                     return JsonResponse({'success': True})
 
                 elif action_type == 'delete_block':
-                    schedule.blocks.filter(id=data.get('block_id')).delete()
+                    if schedule:
+                        schedule.blocks.filter(id=data.get('block_id')).delete()
                     return JsonResponse({'success': True})
 
                 elif action_type == 'delete_template':
@@ -179,6 +183,8 @@ def schedule_view(request):
                     name = data.get('template_name', '').strip()
                     if not name:
                         return JsonResponse({'error': 'Name required'}, status=400)
+                    if not schedule or not schedule.blocks.exists():
+                        return JsonResponse({'error': 'This day has no blocks to save'}, status=400)
                     schedule.create_template_from_day(name)
                     return JsonResponse({'success': True})
 
@@ -199,13 +205,16 @@ def schedule_view(request):
 
         # Standard form submission (add / edit block)
         block_id = request.POST.get('block_id')
-        instance = schedule.blocks.filter(id=block_id).first() if block_id else None
+        instance = schedule.blocks.filter(id=block_id).first() if (block_id and schedule) else None
         form = ScheduleBlockForm(request.POST, user=request.user, instance=instance)
         if form.is_valid():
-            new_block          = form.save(commit=False)
-            new_block.schedule = schedule
+            new_block = form.save(commit=False)
             try:
-                new_block.save()
+                with transaction.atomic():
+                    if schedule is None:
+                        schedule = DaySchedule.objects.create(user=request.user, date=selected_date)
+                    new_block.schedule = schedule
+                    new_block.save()
                 return redirect(f"{request.path}?date={selected_date.isoformat()}")
             except Exception as e:
                 form.add_error(None, str(e))
@@ -215,7 +224,9 @@ def schedule_view(request):
         form = ScheduleBlockForm(user=request.user)
 
     # Load the blocks once and reuse them for the list, gaps and statistics
-    blocks = list(schedule.blocks.select_related('action'))
+    blocks = list(schedule.blocks.select_related('action')) if schedule else []
+    if schedule is None:
+        schedule = DaySchedule(user=request.user, date=selected_date)  # not saved, used for the date only
 
     # Serialize blocks to JSON for the statistics template
     blocks_data = []
