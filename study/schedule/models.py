@@ -47,10 +47,6 @@ class DaySchedule(models.Model):
             )
 
             for index, block in enumerate(self.blocks.all()):
-                
-                if block.action is None:
-                    continue 
-
                 TemplateBlock.objects.create(
                     template=new_template,
                     action=block.action,
@@ -201,7 +197,7 @@ class TemplateBlock(models.Model):
         on_delete=models.CASCADE, 
         related_name="template_blocks" 
     )
-    action = models.ForeignKey(Action, on_delete=models.PROTECT, related_name='template_blocks')
+    action = models.ForeignKey(Action, on_delete=models.PROTECT, related_name='template_blocks', null=True, blank=True)
     
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
