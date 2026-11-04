@@ -110,7 +110,7 @@ The front end uses Django templates with [Tailwind CSS](https://tailwindcss.com)
 - [ ] Link Pomodoro sessions to schedule blocks automatically
 - [x] Move `SECRET_KEY`, the database password and `DEBUG` to environment variables
 - [x] Add `django-allauth` and `psycopg2` to `requirements.txt`
-- [ ] Stop tracking `node_modules/` and `__pycache__/` in git
+- [x] Stop tracking `node_modules/` and `__pycache__/` in git
 - [ ] Reminders and notifications before a block starts
 - [ ] Mobile-friendly layout
 - [ ] Tests for the schedule and Pomodoro logic

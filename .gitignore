@@ -3,3 +3,6 @@ node_modules/
 .venv/
 study/static/css/src/output.css
 .env
+__pycache__/
+*.pyc
+studyv/
