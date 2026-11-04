@@ -214,5 +214,31 @@ class TemplateBlock(models.Model):
     
     order = models.PositiveSmallIntegerField(default=0)
 
+    def clean(self):
+        # Same rules as ScheduleBlock: end after start, no overlaps inside one template
+        if self.start_time and self.end_time:
+            if self.start_time >= self.end_time:
+                raise ValidationError("End time must be after start time.")
+
+            if self.template_id:
+                overlapping_blocks = TemplateBlock.objects.filter(
+                    template=self.template,
+                    start_time__lt=self.end_time,
+                    end_time__gt=self.start_time
+                )
+                if self.pk:
+                    overlapping_blocks = overlapping_blocks.exclude(pk=self.pk)
+
+                conflict = overlapping_blocks.first()
+                if conflict:
+                    raise ValidationError(
+                        f"Overlaps with existing block: '{conflict.title}' "
+                        f"({conflict.start_time} - {conflict.end_time})"
+                    )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
     class Meta:
         ordering = ['order', 'start_time']
