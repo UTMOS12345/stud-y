@@ -117,9 +117,11 @@ def _build_schedule_with_gaps(blocks):
                 })
     
     # Check if there's a gap after the last block
+    # The day is shown as ending at 23:59, so count the last gap up to 23:59 too
     last_end_mins = blocks[-1].end_time.hour * 60 + blocks[-1].end_time.minute
-    if last_end_mins < 1440:  # 24 * 60
-        remaining_mins = 1440 - last_end_mins
+    day_end_mins = 23 * 60 + 59
+    if last_end_mins < day_end_mins:
+        remaining_mins = day_end_mins - last_end_mins
         result.append({
             'is_empty': True,
             'start_time': blocks[-1].end_time,
