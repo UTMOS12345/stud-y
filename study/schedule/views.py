@@ -128,6 +128,23 @@ def _build_schedule_with_gaps(blocks):
     return result
 
 
+def _save_action(user, action_type, data):
+    """Create or update an Action from the JSON sent by the schedule / template pages."""
+    name      = data.get('name', '').strip()
+    color     = data.get('color', '#3B82F6')
+    icon      = data.get('icon_name', 'activity')
+    action_id = data.get('action_id')
+    if not name:
+        return JsonResponse({'error': 'Name required'}, status=400)
+    if action_type == 'update_action' and action_id:
+        Action.objects.filter(id=action_id, user=user).update(
+            name=name, color=color, icon_name=icon
+        )
+    else:
+        Action.objects.create(user=user, name=name, color=color, icon_name=icon)
+    return JsonResponse({'success': True})
+
+
 # ─── schedule view ─────────────────────────────────────────────────────────────
 
 @login_required
@@ -152,21 +169,7 @@ def schedule_view(request):
                 action_type = data.get('action')
 
                 if action_type in ('create_action', 'update_action'):
-                    name      = data.get('name', '').strip()
-                    color     = data.get('color', '#3B82F6')
-                    icon      = data.get('icon_name', 'activity')
-                    action_id = data.get('action_id')
-                    if not name:
-                        return JsonResponse({'error': 'Name required'}, status=400)
-                    if action_type == 'update_action' and action_id:
-                        Action.objects.filter(id=action_id, user=request.user).update(
-                            name=name, color=color, icon_name=icon
-                        )
-                    else:
-                        Action.objects.create(
-                            user=request.user, name=name, color=color, icon_name=icon
-                        )
-                    return JsonResponse({'success': True})
+                    return _save_action(request.user, action_type, data)
 
                 elif action_type == 'delete_block':
                     if schedule:
@@ -289,21 +292,7 @@ def template_detail_view(request, template_id):
                     return JsonResponse({'success': True})
 
                 elif action_type in ('create_action', 'update_action'):
-                    name      = data.get('name', '').strip()
-                    color     = data.get('color', '#3B82F6')
-                    icon      = data.get('icon_name', 'activity')
-                    action_id = data.get('action_id')
-                    if not name:
-                        return JsonResponse({'error': 'Name required'}, status=400)
-                    if action_type == 'update_action' and action_id:
-                        Action.objects.filter(id=action_id, user=request.user).update(
-                            name=name, color=color, icon_name=icon
-                        )
-                    else:
-                        Action.objects.create(
-                            user=request.user, name=name, color=color, icon_name=icon
-                        )
-                    return JsonResponse({'success': True})
+                    return _save_action(request.user, action_type, data)
 
             except Exception as e:
                 return JsonResponse({'error': str(e)}, status=400)
