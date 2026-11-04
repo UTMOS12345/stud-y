@@ -26,13 +26,8 @@ COMMON_TIMEZONES = [
 @login_required
 def settings_view(request, section='profile'):
     """Main settings dispatcher"""
-    try:
-        # We fetch the profile linked to the current user
-        profile = request.user.profile
-    except Profile.DoesNotExist:
-        logger.error(f"Profile missing for user {request.user.pk}")
-        messages.error(request, 'Profile not found. Please contact support.')
-        return redirect('dashboard')
+    # Users made before the signal existed (e.g. createsuperuser) may have no profile yet
+    profile, _ = Profile.objects.get_or_create(user=request.user)
 
     if request.method == 'POST':
         # Determine which section we are saving based on the URL or a hidden field

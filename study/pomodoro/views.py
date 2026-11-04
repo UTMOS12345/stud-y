@@ -7,7 +7,7 @@ from accounts.models import Profile
 
 @login_required
 def pomodoro(request):
-    profile = Profile.objects.get(user=request.user)
+    profile, _ = Profile.objects.get_or_create(user=request.user)
 
     context = {
         'pomodoro_time': profile.default_pomodoro_duration,
