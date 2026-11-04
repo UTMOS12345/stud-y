@@ -44,7 +44,7 @@ git clone https://github.com/UTMOS12345/stud-y
 cd stud-y
 
 python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt django-allauth psycopg2-binary
+pip install -r requirements.txt
 
 npm install
 ```
@@ -109,7 +109,7 @@ The front end uses Django templates with [Tailwind CSS](https://tailwindcss.com)
 - [ ] Finish the statistics tab with real charts (daily, weekly and per subject)
 - [ ] Link Pomodoro sessions to schedule blocks automatically
 - [x] Move `SECRET_KEY`, the database password and `DEBUG` to environment variables
-- [ ] Add `django-allauth` and `psycopg2` to `requirements.txt`
+- [x] Add `django-allauth` and `psycopg2` to `requirements.txt`
 - [ ] Stop tracking `node_modules/` and `__pycache__/` in git
 - [ ] Reminders and notifications before a block starts
 - [ ] Mobile-friendly layout
