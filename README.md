@@ -49,14 +49,20 @@ pip install -r requirements.txt django-allauth psycopg2-binary
 npm install
 ```
 
-Create the database and user that `study/study/settings.py` expects:
+Create the database and user:
 
 ```sql
 CREATE USER planner_user WITH PASSWORD 'your-password';
 CREATE DATABASE planner_db OWNER planner_user;
 ```
 
-Then set the same password in `DATABASES` in `study/study/settings.py`, and run the migrations:
+Copy `.env.example` to `.env` next to `requirements.txt`, and fill in `SECRET_KEY` and `DB_PASSWORD`:
+
+```bash
+cp .env.example .env
+```
+
+Then run the migrations:
 
 ```bash
 cd study
@@ -102,7 +108,7 @@ The front end uses Django templates with [Tailwind CSS](https://tailwindcss.com)
 
 - [ ] Finish the statistics tab with real charts (daily, weekly and per subject)
 - [ ] Link Pomodoro sessions to schedule blocks automatically
-- [ ] Move `SECRET_KEY`, the database password and `DEBUG` to environment variables
+- [x] Move `SECRET_KEY`, the database password and `DEBUG` to environment variables
 - [ ] Add `django-allauth` and `psycopg2` to `requirements.txt`
 - [ ] Stop tracking `node_modules/` and `__pycache__/` in git
 - [ ] Reminders and notifications before a block starts
