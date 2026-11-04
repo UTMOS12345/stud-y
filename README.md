@@ -113,7 +113,8 @@ The front end uses Django templates with [Tailwind CSS](https://tailwindcss.com)
 - [x] Stop tracking `node_modules/` and `__pycache__/` in git
 - [ ] Reminders and notifications before a block starts
 - [ ] Mobile-friendly layout
-- [ ] Tests for the schedule and Pomodoro logic
+- [x] Tests for the schedule and login (`python manage.py test`)
+- [ ] Tests for the Pomodoro timer
 - [ ] Deploy a public demo
 
 ## Maintainers
