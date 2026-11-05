@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from django.test import TestCase
 from django.urls import reverse
 
@@ -6,6 +7,7 @@ from .models import Profile, User
 
 class LoginViewTest(TestCase):
     def setUp(self):
+        cache.clear()
         self.user = User.objects.create_user(username='t', email='t@t.com', password='pw12345!x')
 
     def test_login_page_status_code(self):
@@ -30,6 +32,25 @@ class LoginViewTest(TestCase):
         self.client.force_login(self.user)
         response = self.client.get(reverse('signup'))
         self.assertRedirects(response, reverse('dashboard'), fetch_redirect_response=False)
+
+    def test_too_many_wrong_passwords_locks_login(self):
+        url = reverse('login')
+        for _ in range(5):
+            self.assertEqual(self.client.post(url, {'email': 't@t.com', 'password': 'wrong'}).status_code, 200)
+        # even the right password is refused while locked
+        response = self.client.post(url, {'email': 't@t.com', 'password': 'pw12345!x'})
+        self.assertEqual(response.status_code, 429)
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+    def test_successful_login_resets_failures(self):
+        url = reverse('login')
+        for _ in range(4):
+            self.client.post(url, {'email': 't@t.com', 'password': 'wrong'})
+        self.assertEqual(self.client.post(url, {'email': 't@t.com', 'password': 'pw12345!x'}).status_code, 302)
+        self.client.logout()
+        for _ in range(4):
+            self.client.post(url, {'email': 't@t.com', 'password': 'wrong'})
+        self.assertEqual(self.client.post(url, {'email': 't@t.com', 'password': 'pw12345!x'}).status_code, 302)
 
     def test_pages_work_without_profile(self):
         Profile.objects.filter(user=self.user).delete()
