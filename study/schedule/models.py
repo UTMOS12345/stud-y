@@ -46,10 +46,11 @@ class DaySchedule(models.Model):
                 description=description
             )
 
-            for index, block in enumerate(self.blocks.all()):
-                TemplateBlock.objects.create(
+            # One INSERT for all blocks. They come from a valid day, so no extra checks needed.
+            TemplateBlock.objects.bulk_create([
+                TemplateBlock(
                     template=new_template,
-                    action=block.action,
+                    action_id=block.action_id,
                     title=block.title,
                     description=block.description,
                     start_time=block.start_time,
@@ -57,7 +58,9 @@ class DaySchedule(models.Model):
                     order=index,
                     block_type=block.block_type
                 )
-            
+                for index, block in enumerate(self.blocks.all())
+            ])
+
             return new_template
 
 class ScheduleBlock(models.Model):
@@ -156,34 +159,35 @@ class DayTemplate(models.Model):
     description = models.TextField(blank=True, null=True)
 
     def apply_to_date_merge(self, target_date):
+        """Copy this template's blocks into target_date, skipping any that overlap.
+        Returns (applied_count, skipped_count)."""
         with transaction.atomic():
-            # Get the schedule for that specific day
-            from .models import DaySchedule, ScheduleBlock # local import to avoid circularity if needed
             schedule, _ = DaySchedule.objects.get_or_create(user=self.user, date=target_date)
 
-            applied_count = 0
+            # (start, end) of everything already on that day, loaded once
+            taken = list(schedule.blocks.values_list('start_time', 'end_time'))
+            new_blocks = []
             skipped_count = 0
 
             for t_block in self.template_blocks.all():
-                new_block = ScheduleBlock(
-                    schedule=schedule,
-                    action=t_block.action,
-                    title=t_block.title,
-                    description=t_block.description,
-                    start_time=t_block.start_time,
-                    end_time=t_block.end_time,
-                    block_type=t_block.block_type # Ensure this matches
-                )
-            
-                try:
-                    new_block.full_clean() 
-                    new_block.save()
-                    applied_count += 1
-                except ValidationError:
+                start, end = t_block.start_time, t_block.end_time
+                overlaps = any(start < t_end and end > t_start for t_start, t_end in taken)
+                if start >= end or overlaps:
                     skipped_count += 1
                     continue
-        
-            return applied_count, skipped_count
+                taken.append((start, end))
+                new_blocks.append(ScheduleBlock(
+                    schedule=schedule,
+                    action_id=t_block.action_id,
+                    title=t_block.title,
+                    description=t_block.description,
+                    start_time=start,
+                    end_time=end,
+                    block_type=t_block.block_type
+                ))
+
+            ScheduleBlock.objects.bulk_create(new_blocks)
+            return len(new_blocks), skipped_count
 
     def __str__(self):
         return self.name

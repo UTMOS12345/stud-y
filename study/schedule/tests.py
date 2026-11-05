@@ -152,6 +152,20 @@ class TemplateTests(ScheduleTestCase):
         template = block.schedule.create_template_from_day('Copy')
         self.assertEqual(template.template_blocks.count(), 2)
 
+    def test_template_copy_and_apply_use_few_queries(self):
+        day = datetime.date(2026, 1, 5)
+        for h in range(6, 18):
+            self.add_block(day, T(h), T(h, 30), title=f'b{h}')
+        schedule = DaySchedule.objects.get(date=day)
+        with self.assertNumQueries(6):  # same count for any number of blocks
+            template = schedule.create_template_from_day('Busy day')
+        self.assertEqual(template.template_blocks.count(), 12)
+        with self.assertNumQueries(9):  # same count for any number of blocks
+            applied, skipped = template.apply_to_date_merge(datetime.date(2026, 1, 9))
+        self.assertEqual((applied, skipped), (12, 0))
+        # applying again to the same day skips everything
+        self.assertEqual(template.apply_to_date_merge(datetime.date(2026, 1, 9)), (0, 12))
+
     def test_apply_template_skips_overlaps(self):
         TemplateBlock.objects.create(template=self.template, action=self.action,
                                      title='A', start_time=T(9), end_time=T(10))
