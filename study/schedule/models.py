@@ -151,8 +151,7 @@ class BlockSession(models.Model):
             return self.end_time - self.start_time
         return None
 class DayTemplate(models.Model):
-    # ADD THESE FIELDS:
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='templates', null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='templates')
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
 
