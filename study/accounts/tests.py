@@ -94,3 +94,21 @@ class PomodoroSettingsTest(TestCase):
         self.assertEqual(profile.default_long_break_duration, 15)
         self.assertEqual(profile.default_long_break_interval, 4)
         self.assertEqual(profile.default_pomodoro_duration, 25)
+
+
+class SettingsUrlTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='t', email='t@t.com', password='pw12345!x')
+        self.client.force_login(self.user)
+
+    def test_settings_root_opens_profile(self):
+        response = self.client.get('/settings/')
+        self.assertRedirects(response, reverse('settings:profile'))
+
+    def test_every_section_loads(self):
+        for section in ['profile', 'pomodoro', 'preferences', 'security', 'about']:
+            self.assertEqual(self.client.get(reverse(f'settings:{section}')).status_code, 200, section)
+
+    def test_post_to_about_redirects_back(self):
+        response = self.client.post(reverse('settings:about'))
+        self.assertRedirects(response, reverse('settings:about'))

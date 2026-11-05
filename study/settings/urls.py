@@ -1,11 +1,12 @@
 from django.urls import path
+from django.views.generic import RedirectView
 from . import views
 
 app_name = 'settings'
 
 urlpatterns = [
-    # Main settings page with section parameter
-    path('', views.profile_settings, name='profile'),
+    # /settings/ opens the profile section
+    path('', RedirectView.as_view(pattern_name='settings:profile'), name='index'),
     
     # Individual section URLs
     path('profile/', views.profile_settings, name='profile'),

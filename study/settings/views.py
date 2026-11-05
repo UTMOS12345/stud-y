@@ -51,7 +51,9 @@ def settings_view(request, section='profile'):
             return handle_pomodoro_post(request, profile)
         elif section == 'preferences':
             return handle_preferences_post(request, profile)
-        
+        # Sections without a form: send the user back instead of re-rendering on POST
+        return redirect(f'settings:{section}')
+
     context = {
         'profile': profile,
         'user': request.user,
