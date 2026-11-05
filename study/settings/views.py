@@ -2,7 +2,8 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.exceptions import ValidationError
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, update_session_auth_hash
+from django.contrib.auth.forms import PasswordChangeForm
 import logging
 import pytz
 
@@ -51,6 +52,19 @@ def settings_view(request, section='profile'):
             return handle_pomodoro_post(request, profile)
         elif section == 'preferences':
             return handle_preferences_post(request, profile)
+        elif section == 'security':
+            password_form = PasswordChangeForm(request.user, request.POST)
+            if password_form.is_valid():
+                user = password_form.save()
+                update_session_auth_hash(request, user)  # stay logged in after the change
+                logger.info(f"User {user.pk} changed their password.")
+                messages.success(request, '✓ password changed!')
+                return redirect('settings:security')
+            # fall through and show the form with its errors
+            return render(request, 'settings/settings_page.html', {
+                'profile': profile, 'user': request.user, 'active_section': section,
+                'timezones': COMMON_TIMEZONES, 'password_form': password_form,
+            })
         # Sections without a form: send the user back instead of re-rendering on POST
         return redirect(f'settings:{section}')
 

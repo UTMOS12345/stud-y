@@ -112,3 +112,16 @@ class SettingsUrlTest(TestCase):
     def test_post_to_about_redirects_back(self):
         response = self.client.post(reverse('settings:about'))
         self.assertRedirects(response, reverse('settings:about'))
+
+    def test_change_password(self):
+        url = reverse('settings:security')
+        response = self.client.post(url, {'old_password': 'wrong', 'new_password1': 'NewPass123!x', 'new_password2': 'NewPass123!x'})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'incorrectly')
+
+        response = self.client.post(url, {'old_password': 'pw12345!x', 'new_password1': 'NewPass123!x', 'new_password2': 'NewPass123!x'}, follow=True)
+        self.assertRedirects(response, url)
+        # still logged in, and the success message is shown
+        self.assertContains(response, 'password changed')
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('NewPass123!x'))

@@ -152,6 +152,16 @@
 
     <!-- Main Content Area -->
     <main class="flex-1 overflow-y-auto">
+        {% if messages %}
+        <div class="px-12 pt-8 space-y-2 max-w-2xl">
+            {% for message in messages %}
+            <div class="px-4 py-3 rounded-lg border text-[12px]
+                        {% if message.tags == 'error' %}border-error/40 text-error bg-error/5{% else %}border-primary/40 text-primary bg-primary/5{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
         {% if active_section == 'profile' %}
         {% include "settings/profile_section.html" %}
         {% elif active_section == 'pomodoro' %}
