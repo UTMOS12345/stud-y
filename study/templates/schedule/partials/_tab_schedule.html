@@ -1,61 +1,4 @@
 {% load tz %}
-<!DOCTYPE html>
-<html lang="en-GB" data-theme="studyTheme">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/themes/dark.css">
-    <style type="text/tailwindcss">
-        .time-field::-webkit-calendar-picker-indicator,
-        .time-field::-webkit-inner-spin-button,
-        .time-field::-webkit-clear-button {
-            display: none;
-            -webkit-appearance: none;
-        }
-        .time-field {
-            letter-spacing: 0.1em;
-        }
-
-        .time-field:focus {
-            background-color: var(--color-base-300);
-        }
-
-        @layer components {
-            .solid-card {
-                @apply rounded-[2rem] p-8 border border-white/5 transition-all duration-300 w-full shadow-2xl;
-            }
-            
-            /* Active highlight: Bright white border */
-            .solid-card.active {
-                @apply border-white ring-4 ring-white/10 bg-slate-700;
-            }
-
-            .scrollbar-hide::-webkit-scrollbar { display: none; }
-            .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-            
-            /* Ensure smooth transitions for progress bars */
-            .progress-bar-fill {
-                @apply h-full transition-all duration-1000 ease-in-out;
-            }
-        }
-        /* Removes the AM/PM button in some Webkit browsers to keep it strictly 24h style */
-        input[type="time"]::-webkit-calendar-picker-indicator {
-            filter: invert(1); /* Makes the icon visible on dark backgrounds */
-            cursor: pointer;
-        }
-
-        /* Ensure the text is always 24h formatted in the input */
-        input[type="time"] {
-            position: relative;
-        }
-    </style>
-</head>
-
-<body class="min-h-screen bg-base-900 text-base-200">
     <main class="relative z-10 flex flex-col h-screen w-full">
 
         <!-- Header -->
@@ -800,6 +743,3 @@
             if (e.target.id === 'settingsModal') closeSettingsModal();
         });
     </script>
-</body>
-
-</html>

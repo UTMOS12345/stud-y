@@ -155,3 +155,53 @@
     scrollbar-color: var(--color-primary) transparent;
   }
 }
+
+/* ─── SCHEDULE / TEMPLATE EDITOR ─── */
+@layer components {
+  .solid-card {
+    @apply rounded-[2rem] p-8 border border-white/5 transition-all duration-300 w-full shadow-2xl;
+  }
+
+  /* Active highlight: bright white border */
+  .solid-card.active {
+    @apply border-white ring-4 ring-white/10 bg-slate-700;
+  }
+
+  .progress-bar-fill {
+    @apply h-full transition-all duration-1000 ease-in-out;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .time-field::-webkit-calendar-picker-indicator,
+  .time-field::-webkit-inner-spin-button,
+  .time-field::-webkit-clear-button {
+    display: none;
+    -webkit-appearance: none;
+  }
+
+  .time-field {
+    letter-spacing: 0.1em;
+  }
+
+  .time-field:focus {
+    background-color: var(--color-base-300);
+  }
+
+  /* Time picker icon visible on dark backgrounds */
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+  }
+
+  input[type="time"] {
+    position: relative;
+  }
+}
