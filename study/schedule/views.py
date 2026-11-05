@@ -156,6 +156,18 @@ def _save_action(user, action_type, data):
     return JsonResponse({'success': True})
 
 
+def _delete_action(user, data):
+    """Delete an Action. Blocks that used it are kept and just lose their action."""
+    action = Action.objects.filter(id=data.get('action_id'), user=user).first()
+    if not action:
+        return JsonResponse({'error': 'Action not found'}, status=404)
+    with transaction.atomic():
+        ScheduleBlock.objects.filter(action=action).update(action=None)
+        TemplateBlock.objects.filter(action=action).update(action=None)
+        action.delete()
+    return JsonResponse({'success': True})
+
+
 def _error_text(e):
     """Readable text for a ValidationError, without the ['...'] list formatting."""
     if isinstance(e, ValidationError):
@@ -197,6 +209,9 @@ def schedule_view(request):
 
                 if action_type in ('create_action', 'update_action'):
                     return _save_action(request.user, action_type, data)
+
+                elif action_type == 'delete_action':
+                    return _delete_action(request.user, data)
 
                 elif action_type == 'delete_block':
                     if schedule:
@@ -324,6 +339,9 @@ def template_detail_view(request, template_id):
 
                 elif action_type in ('create_action', 'update_action'):
                     return _save_action(request.user, action_type, data)
+
+                elif action_type == 'delete_action':
+                    return _delete_action(request.user, data)
 
                 return JsonResponse({'error': 'Unknown action'}, status=400)
 

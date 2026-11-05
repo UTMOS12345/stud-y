@@ -87,6 +87,27 @@ class ScheduleViewTests(ScheduleTestCase):
         self.assertEqual(DayTemplate.objects.count(), 0)
 
 
+class DeleteActionTests(ScheduleTestCase):
+    def test_delete_action_keeps_blocks(self):
+        block = self.add_block(datetime.date(2026, 1, 5), T(9), T(10))
+        template = DayTemplate.objects.create(user=self.user, name='Mon')
+        t_block = TemplateBlock.objects.create(template=template, action=self.action,
+                                               title='A', start_time=T(9), end_time=T(10))
+        response = self.post_json(self.url, {'action': 'delete_action', 'action_id': self.action.id})
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Action.objects.exists())
+        block.refresh_from_db(); t_block.refresh_from_db()
+        self.assertIsNone(block.action)
+        self.assertIsNone(t_block.action)
+
+    def test_cannot_delete_someone_elses_action(self):
+        other = User.objects.create_user(username='o', email='o@o.com', password='pw12345!x')
+        theirs = Action.objects.create(user=other, name='Theirs')
+        response = self.post_json(self.url, {'action': 'delete_action', 'action_id': theirs.id})
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(Action.objects.filter(pk=theirs.pk).exists())
+
+
 class HelperTests(ScheduleTestCase):
     def test_week_hours(self):
         self.add_block(datetime.date(2026, 1, 5), T(9), T(10, 30))   # Monday

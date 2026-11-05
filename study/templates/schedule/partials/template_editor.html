@@ -307,6 +307,10 @@
                         class="w-full py-3 mt-4 rounded-xl border border-primary text-primary-content font-bold uppercase tracking-[0.2em] hover:bg-primary/10 transition-all bg-primary">
                         Confirm
                     </button>
+                    <button type="button" id="deleteActionBtn" onclick="deleteActionData()"
+                        class="hidden w-full py-3 rounded-xl border border-error/50 text-error font-bold uppercase tracking-[0.2em] hover:bg-error/10 transition-all cursor-pointer">
+                        Delete
+                    </button>
                 </div>
             </div>
         </div>
@@ -421,6 +425,7 @@
             document.getElementById('actionNameInput').value = "";
             document.getElementById('actionColorInput').value = "#3B82F6";
             document.getElementById('actionIconInput').value = "activity";
+            document.getElementById('deleteActionBtn').classList.add('hidden');
             document.getElementById('actionModal').classList.remove('hidden');
         }
 
@@ -430,11 +435,24 @@
             document.getElementById('actionNameInput').value = name;
             document.getElementById('actionColorInput').value = color;
             document.getElementById('actionIconInput').value = icon;
+            document.getElementById('deleteActionBtn').classList.remove('hidden');
             document.getElementById('actionModal').classList.remove('hidden');
         }
 
         function closeActionModal() {
             document.getElementById('actionModal').classList.add('hidden');
+        }
+
+        async function deleteActionData() {
+            const id = document.getElementById('manageActionId').value;
+            if (!id || !confirm('Delete this action? Blocks using it will keep their time but lose the action.')) return;
+            const res = await fetch(window.location.href, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                body: JSON.stringify({ action: 'delete_action', action_id: id })
+            });
+            if (res.ok) window.location.reload();
+            else alert((await res.json()).error || 'Error deleting action');
         }
 
         async function saveActionData() {
@@ -455,7 +473,7 @@
                     body: JSON.stringify(body)
                 });
                 if (res.ok) window.location.reload();
-                else alert('Error saving action');
+                else alert((await res.json()).error || 'Error saving action');
             } catch (e) { console.error(e); }
         }
 
