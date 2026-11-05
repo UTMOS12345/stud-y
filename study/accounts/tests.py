@@ -36,3 +36,32 @@ class LoginViewTest(TestCase):
         self.client.force_login(self.user)
         self.assertEqual(self.client.get(reverse('pomodoro')).status_code, 200)
         self.assertTrue(Profile.objects.filter(user=self.user).exists())
+
+
+class PomodoroSettingsTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='t', email='t@t.com', password='pw12345!x')
+        self.client.force_login(self.user)
+
+    def post(self, **values):
+        data = {'default_pomodoro_duration': '25', 'default_short_break_duration': '5',
+                'default_long_break_duration': '15', 'default_long_break_interval': '4'}
+        data.update(values)
+        return self.client.post(reverse('settings:pomodoro'), data)
+
+    def test_valid_values_are_saved(self):
+        self.post(default_pomodoro_duration='50', default_long_break_interval='3')
+        profile = Profile.objects.get(user=self.user)
+        self.assertEqual((profile.default_pomodoro_duration, profile.default_long_break_interval), (50, 3))
+
+    def test_out_of_range_values_are_rejected(self):
+        for field, value in [('default_short_break_duration', '0'),
+                             ('default_long_break_duration', '100000'),
+                             ('default_long_break_interval', '0'),
+                             ('default_pomodoro_duration', 'abc')]:
+            self.post(**{field: value})
+        profile = Profile.objects.get(user=self.user)
+        self.assertEqual(profile.default_short_break_duration, 5)
+        self.assertEqual(profile.default_long_break_duration, 15)
+        self.assertEqual(profile.default_long_break_interval, 4)
+        self.assertEqual(profile.default_pomodoro_duration, 25)

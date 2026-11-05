@@ -23,6 +23,20 @@ COMMON_TIMEZONES = [
     'Pacific/Auckland', 'Pacific/Fiji'
 ]
 
+# (min, max) for each pomodoro setting, matching the inputs in pomodoro_section.html
+POMODORO_LIMITS = {
+    'default_pomodoro_duration': (1, 120),
+    'default_short_break_duration': (1, 60),
+    'default_long_break_duration': (1, 120),
+    'default_long_break_interval': (1, 20),
+}
+POMODORO_LABELS = {
+    'default_pomodoro_duration': 'Focus time',
+    'default_short_break_duration': 'Short break',
+    'default_long_break_duration': 'Long break',
+    'default_long_break_interval': 'Long break interval',
+}
+
 @login_required
 def settings_view(request, section='profile'):
     """Main settings dispatcher"""
@@ -79,9 +93,11 @@ def handle_pomodoro_post(request, profile):
             'default_long_break_interval': int(request.POST.get('default_long_break_interval', 4)),
         }
 
-        # Simple validation
-        if durations['default_pomodoro_duration'] < 1:
-            raise ValidationError("Duration must be positive.")
+        # Same limits as the inputs on the settings page
+        for key, value in durations.items():
+            low, high = POMODORO_LIMITS[key]
+            if not low <= value <= high:
+                raise ValidationError(f"{POMODORO_LABELS[key]} must be between {low} and {high}.")
 
         # Update the profile object attributes
         for key, value in durations.items():
@@ -92,8 +108,10 @@ def handle_pomodoro_post(request, profile):
 
         logger.info(f"User {request.user.pk} updated pomodoro settings.")
         messages.success(request, '✓ pomodoro settings updated!')
-    except (ValueError, ValidationError) as e:
-        messages.error(request, f'Invalid input: {str(e)}')
+    except ValueError:
+        messages.error(request, 'Invalid input: please enter whole numbers.')
+    except ValidationError as e:
+        messages.error(request, f"Invalid input: {' '.join(e.messages)}")
     except Exception as e:
         logger.error(f"Error updating pomodoro for {request.user.pk}: {str(e)}")
         messages.error(request, 'error saving pomodoro settings.')
