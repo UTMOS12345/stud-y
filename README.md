@@ -127,4 +127,4 @@ Bug reports and ideas are welcome in [Issues](https://github.com/UTMOS12345/stud
 
 ## License
 
-No license has been chosen yet. Until one is added, all rights are reserved © Imomaliyev Maksudali.
+[MIT](LICENSE) © Imomaliyev Maksudali
