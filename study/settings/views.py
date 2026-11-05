@@ -38,6 +38,11 @@ POMODORO_LABELS = {
     'default_long_break_interval': 'Long break interval',
 }
 
+# Only languages the app is actually translated into. Add more here when translations exist.
+SUPPORTED_LANGUAGES = [
+    ('en', 'English'),
+]
+
 @login_required
 def settings_view(request, section='profile'):
     """Main settings dispatcher"""
@@ -63,7 +68,8 @@ def settings_view(request, section='profile'):
             # fall through and show the form with its errors
             return render(request, 'settings/settings_page.html', {
                 'profile': profile, 'user': request.user, 'active_section': section,
-                'timezones': COMMON_TIMEZONES, 'password_form': password_form,
+                'timezones': COMMON_TIMEZONES, 'languages': SUPPORTED_LANGUAGES,
+                'password_form': password_form,
             })
         # Sections without a form: send the user back instead of re-rendering on POST
         return redirect(f'settings:{section}')
@@ -73,6 +79,7 @@ def settings_view(request, section='profile'):
         'user': request.user,
         'active_section': section,
         'timezones': COMMON_TIMEZONES,
+        'languages': SUPPORTED_LANGUAGES,
     }
     return render(request, 'settings/settings_page.html', context)
 
@@ -153,8 +160,10 @@ def handle_preferences_post(request, profile):
             profile.theme_preference = theme
             logger.info(f"User {request.user.pk} changed theme to {theme}")
 
-        # Update Language
-        profile.language_preference = request.POST.get('language_preference', 'en')
+        # Update Language (ignore anything we don't support)
+        language = request.POST.get('language_preference', 'en')
+        if language in dict(SUPPORTED_LANGUAGES):
+            profile.language_preference = language
 
         # Update Checkbox
         profile.google_sync_enabled = request.POST.get('google_sync_enabled') == 'on'

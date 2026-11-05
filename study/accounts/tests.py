@@ -125,3 +125,9 @@ class SettingsUrlTest(TestCase):
         self.assertContains(response, 'password changed')
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password('NewPass123!x'))
+
+    def test_language_only_accepts_supported_values(self):
+        url = reverse('settings:preferences')
+        self.client.post(url, {'timezone': 'UTC', 'theme_preference': 'dark', 'language_preference': 'x' * 50})
+        self.assertEqual(Profile.objects.get(user=self.user).language_preference, 'en')
+        self.assertContains(self.client.get(url), '<option value="en"')
