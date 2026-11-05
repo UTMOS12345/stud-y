@@ -6,3 +6,4 @@ study/static/css/src/output.css
 __pycache__/
 *.pyc
 studyv/
+study/staticfiles/

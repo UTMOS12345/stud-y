@@ -151,6 +151,16 @@ STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 
+# collectstatic puts everything here for the web server
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Production (DEBUG off): only send cookies over HTTPS
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'True') == 'True'
+
 AUTH_USER_MODEL = 'accounts.User'
 
 AUTHENTICATION_BACKENDS = (
