@@ -52,6 +52,14 @@ class LoginViewTest(TestCase):
             self.client.post(url, {'email': 't@t.com', 'password': 'wrong'})
         self.assertEqual(self.client.post(url, {'email': 't@t.com', 'password': 'pw12345!x'}).status_code, 302)
 
+    def test_logout_needs_post(self):
+        self.client.force_login(self.user)
+        self.assertEqual(self.client.get(reverse('logout')).status_code, 405)
+        self.assertIn('_auth_user_id', self.client.session)
+        response = self.client.post(reverse('logout'))
+        self.assertRedirects(response, reverse('login'), fetch_redirect_response=False)
+        self.assertNotIn('_auth_user_id', self.client.session)
+
     def test_pages_work_without_profile(self):
         Profile.objects.filter(user=self.user).delete()
         self.client.force_login(self.user)

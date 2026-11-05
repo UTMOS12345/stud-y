@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from django.contrib import messages
 from django.core.cache import cache
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -67,6 +68,7 @@ def login_view(request):
     return render(request, 'accounts/login.html', {'form': form, 'next': next_url or ''})
 
 
+@require_POST
 def logout_view(request):
     logout(request)
     return redirect('login')

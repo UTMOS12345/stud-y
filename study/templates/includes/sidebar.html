@@ -105,7 +105,9 @@
         </a>
 
         <!-- log out -->
-        <a href="{% url 'logout' %}" class="flex items-center justify-center rounded-xl
+        <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="w-full cursor-pointer flex items-center justify-center rounded-xl
                   text-error/50 hover:text-error hover:bg-error/10 transition-all"
             style="padding: 15px 0; gap:0; min-height:54px;">
             <svg class="flex-shrink-0" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -119,7 +121,8 @@
                                      opacity 0.2s ease, margin-left 0.3s ease;">
                 Log Out
             </span>
-        </a>
+        </button>
+        </form>
 
     </div>
 
