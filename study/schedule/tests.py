@@ -1,5 +1,6 @@
 import datetime
 import json
+from unittest import mock
 
 from django.test import TestCase
 from django.urls import reverse
@@ -137,3 +138,26 @@ class TemplateTests(ScheduleTestCase):
                                      title='B', start_time=T(11), end_time=T(12))
         self.add_block(datetime.date(2026, 1, 6), T(9, 30), T(10, 30))
         self.assertEqual(self.template.apply_to_date_merge(datetime.date(2026, 1, 6)), (1, 1))
+
+
+class TimezoneTests(ScheduleTestCase):
+    # 22:00 UTC on Jan 5 is already Jan 6 in Auckland and Tashkent, still Jan 5 in New York
+    NOW = datetime.datetime(2026, 1, 5, 22, 0, tzinfo=datetime.timezone.utc)
+
+    def today_for(self, tz_name):
+        self.user.profile.timezone = tz_name
+        self.user.profile.save()
+        with mock.patch('django.utils.timezone.now', return_value=self.NOW):
+            return self.client.get(self.url).context['selected_date']
+
+    def test_today_follows_user_timezone(self):
+        self.assertEqual(self.today_for('America/New_York'), datetime.date(2026, 1, 5))
+        self.assertEqual(self.today_for('Pacific/Auckland'), datetime.date(2026, 1, 6))
+        self.assertEqual(self.today_for('Asia/Tashkent'), datetime.date(2026, 1, 6))
+
+    def test_bad_timezone_falls_back(self):
+        self.assertEqual(self.today_for('Not/AZone'), datetime.date(2026, 1, 6))
+
+    def test_new_users_get_app_timezone(self):
+        user = User.objects.create_user(username='n', email='n@n.com', password='pw12345!x')
+        self.assertEqual(user.profile.timezone, 'Asia/Tashkent')

@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 import uuid
@@ -16,7 +17,7 @@ class User(AbstractUser):
 class Profile(models.Model):
     """User profile with timezone and pomodoro settings"""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
-    timezone = models.CharField(max_length=64, default='UTC')
+    timezone = models.CharField(max_length=64, default=settings.TIME_ZONE)
     
     default_pomodoro_duration = models.PositiveIntegerField(default=25)
     default_short_break_duration = models.PositiveIntegerField(default=5)

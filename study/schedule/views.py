@@ -7,6 +7,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.db import transaction, IntegrityError
+from django.utils import timezone
 from django.core.exceptions import ValidationError
 
 from .models import DaySchedule, DayTemplate, Action, ScheduleBlock, TemplateBlock
@@ -177,9 +178,9 @@ def _json_error(e):
 def schedule_view(request):
     date_str = request.GET.get('date')
     try:
-        selected_date = date.fromisoformat(date_str) if date_str else date.today()
+        selected_date = date.fromisoformat(date_str) if date_str else timezone.localdate()
     except (ValueError, TypeError):
-        selected_date = date.today()
+        selected_date = timezone.localdate()
 
     # Only look the day up here. A row is created when the first block is added,
     # so just browsing dates doesn't fill the table with empty days.

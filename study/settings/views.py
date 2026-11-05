@@ -17,7 +17,7 @@ COMMON_TIMEZONES = [
     'UTC',
     'Africa/Cairo', 'Africa/Johannesburg', 'Africa/Lagos',
     'America/Anchorage', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'America/New_York', 'America/Toronto', 'America/Vancouver',
-    'Asia/Bangkok', 'Asia/Dubai', 'Asia/Hong_Kong', 'Asia/Jakarta', 'Asia/Kolkata', 'Asia/Shanghai', 'Asia/Singapore', 'Asia/Tokyo',
+    'Asia/Bangkok', 'Asia/Dubai', 'Asia/Hong_Kong', 'Asia/Jakarta', 'Asia/Kolkata', 'Asia/Shanghai', 'Asia/Singapore', 'Asia/Tashkent', 'Asia/Tokyo',
     'Australia/Brisbane', 'Australia/Sydney',
     'Europe/Berlin', 'Europe/London', 'Europe/Moscow', 'Europe/Paris',
     'Pacific/Auckland', 'Pacific/Fiji'
