@@ -32,9 +32,10 @@ SECRET_KEY = os.environ['SECRET_KEY']
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['stud-y.loca.lt', '127.0.0.1', 'localhost']
+# Comma separated lists in .env, e.g. ALLOWED_HOSTS=stud-y.example.com,localhost
+ALLOWED_HOSTS = [h.strip() for h in os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',') if h.strip()]
 
-CSRF_TRUSTED_ORIGINS = ['https://stud-y.loca.lt']
+CSRF_TRUSTED_ORIGINS = [o.strip() for o in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') if o.strip()]
 
 # Application definition
 
