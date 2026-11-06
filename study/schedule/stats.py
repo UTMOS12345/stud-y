@@ -67,7 +67,7 @@ def subject_stats(user, first_day, last_day=None):
         if action_id is None:
             action_id, name, color = None, NO_SUBJECT['name'], NO_SUBJECT['color']
         return subjects.setdefault(action_id, {
-            'name': name, 'color': color, 'planned_minutes': 0, 'focused_minutes': 0,
+            'name': name, 'color': color, 'planned_minutes': 0, 'focused_minutes': 0, 'sessions': 0,
         })
 
     for action_id, name, color, start, end in ScheduleBlock.objects.filter(
@@ -80,10 +80,40 @@ def subject_stats(user, first_day, last_day=None):
         end_time__gte=day_start(first_day),
         end_time__lt=day_start(last_day + datetime.timedelta(days=1)),
     ).values_list('block__action_id', 'block__action__name', 'block__action__color', 'focused_seconds'):
-        row(action_id, name, color)['focused_minutes'] += seconds / 60
+        subject = row(action_id, name, color)
+        subject['focused_minutes'] += seconds / 60
+        subject['sessions'] += 1
 
     result = list(subjects.values())
     for r in result:
         r['focused_minutes'] = round(r['focused_minutes'])
     result.sort(key=lambda r: (-r['planned_minutes'], -r['focused_minutes'], r['name']))
     return result
+
+
+def format_minutes(minutes):
+    """90 -> '1h 30m', 60 -> '1h', 5 -> '5m'"""
+    minutes = int(round(minutes))
+    h, m = divmod(minutes, 60)
+    if h and m:
+        return f"{h}h {m}m"
+    return f"{h}h" if h else f"{m}m"
+
+
+def summary(subjects, block_count):
+    """Totals for the stat cards, from the rows subject_stats() returned."""
+    planned = sum(s['planned_minutes'] for s in subjects)
+    focused = sum(s['focused_minutes'] for s in subjects)
+    top = subjects[0] if subjects and subjects[0]['planned_minutes'] else None
+    return {
+        'planned_minutes': planned,
+        'planned': format_minutes(planned),
+        'focused_minutes': focused,
+        'focused': format_minutes(focused),
+        'sessions': sum(s['sessions'] for s in subjects),
+        'blocks': block_count,
+        # share of the plan you actually focused on, capped at 100
+        'done_percent': min(100, round(focused * 100 / planned)) if planned else None,
+        'top_subject': top['name'] if top else None,
+        'top_subject_time': format_minutes(top['planned_minutes']) if top else '',
+    }

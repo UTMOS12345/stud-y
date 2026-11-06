@@ -36,11 +36,34 @@
 
     {# ── STAT CARDS ── #}
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8" id="stat-cards">
-        {% if not blocks %}
+        {% with d=day_summary %}
+        {% if d.planned_minutes or d.focused_minutes %}
+        <div class="s-card">
+            <p class="s-label">Planned</p>
+            <p class="s-value">{{ d.planned }}</p>
+            <span class="s-badge">{{ d.blocks }} block{{ d.blocks|pluralize }}</span>
+        </div>
+        <div class="s-card">
+            <p class="s-label">Focused</p>
+            <p class="s-value">{{ d.focused }}</p>
+            <span class="s-badge">{{ d.sessions }} session{{ d.sessions|pluralize }}</span>
+        </div>
+        <div class="s-card">
+            <p class="s-label">Plan done</p>
+            <p class="s-value">{% if d.done_percent is not None %}{{ d.done_percent }}%{% else %}—{% endif %}</p>
+            <span class="s-badge">focused / planned</span>
+        </div>
+        <div class="s-card">
+            <p class="s-label">Top subject</p>
+            <p class="s-value truncate">{{ d.top_subject|default:"—" }}</p>
+            {% if d.top_subject_time %}<span class="s-badge">{{ d.top_subject_time }}</span>{% endif %}
+        </div>
+        {% else %}
         <div class="col-span-4 text-center py-8 text-neutral-content text-sm opacity-60">
-            No blocks scheduled for this day.
+            Nothing planned or focused on this day.
         </div>
         {% endif %}
+        {% endwith %}
     </div>
 
     {# ── DONUT + ACTION LIST ── #}
@@ -177,6 +200,32 @@
 
     #stat-cards .s-card:hover {
         border-color: rgba(77, 255, 170, .22);
+    }
+
+    #stat-cards .s-label {
+        font-size: 9px;
+        color: #7aaa96;
+        text-transform: uppercase;
+        letter-spacing: .2em;
+        font-weight: 700;
+        margin-bottom: .6rem;
+    }
+
+    #stat-cards .s-value {
+        font-size: 26px;
+        font-weight: 700;
+        color: #f0faf5;
+        line-height: 1;
+        margin-bottom: .4rem;
+    }
+
+    #stat-cards .s-badge {
+        font-size: 9px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: rgba(77, 255, 170, .1);
+        color: #4dffaa;
+        font-weight: 700;
     }
 
     .wbc {
@@ -454,34 +503,6 @@
                 });
             }));
         }
-
-        /* ── stat cards (always based on scheduled only) ── */
-        (function () {
-            const el = document.getElementById('stat-cards');
-            if (!SCHEDULE_BLOCKS.length) return;
-            const totalMins = SCHEDULE_BLOCKS.reduce((s, b) => s + (b.endMins - b.startMins), 0);
-            const sorted = [...SCHEDULE_BLOCKS].sort((a, b) => (b.endMins - b.startMins) - (a.endMins - a.startMins));
-            const avg = Math.round(totalMins / SCHEDULE_BLOCKS.length);
-            const top = sorted[0];
-            el.innerHTML = [
-                { label: 'Total Tracked', value: fmtH(totalMins), badge: 'today' },
-                { label: 'Activities', value: SCHEDULE_BLOCKS.length, badge: 'blocks' },
-                { label: 'Avg per Block', value: fmtDuration(avg), badge: 'avg' },
-                {
-                    label: 'Top Activity', value: top ? top.action : '—',
-                    badge: top ? fmtDuration(top.endMins - top.startMins) : ''
-                },
-            ].map(c => `
-      <div class="s-card">
-        <p style="font-size:9px;color:#7aaa96;text-transform:uppercase;
-                  letter-spacing:.2em;font-weight:700;margin-bottom:.6rem;">${c.label}</p>
-        <p style="font-size:26px;font-weight:700;color:#f0faf5;line-height:1;margin-bottom:.4rem;">${c.value}</p>
-        <span style="font-size:9px;padding:2px 8px;border-radius:999px;
-                     background:rgba(77,255,170,.1);color:#4dffaa;font-weight:700;">
-          ${c.badge}
-        </span>
-      </div>`).join('');
-        })();
 
         /* ── weekly bars: planned and focused side by side ── */
         (function () {

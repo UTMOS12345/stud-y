@@ -167,6 +167,21 @@ class HelperTests(ScheduleTestCase):
         rows = subject_stats(self.user, day, day + datetime.timedelta(days=1))
         self.assertEqual((rows[0]['name'], rows[0]['planned_minutes']), ('Math', 150))
 
+    def test_day_summary_on_statistics_tab(self):
+        block = self.add_block(datetime.date(2026, 1, 5), T(9), T(11))
+        ended = datetime.datetime(2026, 1, 5, 6, 0, tzinfo=datetime.timezone.utc)
+        for seconds in (1500, 1500, 1500):
+            BlockSession.objects.create(user=self.user, block=block, start_time=ended, end_time=ended,
+                                        focused_seconds=seconds)
+        summary = self.client.get(self.url, {'date': '2026-01-05'}).context['day_summary']
+        self.assertEqual((summary['planned'], summary['focused'], summary['sessions'], summary['done_percent']),
+                         ('2h', '1h 15m', 3, 62))
+        self.assertEqual(summary['top_subject'], 'Math')
+
+    def test_empty_day_summary(self):
+        summary = self.client.get(self.url, {'date': '2026-01-05'}).context['day_summary']
+        self.assertEqual((summary['planned_minutes'], summary['done_percent'], summary['top_subject']), (0, None, None))
+
     def test_gaps(self):
         blocks = [
             self.add_block(datetime.date(2026, 1, 5), T(9), T(10)),
