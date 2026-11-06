@@ -169,6 +169,10 @@
 
                                 <!-- Actions & Status Dot -->
                                 <div class="flex items-center gap-4 flex-shrink-0">
+                                    <a href="{% url 'pomodoro' %}?block={{ item.block.id }}"
+                                        class="text-base-content/40 hover:text-primary transition-colors" title="Focus on this block">
+                                        <i data-lucide="timer" class="w-5 h-5"></i>
+                                    </a>
                                     <button
                                         onclick="editBlock({{ item.block.id }}, '{{ item.block.title|escapejs }}', '{{ item.block.action_id|default_if_none:'' }}', '{{ item.block.start_time|time:'H:i' }}', '{{ item.block.end_time|time:'H:i' }}', '{{ item.block.block_type|escapejs }}', '{{ item.block.description|escapejs }}')"
                                         class="text-base-content/40 hover:text-primary transition-colors" title="Edit">

@@ -72,3 +72,26 @@ class PomodoroPageTests(TestCase):
         response = self.client.get(reverse('pomodoro'))
         self.assertEqual(response.context['today_sessions'], 2)
         self.assertEqual(response.context['today_focused_seconds'], 2100)
+
+
+class FocusLinkTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='t', email='t@t.com', password='pw12345!x')
+        self.client.force_login(self.user)
+
+    def test_block_from_schedule_link_is_selected(self):
+        block = make_block(self.user)  # not today, still offered when linked
+        response = self.client.get(reverse('pomodoro'), {'block': block.id})
+        self.assertEqual(response.context['selected_block_id'], block.id)
+        self.assertIn(block, response.context['blocks'])
+
+    def test_someone_elses_block_is_ignored(self):
+        other = User.objects.create_user(username='o', email='o@o.com', password='pw12345!x')
+        response = self.client.get(reverse('pomodoro'), {'block': make_block(other).id})
+        self.assertIsNone(response.context['selected_block_id'])
+        self.assertEqual(response.context['blocks'], [])
+
+    def test_schedule_links_each_block_to_the_timer(self):
+        block = make_block(self.user)
+        response = self.client.get(reverse('schedule'), {'date': '2026-01-05'})
+        self.assertContains(response, f"{reverse('pomodoro')}?block={block.id}")
