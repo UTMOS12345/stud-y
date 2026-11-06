@@ -1,10 +1,18 @@
+import datetime
 import json
 
 from django.test import TestCase
 from django.urls import reverse
 
 from accounts.models import User
-from schedule.models import BlockSession
+from schedule.models import Action, BlockSession, DaySchedule, ScheduleBlock
+
+
+def make_block(user, start=datetime.time(9), end=datetime.time(10)):
+    schedule, _ = DaySchedule.objects.get_or_create(user=user, date=datetime.date(2026, 1, 5))
+    action, _ = Action.objects.get_or_create(user=user, name='Math')
+    return ScheduleBlock.objects.create(schedule=schedule, action=action, title='Algebra',
+                                        start_time=start, end_time=end)
 
 
 class SaveSessionTests(TestCase):
@@ -28,6 +36,18 @@ class SaveSessionTests(TestCase):
             self.assertEqual(self.post(body).status_code, 400, body)
         self.assertFalse(BlockSession.objects.exists())
 
+    def test_session_can_belong_to_a_block(self):
+        block = make_block(self.user)
+        self.assertEqual(self.post({'focused_seconds': 1500, 'block_id': block.id}).status_code, 201)
+        self.assertEqual(BlockSession.objects.get().block, block)
+
+    def test_cannot_use_someone_elses_block(self):
+        other = User.objects.create_user(username='o', email='o@o.com', password='pw12345!x')
+        theirs = make_block(other)
+        for block_id in [theirs.id, 999999, 'abc']:
+            self.assertEqual(self.post({'focused_seconds': 1500, 'block_id': block_id}).status_code, 404)
+        self.assertFalse(BlockSession.objects.exists())
+
     def test_needs_post_and_login(self):
         self.assertEqual(self.client.get(self.url).status_code, 405)
         self.client.logout()
@@ -41,7 +61,6 @@ class PomodoroPageTests(TestCase):
         self.client.force_login(self.user)
 
     def test_counts_only_todays_sessions(self):
-        import datetime
         from django.utils import timezone
         now = timezone.now()
         for ended, seconds in [(now, 1500), (now, 600), (now - datetime.timedelta(days=2), 1500)]:

@@ -9,7 +9,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from accounts.models import Profile
-from schedule.models import BlockSession
+from schedule.models import BlockSession, ScheduleBlock
 
 # Longest focus session we accept, the same as the longest pomodoro allowed in settings
 MAX_SESSION_SECONDS = 120 * 60
@@ -44,7 +44,8 @@ def pomodoro(request):
 @login_required
 @require_POST
 def save_session(request):
-    """Save one finished focus session. Body: {"focused_seconds": 1500}"""
+    """Save one finished focus session.
+    Body: {"focused_seconds": 1500, "block_id": 12}  (block_id is optional)"""
     try:
         data = json.loads(request.body)
         seconds = int(data.get('focused_seconds'))
@@ -54,9 +55,18 @@ def save_session(request):
     if not 1 <= seconds <= MAX_SESSION_SECONDS:
         return JsonResponse({'error': f'focused_seconds must be between 1 and {MAX_SESSION_SECONDS}'}, status=400)
 
+    block = None
+    block_id = data.get('block_id')
+    if block_id not in (None, ''):
+        if str(block_id).isdigit():
+            block = ScheduleBlock.objects.filter(pk=block_id, schedule__user=request.user).first()
+        if block is None:
+            return JsonResponse({'error': 'Block not found'}, status=404)
+
     end = timezone.now()
     session = BlockSession.objects.create(
         user=request.user,
+        block=block,
         start_time=end - datetime.timedelta(seconds=seconds),
         end_time=end,
         focused_seconds=seconds,
