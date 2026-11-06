@@ -1,6 +1,5 @@
 asgiref==3.11.1
 Django==6.0.2
-django-allauth[socialaccount]==65.18.0
 psycopg2-binary==2.9.12
 python-dotenv==1.2.4
 pytz==2026.2

@@ -45,12 +45,6 @@ INSTALLED_APPS = [
     'pomodoro',
     'settings',
     'schedule',
-    
-
-    'allauth',
-    'allauth.account',
-    'allauth.socialaccount',
-    'allauth.socialaccount.providers.google',
 
     'django.contrib.admin',
     'django.contrib.auth',
@@ -69,7 +63,6 @@ MIDDLEWARE = [
     'accounts.middleware.UserTimezoneMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'study.urls'
@@ -163,19 +156,7 @@ if not DEBUG:
 
 AUTH_USER_MODEL = 'accounts.User'
 
-AUTHENTICATION_BACKENDS = (
-    'allauth.account.auth_backends.AuthenticationBackend',
-    'django.contrib.auth.backends.ModelBackend',
-)
-
-ACCOUNT_ADAPTER = 'allauth.account.adapter.DefaultAccountAdapter'
-SOCIALACCOUNT_ADAPTER = 'allauth.socialaccount.adapter.DefaultSocialAccountAdapter'
-ACCOUNT_USER_MODEL_USERNAME_FIELD = 'username'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-ACCOUNT_LOGIN_METHODS = {'email'}
-ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']  # username is in REQUIRED_FIELDS
-ACCOUNT_EMAIL_VERIFICATION = 'mandatory'  # set to 'mandatory' later with email backend
 
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'
