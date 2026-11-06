@@ -149,3 +149,38 @@ def focus_streak(user, today, look_back_days=366):
         streak += 1
         day -= datetime.timedelta(days=1)
     return streak
+
+
+def longest_run(days):
+    """Longest run of consecutive dates in a set."""
+    best = 0
+    for day in days:
+        if day - datetime.timedelta(days=1) in days:
+            continue  # not the start of a run
+        length = 1
+        while day + datetime.timedelta(days=length) in days:
+            length += 1
+        best = max(best, length)
+    return best
+
+
+def records(user):
+    """All-time numbers from every focus session. One query."""
+    per_day = {}
+    total = count = 0
+    for ended, seconds in BlockSession.objects.filter(user=user).values_list('end_time', 'focused_seconds'):
+        day = timezone.localtime(ended).date()
+        per_day[day] = per_day.get(day, 0) + seconds
+        total += seconds
+        count += 1
+
+    best_day, best_seconds = max(per_day.items(), key=lambda kv: kv[1]) if per_day else (None, 0)
+    return {
+        'sessions': count,
+        'total_hours': round(total / 3600, 1),
+        'average_session': format_minutes(total / 60 / count) if count else None,
+        'best_day': best_day,
+        'best_day_time': format_minutes(best_seconds / 60),
+        'longest_streak': longest_run(set(per_day)),
+        'active_days': len(per_day),
+    }

@@ -7,7 +7,7 @@ from django.urls import reverse
 
 from accounts.models import User
 from .models import Action, BlockSession, DaySchedule, DayTemplate, ScheduleBlock, TemplateBlock
-from .stats import block_stats, week_stats, week_blocks
+from .stats import block_stats, longest_run, records, week_stats, week_blocks
 from .views import _build_schedule_with_gaps
 
 T = datetime.time
@@ -70,7 +70,7 @@ class ScheduleViewTests(ScheduleTestCase):
         for h in range(8, 14):
             self.add_block(datetime.date(2026, 1, 5), T(h), T(h, 45), title=f'b{h}')
         # a fixed number, it does not grow with the number of blocks or sessions
-        with self.assertNumQueries(14):
+        with self.assertNumQueries(15):
             self.client.get(self.url, {'date': '2026-01-05'})
 
     def test_blocks_show_focused_time(self):
@@ -298,3 +298,33 @@ class ActionColorTests(ScheduleTestCase):
         for i in range(15):
             Action.objects.create(user=self.user, name=f'a{i}', color=Action.next_color(self.user))
         self.assertEqual(Action.objects.count(), 16)
+
+
+class RecordsTests(ScheduleTestCase):
+    def focus(self, day, seconds):
+        ended = datetime.datetime(2026, 1, day, 6, 0, tzinfo=datetime.timezone.utc)
+        BlockSession.objects.create(user=self.user, start_time=ended, end_time=ended, focused_seconds=seconds)
+
+    def test_records(self):
+        for day, seconds in [(1, 1500), (2, 1500), (2, 3000), (3, 600), (7, 1500)]:
+            self.focus(day, seconds)
+        with self.assertNumQueries(1):
+            r = records(self.user)
+        self.assertEqual((r['sessions'], r['total_hours'], r['average_session']), (5, 2.2, '27m'))
+        self.assertEqual((r['best_day'], r['best_day_time']), (datetime.date(2026, 1, 2), '1h 15m'))
+        self.assertEqual((r['longest_streak'], r['active_days']), (3, 4))
+
+    def test_no_sessions_yet(self):
+        r = records(self.user)
+        self.assertEqual((r['sessions'], r['average_session'], r['best_day'], r['longest_streak']), (0, None, None, 0))
+
+    def test_longest_run(self):
+        d = datetime.date
+        self.assertEqual(longest_run({d(2026, 1, 1), d(2026, 1, 3), d(2026, 1, 4)}), 2)
+        self.assertEqual(longest_run(set()), 0)
+
+    def test_records_on_statistics_tab(self):
+        self.focus(5, 1500)
+        response = self.client.get(self.url, {'date': '2026-01-05'})
+        self.assertContains(response, 'All time')
+        self.assertEqual(response.context['records']['sessions'], 1)

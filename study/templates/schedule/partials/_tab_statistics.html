@@ -157,6 +157,39 @@
         <div class="flex items-end justify-between gap-4 px-2" style="height:180px;" id="week-bars"></div>
     </div>
 
+    {# ── ALL TIME ── #}
+    {% with r=records %}
+    <div class="mt-6">
+        <h3 class="text-[10px] font-bold text-base-content uppercase tracking-[0.2em] mb-3 px-1">All time</h3>
+        <div class="stats stats-vertical sm:stats-horizontal w-full bg-base-300 border border-neutral shadow-lg">
+            <div class="stat">
+                <div class="stat-figure text-primary"><i data-lucide="hourglass" class="w-7 h-7"></i></div>
+                <div class="stat-title text-neutral-content text-[10px] uppercase tracking-[0.2em] font-bold">Total focus</div>
+                <div class="stat-value text-primary text-3xl">{{ r.total_hours|floatformat:"-1" }}h</div>
+                <div class="stat-desc text-neutral-content">{{ r.sessions }} session{{ r.sessions|pluralize }}</div>
+            </div>
+            <div class="stat">
+                <div class="stat-figure text-primary/60"><i data-lucide="gauge" class="w-7 h-7"></i></div>
+                <div class="stat-title text-neutral-content text-[10px] uppercase tracking-[0.2em] font-bold">Average session</div>
+                <div class="stat-value text-base-content text-3xl">{{ r.average_session|default:"—" }}</div>
+                <div class="stat-desc text-neutral-content">{{ r.active_days }} active day{{ r.active_days|pluralize }}</div>
+            </div>
+            <div class="stat">
+                <div class="stat-figure text-primary/60"><i data-lucide="medal" class="w-7 h-7"></i></div>
+                <div class="stat-title text-neutral-content text-[10px] uppercase tracking-[0.2em] font-bold">Best day</div>
+                <div class="stat-value text-base-content text-3xl">{% if r.best_day %}{{ r.best_day_time }}{% else %}—{% endif %}</div>
+                <div class="stat-desc text-neutral-content">{% if r.best_day %}{{ r.best_day|date:"D, d M Y" }}{% else %}no sessions yet{% endif %}</div>
+            </div>
+            <div class="stat">
+                <div class="stat-figure text-primary/60"><i data-lucide="flame" class="w-7 h-7"></i></div>
+                <div class="stat-title text-neutral-content text-[10px] uppercase tracking-[0.2em] font-bold">Longest streak</div>
+                <div class="stat-value text-base-content text-3xl">{{ r.longest_streak }}</div>
+                <div class="stat-desc text-neutral-content">day{{ r.longest_streak|pluralize }} in a row</div>
+            </div>
+        </div>
+    </div>
+    {% endwith %}
+
     {# ── WEEK BY BLOCK ── #}
     <div class="bg-base-300 border border-neutral rounded-2xl p-8 mt-6 shadow-lg">
         <div class="mb-6">
