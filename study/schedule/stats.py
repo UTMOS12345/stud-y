@@ -53,20 +53,20 @@ def week_stats(user, day):
     ]
 
 
-NO_SUBJECT = {'name': 'No subject', 'color': '#6B7280'}
+NO_BLOCK = {'name': 'No block', 'color': '#6B7280'}
 
 
-def subject_stats(user, first_day, last_day=None):
-    """Planned and focused minutes per action (subject) between two dates.
-    Focus sessions without a block, or on a block without an action, go to 'No subject'.
+def block_stats(user, first_day, last_day=None):
+    """Planned and focused minutes per block (grouped by action) between two dates.
+    Focus sessions without a block, or on a block without an action, go to 'No block'.
     Sorted by planned time, then focused time. Two queries."""
     last_day = last_day or first_day
-    subjects = {}
+    rows = {}
 
     def row(action_id, name, color):
         if action_id is None:
-            action_id, name, color = None, NO_SUBJECT['name'], NO_SUBJECT['color']
-        return subjects.setdefault(action_id, {
+            action_id, name, color = None, NO_BLOCK['name'], NO_BLOCK['color']
+        return rows.setdefault(action_id, {
             'name': name, 'color': color, 'planned_minutes': 0, 'focused_minutes': 0, 'sessions': 0,
         })
 
@@ -80,11 +80,11 @@ def subject_stats(user, first_day, last_day=None):
         end_time__gte=day_start(first_day),
         end_time__lt=day_start(last_day + datetime.timedelta(days=1)),
     ).values_list('block__action_id', 'block__action__name', 'block__action__color', 'focused_seconds'):
-        subject = row(action_id, name, color)
-        subject['focused_minutes'] += seconds / 60
-        subject['sessions'] += 1
+        entry = row(action_id, name, color)
+        entry['focused_minutes'] += seconds / 60
+        entry['sessions'] += 1
 
-    result = list(subjects.values())
+    result = list(rows.values())
     for r in result:
         r['focused_minutes'] = round(r['focused_minutes'])
     result.sort(key=lambda r: (-r['planned_minutes'], -r['focused_minutes'], r['name']))
@@ -100,30 +100,30 @@ def format_minutes(minutes):
     return f"{h}h" if h else f"{m}m"
 
 
-def summary(subjects, block_count):
-    """Totals for the stat cards, from the rows subject_stats() returned."""
-    planned = sum(s['planned_minutes'] for s in subjects)
-    focused = sum(s['focused_minutes'] for s in subjects)
-    top = subjects[0] if subjects and subjects[0]['planned_minutes'] else None
+def summary(rows, block_count):
+    """Totals for the stat cards, from the rows block_stats() returned."""
+    planned = sum(s['planned_minutes'] for s in rows)
+    focused = sum(s['focused_minutes'] for s in rows)
+    top = rows[0] if rows and rows[0]['planned_minutes'] else None
     return {
         'planned_minutes': planned,
         'planned': format_minutes(planned),
         'focused_minutes': focused,
         'focused': format_minutes(focused),
-        'sessions': sum(s['sessions'] for s in subjects),
+        'sessions': sum(s['sessions'] for s in rows),
         'blocks': block_count,
         # share of the plan you actually focused on, capped at 100
         'done_percent': min(100, round(focused * 100 / planned)) if planned else None,
-        'top_subject': top['name'] if top else None,
-        'top_subject_time': format_minutes(top['planned_minutes']) if top else '',
+        'top_block': top['name'] if top else None,
+        'top_block_time': format_minutes(top['planned_minutes']) if top else '',
     }
 
 
-def week_subjects(user, day):
-    """subject_stats() for the whole week holding `day`, with bar widths (0-100)
+def week_blocks(user, day):
+    """block_stats() for the whole week holding `day`, with bar widths (0-100)
     and readable times ready for the template."""
     monday = week_start(day)
-    rows = subject_stats(user, monday, monday + datetime.timedelta(days=6))
+    rows = block_stats(user, monday, monday + datetime.timedelta(days=6))
     longest = max([max(r['planned_minutes'], r['focused_minutes']) for r in rows] + [1])
     for r in rows:
         r['planned'] = format_minutes(r['planned_minutes'])

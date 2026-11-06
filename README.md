@@ -27,7 +27,7 @@ Most study apps do one thing: a to-do list, a timer, or a calendar. stud-y puts 
 - **Schedule:** plan a day with time blocks, pick days from a date selector, and save a day as a reusable template
 - **Pomodoro:** focus sessions with configurable times; pick the block you are working on, or start from the focus button on any block
 - **Focus tracking:** every finished session is saved (and kept in the browser until the server has it, so going offline loses nothing)
-- **Statistics:** planned vs focused time per day, per week and per subject
+- **Statistics:** planned vs focused time per day, per week and per block
 - **Settings:** profile, Pomodoro times, time zone, password change and a light theme
 
 ## Install
@@ -107,7 +107,7 @@ The front end uses Django templates with [Tailwind CSS](https://tailwindcss.com)
 
 ## Roadmap
 
-- [x] Finish the statistics tab with real charts (daily, weekly and per subject)
+- [x] Finish the statistics tab with real charts (daily, weekly and per block)
 - [x] Link Pomodoro sessions to schedule blocks
 - [x] A real dashboard
 - [x] Move `SECRET_KEY`, the database password and `DEBUG` to environment variables

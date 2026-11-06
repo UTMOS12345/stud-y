@@ -5,7 +5,7 @@
     const SCHEDULE_BLOCKS = {{ blocks_json| safe }};
     const SELECTED_DATE = "{{ selected_date|date:'Y-m-d' }}";
     const WEEK = {{ week_json|safe }};
-    const SUBJECTS = {{ subjects_json|safe }};
+    const BLOCK_STATS = {{ block_stats_json|safe }};
 </script>
 
 <div class="animate-up max-w-4xl mx-auto px-4 py-8">
@@ -54,9 +54,9 @@
             <span class="s-badge">focused / planned</span>
         </div>
         <div class="s-card">
-            <p class="s-label">Top subject</p>
-            <p class="s-value truncate">{{ d.top_subject|default:"—" }}</p>
-            {% if d.top_subject_time %}<span class="s-badge">{{ d.top_subject_time }}</span>{% endif %}
+            <p class="s-label">Top block</p>
+            <p class="s-value truncate">{{ d.top_block|default:"—" }}</p>
+            {% if d.top_block_time %}<span class="s-badge">{{ d.top_block_time }}</span>{% endif %}
         </div>
         {% else %}
         <div class="col-span-4 text-center py-8 text-neutral-content text-sm opacity-60">
@@ -147,17 +147,17 @@
         <div class="flex items-end justify-between gap-4 px-2" style="height:180px;" id="week-bars"></div>
     </div>
 
-    {# ── WEEK BY SUBJECT ── #}
+    {# ── WEEK BY BLOCK ── #}
     <div class="bg-base-300 border border-neutral rounded-2xl p-8 mt-6 shadow-lg">
         <div class="mb-6">
             <h3 class="text-[10px] font-bold text-base-content uppercase tracking-[0.2em] mb-1">
-                This Week by Subject
+                This Week by Block
             </h3>
             <p class="text-[10px] text-neutral-content font-mono opacity-60">
                 Planned vs focused, Monday to Sunday
             </p>
         </div>
-        {% for s in week_subjects %}
+        {% for s in week_blocks %}
         <div class="ws-row">
             <div class="flex items-center justify-between mb-2">
                 <div class="flex items-center gap-2.5">
@@ -392,8 +392,8 @@
 
         function buildDataset(withEmpty) {
             if (!withEmpty) {
-                // one slice per subject
-                return SUBJECTS.filter(s => s.planned_minutes > 0).map(s => ({
+                // one slice per block
+                return BLOCK_STATS.filter(s => s.planned_minutes > 0).map(s => ({
                     action: s.name,
                     color: s.color,
                     mins: s.planned_minutes,
@@ -504,11 +504,11 @@
 
             /* ── action list ── */
             const el = document.getElementById('action-list');
-            if (!dataset.length && !SUBJECTS.length) { el.innerHTML = ''; return; }
+            if (!dataset.length && !BLOCK_STATS.length) { el.innerHTML = ''; return; }
 
-            // one row per subject (planned and focused), then the empty gaps
+            // one row per block (planned and focused), then the empty gaps
             const listItems = [
-                ...SUBJECTS.map(s => ({
+                ...BLOCK_STATS.map(s => ({
                     action: s.name, color: s.color, mins: s.planned_minutes,
                     focused: s.focused_minutes, empty: false,
                 })),

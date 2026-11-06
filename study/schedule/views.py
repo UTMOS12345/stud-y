@@ -13,7 +13,7 @@ from django.core.exceptions import ValidationError
 
 from .models import DaySchedule, DayTemplate, Action, ScheduleBlock, TemplateBlock
 from .forms import ScheduleBlockForm
-from .stats import subject_stats, summary, week_stats, week_subjects
+from .stats import block_stats, summary, week_stats, week_blocks
 
 logger = logging.getLogger(__name__)
 
@@ -283,7 +283,7 @@ def schedule_view(request):
 
     actions = list(Action.objects.filter(user=request.user))
     week = week_stats(request.user, selected_date)
-    subjects = subject_stats(request.user, selected_date)
+    day_rows = block_stats(request.user, selected_date)
 
     context = {
         'schedule':      schedule,
@@ -295,9 +295,9 @@ def schedule_view(request):
         'next_action_color': Action.next_color(request.user, [a.color for a in actions]),
         'selected_date': selected_date,
         'week':          week,
-        'subjects_json': json.dumps(subjects),
-        'day_summary':   summary(subjects, len(blocks)),
-        'week_subjects': week_subjects(request.user, selected_date),
+        'block_stats_json': json.dumps(day_rows),
+        'day_summary':   summary(day_rows, len(blocks)),
+        'week_blocks': week_blocks(request.user, selected_date),
         'week_json':     json.dumps([{'label': d['label'], 'planned': d['planned_hours'],
                                       'focused': d['focused_hours']} for d in week]),
         'blocks_json':   json.dumps(blocks_data),

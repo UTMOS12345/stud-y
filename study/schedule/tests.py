@@ -7,7 +7,7 @@ from django.urls import reverse
 
 from accounts.models import User
 from .models import Action, BlockSession, DaySchedule, DayTemplate, ScheduleBlock, TemplateBlock
-from .stats import subject_stats, week_stats, week_subjects
+from .stats import block_stats, week_stats, week_blocks
 from .views import _build_schedule_with_gaps
 
 T = datetime.time
@@ -148,11 +148,11 @@ class HelperTests(ScheduleTestCase):
             week = week_stats(self.user, datetime.date(2026, 1, 12))
         self.assertEqual(week[0]['focused_hours'], 1.0)
 
-    def test_subject_stats(self):
+    def test_block_stats(self):
         day = datetime.date(2026, 1, 5)
         english = Action.objects.create(user=self.user, name='English', color='#10B981')
         algebra = self.add_block(day, T(9), T(10))                      # Math 60
-        self.add_block(day, T(18), T(18, 30))                           # Math 30, same subject
+        self.add_block(day, T(18), T(18, 30))                           # Math 30, same block
         reading = self.add_block(day, T(11), T(13), action=english)     # English 120
         self.add_block(datetime.date(2026, 1, 6), T(9), T(10))          # other day
         ended = datetime.datetime(2026, 1, 5, 10, 0, tzinfo=datetime.timezone.utc)
@@ -160,12 +160,12 @@ class HelperTests(ScheduleTestCase):
             BlockSession.objects.create(user=self.user, block=block, start_time=ended, end_time=ended,
                                         focused_seconds=seconds)
         with self.assertNumQueries(2):
-            rows = subject_stats(self.user, day)
+            rows = block_stats(self.user, day)
         self.assertEqual([(r['name'], r['planned_minutes'], r['focused_minutes']) for r in rows],
-                         [('English', 120, 50), ('Math', 90, 25), ('No subject', 0, 10)])
+                         [('English', 120, 50), ('Math', 90, 25), ('No block', 0, 10)])
         self.assertEqual(rows[0]['color'], '#10B981')
         # a range adds up both days, so Math moves to the top
-        rows = subject_stats(self.user, day, day + datetime.timedelta(days=1))
+        rows = block_stats(self.user, day, day + datetime.timedelta(days=1))
         self.assertEqual((rows[0]['name'], rows[0]['planned_minutes']), ('Math', 150))
 
     def test_day_summary_on_statistics_tab(self):
@@ -177,13 +177,13 @@ class HelperTests(ScheduleTestCase):
         summary = self.client.get(self.url, {'date': '2026-01-05'}).context['day_summary']
         self.assertEqual((summary['planned'], summary['focused'], summary['sessions'], summary['done_percent']),
                          ('2h', '1h 15m', 3, 62))
-        self.assertEqual(summary['top_subject'], 'Math')
+        self.assertEqual(summary['top_block'], 'Math')
 
     def test_empty_day_summary(self):
         summary = self.client.get(self.url, {'date': '2026-01-05'}).context['day_summary']
-        self.assertEqual((summary['planned_minutes'], summary['done_percent'], summary['top_subject']), (0, None, None))
+        self.assertEqual((summary['planned_minutes'], summary['done_percent'], summary['top_block']), (0, None, None))
 
-    def test_week_subjects(self):
+    def test_week_blocks(self):
         english = Action.objects.create(user=self.user, name='English', color='#10B981')
         self.add_block(datetime.date(2026, 1, 5), T(9), T(11))                   # Mon, Math 2h
         reading = self.add_block(datetime.date(2026, 1, 8), T(9), T(10), action=english)  # Thu
@@ -191,11 +191,11 @@ class HelperTests(ScheduleTestCase):
         ended = datetime.datetime(2026, 1, 8, 6, 0, tzinfo=datetime.timezone.utc)
         BlockSession.objects.create(user=self.user, block=reading, start_time=ended, end_time=ended,
                                     focused_seconds=1800)
-        rows = week_subjects(self.user, datetime.date(2026, 1, 7))
+        rows = week_blocks(self.user, datetime.date(2026, 1, 7))
         self.assertEqual([(r['name'], r['planned'], r['focused'], r['planned_width'], r['focused_width']) for r in rows],
                          [('Math', '2h', '0m', 100, 0), ('English', '1h', '30m', 50, 25)])
         response = self.client.get(self.url, {'date': '2026-01-07'})
-        self.assertContains(response, 'This Week by Subject')
+        self.assertContains(response, 'This Week by Block')
 
     def test_gaps(self):
         blocks = [
