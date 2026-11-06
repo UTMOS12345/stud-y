@@ -92,6 +92,28 @@
         </div>
     </section>
 
+    {# ── THIS WEEK ── #}
+    <section class="db-card mb-8">
+        <div class="flex items-center justify-between mb-5">
+            <p class="db-label" style="margin-bottom: 0;">This week</p>
+            <div class="flex items-center gap-4 text-[10px] uppercase tracking-[0.15em] text-neutral-content">
+                <span class="flex items-center gap-1.5"><span class="db-dot db-planned"></span>planned</span>
+                <span class="flex items-center gap-1.5"><span class="db-dot bg-primary"></span>focused</span>
+            </div>
+        </div>
+        <div class="db-week">
+            {% for d in week %}
+            <div class="db-day {% if d.is_today %}db-today{% endif %}">
+                <div class="db-bars" title="{{ d.label }}: {{ d.focused_hours }}h focused of {{ d.planned_hours }}h planned">
+                    <div class="db-bar db-planned" style="height: {{ d.planned_height }}%;"></div>
+                    <div class="db-bar bg-primary" style="height: {{ d.focused_height }}%;"></div>
+                </div>
+                <span class="db-day-label">{{ d.label }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
     {# ── TODAY'S PLAN ── #}
     <section class="db-card">
         <div class="flex items-center justify-between mb-5">
@@ -156,6 +178,50 @@
 
     .db-streak b {
         font-size: 14px;
+    }
+
+    .db-week {
+        display: flex;
+        gap: .75rem;
+        height: 120px;
+    }
+
+    .db-day {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: .5rem;
+    }
+
+    .db-bars {
+        flex: 1;
+        width: 100%;
+        display: flex;
+        align-items: flex-end;
+        gap: 3px;
+    }
+
+    .db-bar {
+        flex: 1;
+        min-height: 3px;
+        border-radius: 4px 4px 2px 2px;
+    }
+
+    .db-planned {
+        background: color-mix(in srgb, var(--color-primary), transparent 80%);
+    }
+
+    .db-day-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+        color: var(--color-neutral-content);
+    }
+
+    .db-today .db-day-label {
+        color: var(--color-primary);
     }
 
     .db-number {

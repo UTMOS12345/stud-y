@@ -101,3 +101,16 @@ class StreakTests(DashboardTestCase):
         response = self.get()
         self.assertEqual(response.context['streak'], 0)
         self.assertContains(response, 'start a streak today')
+
+
+class WeekChartTests(DashboardTestCase):
+    def test_bar_heights(self):
+        block = self.add_block(T(9), T(13))                              # Monday, 4h planned
+        self.add_block(T(9), T(11), date=datetime.date(2026, 1, 6))      # Tuesday, 2h
+        BlockSession.objects.create(user=self.user, block=block, start_time=NOW, end_time=NOW,
+                                    focused_seconds=3600)
+        week = self.get().context['week']
+        self.assertEqual([(d['planned_height'], d['focused_height']) for d in week[:3]],
+                         [(100, 25), (50, 0), (0, 0)])
+        self.assertTrue(week[0]['is_today'])
+        self.assertFalse(week[1]['is_today'])

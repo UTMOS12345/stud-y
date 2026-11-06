@@ -49,11 +49,17 @@ def dashboard(request):
     week = week_stats(request.user, now.date())
     week_planned = sum(d['planned_hours'] for d in week)
     week_focused = sum(d['focused_hours'] for d in week)
+    tallest = max([max(d['planned_hours'], d['focused_hours']) for d in week] + [0.1])
+    for d in week:
+        d['planned_height'] = round(d['planned_hours'] * 100 / tallest)
+        d['focused_height'] = round(d['focused_hours'] * 100 / tallest)
+        d['is_today'] = d['date'] == now.date()
 
     return render(request, 'dashboard.html', {
         'today': now.date(),
         'day': day,
         'streak': focus_streak(request.user, now.date()),
+        'week': week,
         'week_planned': round(week_planned, 1),
         'week_focused': round(week_focused, 1),
         'week_percent': min(100, round(week_focused * 100 / week_planned)) if week_planned else None,
