@@ -270,12 +270,10 @@
                     timeLeft = remaining;
                     endTime = parseInt(savedEndTime);
                     start();
-                } else if (remaining > -5) {
+                } else {
+                    // finished while the page was closed, it still counts
                     timeLeft = durationForMode(mode);
                     complete();
-                } else {
-                    timeLeft = savedTimeLeft;
-                    applyModeButtons();
                 }
             } else {
                 timeLeft = savedTimeLeft;
@@ -284,6 +282,64 @@
 
             updateDisplay();
             updateStats();
+        }
+
+        // ── Saving sessions to the server ──────────────────────────────────
+        // Finished sessions wait in localStorage until the server has them,
+        // so nothing is lost when the connection drops.
+
+        const SAVE_URL = '{% url "pomodoro_save_session" %}';
+        const CSRF_TOKEN = '{{ csrf_token }}';
+
+        function pendingSessions() {
+            try { return JSON.parse(localStorage.getItem('pomodoro_pending') || '[]'); }
+            catch (e) { return []; }
+        }
+
+        function setPendingSessions(list) {
+            localStorage.setItem('pomodoro_pending', JSON.stringify(list));
+        }
+
+        let flushing = false;
+
+        async function flushPendingSessions() {
+            if (flushing) return;  // one upload at a time, or a session could be sent twice
+            flushing = true;
+            try {
+                await sendPendingSessions();
+            } finally {
+                flushing = false;
+            }
+        }
+
+        async function sendPendingSessions() {
+            for (const session of pendingSessions()) {
+                try {
+                    const response = await fetch(SAVE_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+                        body: JSON.stringify(session),
+                    });
+                    // 4xx means the server will never accept it, so drop it too
+                    if (response.ok || (response.status >= 400 && response.status < 500)) {
+                        setPendingSessions(pendingSessions().filter(s => s.uid !== session.uid));
+                    }
+                } catch (e) {
+                    return; // offline, try again later
+                }
+            }
+        }
+
+        function recordSession(seconds) {
+            const list = pendingSessions();
+            list.push({ uid: Date.now() + '-' + Math.random(), focused_seconds: seconds });
+            setPendingSessions(list);
+            if (flushing) {
+                // an upload is running, send this one right after it
+                setTimeout(flushPendingSessions, 1000);
+            } else {
+                flushPendingSessions();
+            }
         }
 
         // ── Core timer logic ───────────────────────────────────────────────
@@ -323,6 +379,7 @@
             if (mode === 'work') {
                 sessionsCompleted++;
                 totalFocusedSeconds += WORK_TIME;
+                recordSession(WORK_TIME);
                 updateStats();
                 switchMode(nextBreakMode());
             } else {
@@ -351,6 +408,8 @@
 
         // ── Boot ───────────────────────────────────────────────────────────
         loadState();
+        flushPendingSessions();
+        window.addEventListener('online', flushPendingSessions);
     })();
 </script>
 {% endblock %}
