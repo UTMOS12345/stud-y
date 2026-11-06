@@ -36,8 +36,9 @@
                 <div class="mb-4">
                     <div id="session-label" class="text-[12px] text-primary tracking-[0.5em] uppercase font-bold">work
                     </div>
-                    <div class="text-[9px] text-base-content/40 tracking-[0.3em] uppercase mt-1.5 font-medium">active
-                        session</div>
+                    <div id="session-target"
+                        class="text-[11px] text-base-content/40 tracking-[0.2em] uppercase mt-1.5 font-bold max-w-[300px] truncate">
+                        active session</div>
                 </div>
 
                 <div class="my-2">
@@ -98,18 +99,36 @@
 
         <div class="flex flex-col items-center gap-10 mt-2">
 
-            <label class="flex items-center gap-3 bg-base-content/5 rounded-full pl-5 pr-2 py-1.5 border border-primary/10">
-                <span class="text-[9px] text-primary/50 tracking-[0.3em] uppercase font-bold whitespace-nowrap">working on</span>
-                <select id="block-select"
-                    class="bg-transparent text-xs text-base-content/80 font-medium pr-2 py-1 rounded-full focus:outline-none cursor-pointer max-w-[260px]">
-                    <option value="">nothing in particular</option>
-                    {% for block in blocks %}
-                    <option value="{{ block.id }}" {% if block.id == selected_block_id %}selected{% endif %}>
-                        {{ block.start_time|time:"H:i" }}–{{ block.end_time|time:"H:i" }} · {{ block.title }}{% if block.action %} ({{ block.action.name }}){% endif %}
-                    </option>
-                    {% endfor %}
-                </select>
-            </label>
+            {# value lives in this hidden select, the button and list below drive it #}
+            <select id="block-select" class="hidden" aria-hidden="true" tabindex="-1">
+                <option value="" data-title="Nothing in particular" data-meta="just focus" data-color="">nothing in particular</option>
+                {% for block in blocks %}
+                <option value="{{ block.id }}" {% if block.id == selected_block_id %}selected{% endif %}
+                    data-title="{{ block.title }}"
+                    data-meta="{{ block.start_time|time:'H:i' }}–{{ block.end_time|time:'H:i' }}{% if block.action %} · {{ block.action.name }}{% endif %}"
+                    data-color="{% if block.action %}{{ block.action.color }}{% else %}#6B7280{% endif %}">{{ block.title }}</option>
+                {% endfor %}
+            </select>
+
+            <div id="block-picker" class="relative w-[440px] max-w-[90vw]">
+                <button id="block-picker-btn" type="button" aria-haspopup="listbox" aria-expanded="false"
+                    class="bp-button w-full flex items-center gap-4 px-5 py-4 rounded-2xl border text-left cursor-pointer transition-all">
+                    <span id="bp-dot" class="bp-dot"></span>
+                    <span class="flex-1 min-w-0">
+                        <span class="block text-[9px] text-primary/60 tracking-[0.35em] uppercase font-bold mb-1">working on</span>
+                        <span id="bp-title" class="block text-base font-bold text-base-content truncate"></span>
+                        <span id="bp-meta" class="block text-[11px] text-base-content/50 mt-0.5 truncate"></span>
+                    </span>
+                    <i data-lucide="chevrons-up-down" class="w-4 h-4 text-primary/60 flex-shrink-0"></i>
+                </button>
+
+                <div id="block-picker-list" role="listbox"
+                    class="bp-list hidden absolute left-0 right-0 bottom-full mb-2 z-30 rounded-2xl border p-2 max-h-[320px] overflow-y-auto">
+                    {% if not blocks %}
+                    <p class="text-[11px] text-base-content/50 px-3 py-2">No blocks today. <a href="{% url 'schedule' %}" class="text-primary hover:underline">Plan your day</a></p>
+                    {% endif %}
+                </div>
+            </div>
 
             <div class="flex flex-col items-center gap-4">
                 <div id="cycle-dots" class="flex items-center gap-3"></div>
@@ -133,6 +152,62 @@
     </div>
 </div>
 </div>
+<style>
+    .bp-button {
+        --accent: var(--color-primary);
+        background: color-mix(in srgb, var(--color-base-200), transparent 20%);
+        border-color: color-mix(in srgb, var(--accent), transparent 70%);
+        backdrop-filter: blur(16px);
+        box-shadow: 0 0 30px color-mix(in srgb, var(--accent), transparent 88%);
+    }
+
+    .bp-button:hover,
+    .bp-button[aria-expanded="true"] {
+        border-color: color-mix(in srgb, var(--accent), transparent 35%);
+    }
+
+    .bp-button.bp-chosen {
+        background: color-mix(in srgb, var(--accent), var(--color-base-200) 88%);
+    }
+
+    .bp-dot {
+        --dot: var(--color-primary);
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        background: var(--dot);
+        box-shadow: 0 0 12px var(--dot);
+    }
+
+    .bp-dot-small {
+        width: 10px;
+        height: 10px;
+        box-shadow: 0 0 8px var(--dot);
+    }
+
+    .bp-dot-empty {
+        background: transparent;
+        box-shadow: none;
+        border: 2px dashed color-mix(in srgb, var(--color-base-content), transparent 60%);
+    }
+
+    .bp-list {
+        background: var(--color-base-200);
+        border-color: color-mix(in srgb, var(--color-primary), transparent 75%);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, .35);
+    }
+
+    .bp-option:hover,
+    .bp-option:focus-visible {
+        outline: none;
+        background: color-mix(in srgb, var(--color-base-content), transparent 94%);
+    }
+
+    .bp-option[aria-selected="true"] {
+        background: color-mix(in srgb, var(--color-primary), transparent 88%);
+    }
+</style>
 {% endblock %}
 
 {% block scripts %}
@@ -436,16 +511,94 @@
 
         // ── Block picker ───────────────────────────────────────────────────
         // A block picked from the schedule wins, otherwise keep the last choice
-        // while it is still in today's list.
+        // while it is still in today's list. The hidden select holds the value.
 
         const blockSelect = document.getElementById('block-select');
+        const pickerBtn = document.getElementById('block-picker-btn');
+        const pickerList = document.getElementById('block-picker-list');
+        const sessionTarget = document.getElementById('session-target');
+
         const savedBlock = localStorage.getItem('pomodoro_block');
         if (!BLOCK_FROM_LINK && savedBlock !== null &&
             [...blockSelect.options].some(o => o.value === savedBlock)) {
             blockSelect.value = savedBlock;
         }
-        localStorage.setItem('pomodoro_block', blockSelect.value);
-        blockSelect.addEventListener('change', () => localStorage.setItem('pomodoro_block', blockSelect.value));
+
+        // one row per option, built from the select so the two never disagree
+        [...blockSelect.options].forEach(option => {
+            const row = document.createElement('button');
+            row.type = 'button';
+            row.setAttribute('role', 'option');
+            row.dataset.value = option.value;
+            row.className = 'bp-option w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left cursor-pointer';
+            const dot = document.createElement('span');
+            dot.className = 'bp-dot bp-dot-small';
+            dot.style.setProperty('--dot', option.dataset.color || 'transparent');
+            if (!option.dataset.color) dot.classList.add('bp-dot-empty');
+            const text = document.createElement('span');
+            text.className = 'flex-1 min-w-0';
+            const title = document.createElement('span');
+            title.className = 'block text-sm font-bold text-base-content truncate';
+            title.textContent = option.dataset.title;
+            const meta = document.createElement('span');
+            meta.className = 'block text-[10px] text-base-content/50 truncate';
+            meta.textContent = option.dataset.meta;
+            text.append(title, meta);
+            row.append(dot, text);
+            row.addEventListener('click', () => { chooseBlock(option.value); closePicker(); pickerBtn.focus(); });
+            pickerList.appendChild(row);
+        });
+
+        function showChoice() {
+            const option = blockSelect.selectedOptions[0];
+            const color = option.dataset.color;
+            const dot = document.getElementById('bp-dot');
+            document.getElementById('bp-title').textContent = option.dataset.title;
+            document.getElementById('bp-meta').textContent = option.dataset.meta;
+            dot.style.setProperty('--dot', color || 'transparent');
+            dot.classList.toggle('bp-dot-empty', !color);
+            pickerBtn.style.setProperty('--accent', color || 'var(--color-primary)');
+            pickerBtn.classList.toggle('bp-chosen', !!color);
+            // and inside the timer circle
+            sessionTarget.textContent = color ? option.dataset.title : 'active session';
+            sessionTarget.style.color = color || '';
+            pickerList.querySelectorAll('.bp-option').forEach(row =>
+                row.setAttribute('aria-selected', row.dataset.value === blockSelect.value));
+        }
+
+        function chooseBlock(value) {
+            blockSelect.value = value;
+            localStorage.setItem('pomodoro_block', value);
+            showChoice();
+        }
+
+        function openPicker() {
+            pickerList.classList.remove('hidden');
+            pickerBtn.setAttribute('aria-expanded', 'true');
+            const current = pickerList.querySelector('[aria-selected="true"]');
+            if (current) current.focus();
+        }
+
+        function closePicker() {
+            pickerList.classList.add('hidden');
+            pickerBtn.setAttribute('aria-expanded', 'false');
+        }
+
+        pickerBtn.addEventListener('click', () =>
+            pickerList.classList.contains('hidden') ? openPicker() : closePicker());
+        document.addEventListener('click', e => {
+            if (!document.getElementById('block-picker').contains(e.target)) closePicker();
+        });
+        document.addEventListener('keydown', e => {
+            if (pickerList.classList.contains('hidden')) return;
+            const rows = [...pickerList.querySelectorAll('.bp-option')];
+            const i = rows.indexOf(document.activeElement);
+            if (e.key === 'Escape') { closePicker(); pickerBtn.focus(); }
+            if (e.key === 'ArrowDown') { e.preventDefault(); rows[Math.min(i + 1, rows.length - 1)].focus(); }
+            if (e.key === 'ArrowUp') { e.preventDefault(); rows[Math.max(i - 1, 0)].focus(); }
+        });
+
+        chooseBlock(blockSelect.value);
 
         // ── Boot ───────────────────────────────────────────────────────────
         loadState();
