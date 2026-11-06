@@ -4,7 +4,7 @@ from django.shortcuts import render
 from django.utils import timezone
 
 from schedule.models import ScheduleBlock
-from schedule.stats import format_minutes, minutes_between
+from schedule.stats import format_minutes, minutes_between, subject_stats, summary, week_stats
 
 
 def today_blocks(user, today):
@@ -45,8 +45,17 @@ def dashboard(request):
         b.is_done = b.end_time <= now.time()
         b.is_current = b is current
 
+    day = summary(subject_stats(request.user, now.date()), len(blocks))
+    week = week_stats(request.user, now.date())
+    week_planned = sum(d['planned_hours'] for d in week)
+    week_focused = sum(d['focused_hours'] for d in week)
+
     return render(request, 'dashboard.html', {
         'today': now.date(),
+        'day': day,
+        'week_planned': round(week_planned, 1),
+        'week_focused': round(week_focused, 1),
+        'week_percent': min(100, round(week_focused * 100 / week_planned)) if week_planned else None,
         'blocks': blocks,
         'current': current,
         'upcoming': upcoming,

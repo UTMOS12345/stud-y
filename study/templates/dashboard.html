@@ -12,6 +12,30 @@
         </h1>
     </header>
 
+    {# ── NUMBERS ── #}
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div class="db-card">
+            <p class="db-label">Focused today</p>
+            <p class="db-number">{{ day.focused }}</p>
+            <p class="db-note">{{ day.sessions }} session{{ day.sessions|pluralize }}</p>
+        </div>
+        <div class="db-card">
+            <p class="db-label">Planned today</p>
+            <p class="db-number">{{ day.planned }}</p>
+            <p class="db-note">{% if day.done_percent is not None %}{{ day.done_percent }}% done{% else %}nothing planned{% endif %}</p>
+        </div>
+        <div class="db-card">
+            <p class="db-label">Focused this week</p>
+            <p class="db-number">{{ week_focused|floatformat:"-1" }}h</p>
+            <p class="db-note">of {{ week_planned|floatformat:"-1" }}h planned</p>
+        </div>
+        <div class="db-card">
+            <p class="db-label">Week plan done</p>
+            <p class="db-number">{% if week_percent is not None %}{{ week_percent }}%{% else %}—{% endif %}</p>
+            <div class="db-track mt-3"><div class="db-fill bg-primary" style="width: {{ week_percent|default:0 }}%;"></div></div>
+        </div>
+    </section>
+
     {# ── NOW / NEXT ── #}
     <section class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
         <div class="db-card">
@@ -105,6 +129,19 @@
         color: var(--color-primary);
         opacity: .7;
         margin-bottom: 1rem;
+    }
+
+    .db-number {
+        font-size: 28px;
+        font-weight: 700;
+        line-height: 1;
+        color: var(--color-base-content);
+    }
+
+    .db-note {
+        font-size: 11px;
+        margin-top: .5rem;
+        color: var(--color-neutral-content);
     }
 
     .db-dot {

@@ -62,3 +62,21 @@ class TodayTests(DashboardTestCase):
         schedule = DaySchedule.objects.create(user=other, date=TODAY)
         ScheduleBlock.objects.create(schedule=schedule, title='Theirs', start_time=T(10), end_time=T(11))
         self.assertEqual(self.get().context['blocks'], [])
+
+
+class NumbersTests(DashboardTestCase):
+    def test_today_and_week_numbers(self):
+        block = self.add_block(T(9), T(11))                                  # Monday Jan 5, 2h
+        self.add_block(T(9), T(11), date=datetime.date(2026, 1, 7))          # Wednesday, 2h
+        self.add_block(T(9), T(11), date=datetime.date(2026, 1, 12))         # next week
+        for seconds in (1500, 1500):
+            BlockSession.objects.create(user=self.user, block=block, start_time=NOW, end_time=NOW,
+                                        focused_seconds=seconds)
+        context = self.get().context
+        self.assertEqual((context['day']['focused'], context['day']['sessions'], context['day']['done_percent']),
+                         ('50m', 2, 42))
+        self.assertEqual((context['week_planned'], context['week_focused'], context['week_percent']), (4.0, 0.8, 20))
+
+    def test_new_user_numbers(self):
+        context = self.get().context
+        self.assertEqual((context['day']['focused'], context['week_percent']), ('0m', None))
