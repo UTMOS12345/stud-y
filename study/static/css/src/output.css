@@ -2294,6 +2294,9 @@
   .max-w-\[120px\] {
     max-width: 120px;
   }
+  .max-w-\[260px\] {
+    max-width: 260px;
+  }
   .max-w-md {
     max-width: var(--container-md);
   }
@@ -2760,6 +2763,9 @@
       background-color: color-mix(in oklab, var(--color-primary) 20%, transparent);
     }
   }
+  .bg-transparent {
+    background-color: transparent;
+  }
   .fill-primary\/10 {
     fill: var(--color-primary);
     @supports (color: color-mix(in lab, red, red)) {
@@ -2853,11 +2859,17 @@
   .pt-8 {
     padding-top: calc(var(--spacing) * 8);
   }
+  .pr-2 {
+    padding-right: calc(var(--spacing) * 2);
+  }
   .pb-1 {
     padding-bottom: calc(var(--spacing) * 1);
   }
   .pb-32 {
     padding-bottom: calc(var(--spacing) * 32);
+  }
+  .pl-5 {
+    padding-left: calc(var(--spacing) * 5);
   }
   .text-center {
     text-align: center;
@@ -3146,6 +3158,12 @@
     color: var(--color-primary);
     @supports (color: color-mix(in lab, red, red)) {
       color: color-mix(in oklab, var(--color-primary) 40%, transparent);
+    }
+  }
+  .text-primary\/50 {
+    color: var(--color-primary);
+    @supports (color: color-mix(in lab, red, red)) {
+      color: color-mix(in oklab, var(--color-primary) 50%, transparent);
     }
   }
   .text-primary\/70 {
@@ -3453,16 +3471,6 @@
         border-color: var(--color-primary);
         @supports (color: color-mix(in lab, red, red)) {
           border-color: color-mix(in oklab, var(--color-primary) 50%, transparent);
-        }
-      }
-    }
-  }
-  .hover\:bg-base-100\/80 {
-    &:hover {
-      @media (hover: hover) {
-        background-color: var(--color-base-100);
-        @supports (color: color-mix(in lab, red, red)) {
-          background-color: color-mix(in oklab, var(--color-base-100) 80%, transparent);
         }
       }
     }

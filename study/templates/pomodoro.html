@@ -98,6 +98,19 @@
 
         <div class="flex flex-col items-center gap-10 mt-2">
 
+            <label class="flex items-center gap-3 bg-base-content/5 rounded-full pl-5 pr-2 py-1.5 border border-primary/10">
+                <span class="text-[9px] text-primary/50 tracking-[0.3em] uppercase font-bold whitespace-nowrap">working on</span>
+                <select id="block-select"
+                    class="bg-transparent text-xs text-base-content/80 font-medium pr-2 py-1 rounded-full focus:outline-none cursor-pointer max-w-[260px]">
+                    <option value="">nothing in particular</option>
+                    {% for block in blocks %}
+                    <option value="{{ block.id }}" {% if block.id == selected_block_id %}selected{% endif %}>
+                        {{ block.start_time|time:"H:i" }}–{{ block.end_time|time:"H:i" }} · {{ block.title }}{% if block.action %} ({{ block.action.name }}){% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </label>
+
             <div class="flex flex-col items-center gap-4">
                 <div id="cycle-dots" class="flex items-center gap-3"></div>
                 <div class="flex items-center gap-4">
@@ -136,6 +149,7 @@
         // sessions the server already has for today
         const TODAY_SESSIONS = parseInt("{{ today_sessions|default:0 }}", 10);
         const TODAY_FOCUSED_SECONDS = parseInt("{{ today_focused_seconds|default:0 }}", 10);
+        const BLOCK_FROM_LINK = {{ block_from_link|yesno:"true,false" }};
         // ───────────────────────────────────────────────────────────────────
 
         const circumference = 2 * Math.PI * 255;
@@ -318,6 +332,7 @@
         }
 
         async function sendPendingSessions() {
+            let retry = false;
             for (const session of pendingSessions()) {
                 try {
                     const response = await fetch(SAVE_URL, {
@@ -325,6 +340,13 @@
                         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
                         body: JSON.stringify(session),
                     });
+                    if (response.status === 404 && session.block_id) {
+                        // the block was deleted meanwhile, keep the time without it
+                        session.block_id = null;
+                        setPendingSessions(pendingSessions().map(s => s.uid === session.uid ? session : s));
+                        retry = true;
+                        continue;
+                    }
                     // 4xx means the server will never accept it, so drop it too
                     if (response.ok || (response.status >= 400 && response.status < 500)) {
                         setPendingSessions(pendingSessions().filter(s => s.uid !== session.uid));
@@ -333,11 +355,12 @@
                     return; // offline, try again later
                 }
             }
+            if (retry) await sendPendingSessions();
         }
 
         function recordSession(seconds) {
             const list = pendingSessions();
-            list.push({ uid: Date.now() + '-' + Math.random(), focused_seconds: seconds });
+            list.push({ uid: Date.now() + '-' + Math.random(), focused_seconds: seconds, block_id: blockSelect.value || null });
             setPendingSessions(list);
             if (flushing) {
                 // an upload is running, send this one right after it
@@ -410,6 +433,19 @@
 
         window.addEventListener('beforeunload', saveState);
         setInterval(() => { if (isRunning) saveState(); }, 5000);
+
+        // ── Block picker ───────────────────────────────────────────────────
+        // A block picked from the schedule wins, otherwise keep the last choice
+        // while it is still in today's list.
+
+        const blockSelect = document.getElementById('block-select');
+        const savedBlock = localStorage.getItem('pomodoro_block');
+        if (!BLOCK_FROM_LINK && savedBlock !== null &&
+            [...blockSelect.options].some(o => o.value === savedBlock)) {
+            blockSelect.value = savedBlock;
+        }
+        localStorage.setItem('pomodoro_block', blockSelect.value);
+        blockSelect.addEventListener('change', () => localStorage.setItem('pomodoro_block', blockSelect.value));
 
         // ── Boot ───────────────────────────────────────────────────────────
         loadState();

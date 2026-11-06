@@ -29,6 +29,23 @@ def pomodoro(request):
         user=request.user, end_time__gte=start, end_time__lt=end,
     ).aggregate(count=Count('id'), seconds=Sum('focused_seconds'))
 
+    # blocks you can focus on: today's, plus one picked from the schedule (?block=)
+    blocks = list(ScheduleBlock.objects.filter(
+        schedule__user=request.user, schedule__date=timezone.localdate(),
+    ).select_related('action'))
+    selected_id = None
+    requested = request.GET.get('block', '')
+    if requested.isdigit():
+        picked = ScheduleBlock.objects.filter(pk=requested, schedule__user=request.user).select_related('action').first()
+        if picked:
+            selected_id = picked.id
+            if picked not in blocks:
+                blocks.insert(0, picked)
+    if selected_id is None:
+        now = timezone.localtime().time()
+        current = next((b for b in blocks if b.start_time <= now < b.end_time), None)
+        selected_id = current.id if current else None
+
     context = {
         'pomodoro_time': profile.default_pomodoro_duration,
         'short_break_time': profile.default_short_break_duration,
@@ -36,6 +53,9 @@ def pomodoro(request):
         'long_break_interval': profile.default_long_break_interval,
         'today_sessions': today['count'],
         'today_focused_seconds': today['seconds'] or 0,
+        'blocks': blocks,
+        'selected_block_id': selected_id,
+        'block_from_link': requested.isdigit() and selected_id is not None,
     }
 
     return render(request, 'pomodoro.html', context)
