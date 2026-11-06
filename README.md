@@ -23,11 +23,12 @@ Most study apps do one thing: a to-do list, a timer, or a calendar. stud-y puts 
 ## Features
 
 - **Accounts:** sign up and log in with email and password
-- **Dashboard:** an overview of your day
+- **Dashboard:** what is on now and what is next, today's plan, focus time today and this week, a week chart and your focus streak
 - **Schedule:** plan a day with time blocks, pick days from a date selector, and save a day as a reusable template
-- **Pomodoro:** focus sessions with configurable times
-- **Statistics:** how your study time was spent (demo)
-- **Settings:** profile and app settings, including a light theme
+- **Pomodoro:** focus sessions with configurable times; pick the block you are working on, or start from the focus button on any block
+- **Focus tracking:** every finished session is saved (and kept in the browser until the server has it, so going offline loses nothing)
+- **Statistics:** planned vs focused time per day, per week and per subject
+- **Settings:** profile, Pomodoro times, time zone, password change and a light theme
 
 ## Install
 
@@ -98,16 +99,17 @@ Open http://127.0.0.1:8000 and sign up.
 |---|---|
 | `accounts` | Custom `User` and `Profile` models, login and signup |
 | `dashboard` | Home page |
-| `schedule` | `DaySchedule`, `ScheduleBlock`, `BlockSession`, `DayTemplate`, `TemplateBlock`, and `Action` models |
-| `pomodoro` | Pomodoro timer |
+| `schedule` | `DaySchedule`, `ScheduleBlock`, `DayTemplate`, `TemplateBlock`, `Action`, and `BlockSession` (one finished focus session) models; `stats.py` holds the planned vs focused numbers |
+| `pomodoro` | Pomodoro timer and the endpoint that saves sessions |
 | `settings` | User settings |
 
 The front end uses Django templates with [Tailwind CSS](https://tailwindcss.com) and [daisyUI](https://daisyui.com).
 
 ## Roadmap
 
-- [ ] Finish the statistics tab with real charts (daily, weekly and per subject)
-- [ ] Link Pomodoro sessions to schedule blocks automatically
+- [x] Finish the statistics tab with real charts (daily, weekly and per subject)
+- [x] Link Pomodoro sessions to schedule blocks
+- [x] A real dashboard
 - [x] Move `SECRET_KEY`, the database password and `DEBUG` to environment variables
 - [x] Add `psycopg2` to `requirements.txt`
 - [ ] Sign in with Google
@@ -115,7 +117,8 @@ The front end uses Django templates with [Tailwind CSS](https://tailwindcss.com)
 - [ ] Reminders and notifications before a block starts
 - [ ] Mobile-friendly layout
 - [x] Tests for the schedule and login (`python manage.py test`)
-- [ ] Tests for the Pomodoro timer
+- [x] Tests for the Pomodoro timer, statistics and dashboard
+- [ ] Password reset by email
 - [ ] Deploy a public demo
 
 ## Maintainers
