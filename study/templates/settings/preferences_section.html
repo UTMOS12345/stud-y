@@ -103,24 +103,6 @@
             </select>
         </div>
 
-        <!-- Sync Section -->
-        <div class="bg-base-200 rounded-lg p-6 border border-neutral/20">
-            <h2 class="text-lg font-semibold text-base-content mb-4 flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                Integrations
-            </h2>
-
-            <label class="flex items-center gap-4 p-4 rounded-lg bg-base-100 border border-neutral/20 cursor-pointer hover:bg-base-100/80 transition-all">
-                <input type="checkbox" name="google_sync_enabled" {% if profile.google_sync_enabled %}checked{% endif %} class="w-5 h-5 accent-primary cursor-pointer">
-                <div class="flex-1">
-                    <p class="font-medium text-base-content">Google Calendar Sync</p>
-                    <p class="text-xs text-neutral-content">Sync your pomodoro sessions with Google Calendar</p>
-                </div>
-            </label>
-        </div>
-
         <!-- Save Button -->
         <div class="flex gap-4 pt-6">
             <button type="submit" class="px-6 py-3 bg-primary text-primary-content rounded-lg font-medium hover:bg-primary/80 transition-colors flex items-center gap-2">

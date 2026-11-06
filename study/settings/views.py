@@ -166,7 +166,6 @@ def handle_preferences_post(request, profile):
             profile.language_preference = language
 
         # Update Checkbox
-        profile.google_sync_enabled = request.POST.get('google_sync_enabled') == 'on'
 
         # We ONLY save the profile here.
         profile.save()
