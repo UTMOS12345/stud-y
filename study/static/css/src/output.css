@@ -975,6 +975,42 @@
   .visible {
     visibility: visible;
   }
+  .radial-progress {
+    @layer daisyui.l1.l2.l3 {
+      position: relative;
+      display: inline-grid;
+      height: var(--size);
+      width: var(--size);
+      place-content: center;
+      border-radius: calc(infinity * 1px);
+      background-color: transparent;
+      vertical-align: middle;
+      box-sizing: content-box;
+      --value: 0;
+      --size: 5rem;
+      --thickness: calc(var(--size) / 10);
+      --radialprogress: calc(var(--value) * 1%);
+      transition: --radialprogress 0.3s linear;
+      &:before {
+        position: absolute;
+        inset: calc(0.25rem * 0);
+        border-radius: calc(infinity * 1px);
+        content: "";
+        background: radial-gradient(farthest-side, currentColor 98%, #0000) top/var(--thickness) var(--thickness) no-repeat, conic-gradient(currentColor var(--radialprogress), #0000 0);
+        webkit-mask: radial-gradient( farthest-side, #0000 calc(100% - var(--thickness)), #000 calc(100% + 0.5px - var(--thickness)) );
+        mask: radial-gradient( farthest-side, #0000 calc(100% - var(--thickness)), #000 calc(100% + 0.5px - var(--thickness)) );
+      }
+      &:after {
+        position: absolute;
+        border-radius: calc(infinity * 1px);
+        background-color: currentcolor;
+        transition: transform 0.3s linear;
+        content: "";
+        inset: calc(50% - var(--thickness) / 2);
+        transform: rotate(calc(var(--value) * 3.6deg - 90deg)) translate(calc(var(--size) / 2 - 50%));
+      }
+    }
+  }
   .list {
     @layer daisyui.l1.l2.l3 {
       display: flex;
@@ -1984,11 +2020,47 @@
   .z-\[9999\] {
     z-index: 9999;
   }
-  .col-span-4 {
-    grid-column: span 4 / span 4;
-  }
   .col-span-full {
     grid-column: 1 / -1;
+  }
+  .stat-figure {
+    @layer daisyui.l1.l2.l3 {
+      grid-column-start: 2;
+      grid-row: span 3 / span 3;
+      grid-row-start: 1;
+      place-self: center;
+      justify-self: flex-end;
+    }
+  }
+  .stat-value {
+    @layer daisyui.l1.l2.l3 {
+      grid-column-start: 1;
+      white-space: nowrap;
+      font-size: 2rem;
+      font-weight: 800;
+    }
+  }
+  .stat-desc {
+    @layer daisyui.l1.l2.l3 {
+      grid-column-start: 1;
+      white-space: nowrap;
+      color: var(--color-base-content);
+      @supports (color: color-mix(in lab, red, red)) {
+        color: color-mix(in oklab, var(--color-base-content) 60%, transparent);
+      }
+      font-size: 0.75rem;
+    }
+  }
+  .stat-title {
+    @layer daisyui.l1.l2.l3 {
+      grid-column-start: 1;
+      white-space: nowrap;
+      color: var(--color-base-content);
+      @supports (color: color-mix(in lab, red, red)) {
+        color: color-mix(in oklab, var(--color-base-content) 60%, transparent);
+      }
+      font-size: 0.75rem;
+    }
   }
   .divider {
     @layer daisyui.l1.l2.l3 {
@@ -2426,6 +2498,9 @@
   .max-w-7xl {
     max-width: var(--container-7xl);
   }
+  .max-w-\[10rem\] {
+    max-width: 10rem;
+  }
   .max-w-\[90vw\] {
     max-width: 90vw;
   }
@@ -2494,6 +2569,19 @@
   }
   .resize-none {
     resize: none;
+  }
+  .stats-vertical {
+    @layer daisyui.l1.l2 {
+      grid-auto-flow: row;
+      overflow-y: auto;
+      .stat:not(:last-child) {
+        border-inline-end: none;
+        border-block-end: var(--border) dashed currentColor;
+        @supports (color: color-mix(in lab, red, red)) {
+          border-block-end: var(--border) dashed color-mix(in oklab, currentColor 10%, #0000);
+        }
+      }
+    }
   }
   .grid-cols-1 {
     grid-template-columns: repeat(1, minmax(0, 1fr));
@@ -3859,6 +3947,21 @@
   .sm\:w-24 {
     @media (width >= 40rem) {
       width: calc(var(--spacing) * 24);
+    }
+  }
+  .sm\:stats-horizontal {
+    @media (width >= 40rem) {
+      @layer daisyui.l1.l2 {
+        grid-auto-flow: column;
+        overflow-x: auto;
+        .stat:not(:last-child) {
+          border-inline-end: var(--border) dashed currentColor;
+          @supports (color: color-mix(in lab, red, red)) {
+            border-inline-end: var(--border) dashed color-mix(in oklab, currentColor 10%, #0000);
+          }
+          border-block-end: none;
+        }
+      }
     }
   }
   .md\:grid-cols-2 {

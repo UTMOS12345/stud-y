@@ -35,36 +35,46 @@
     </div>
 
     {# ── STAT CARDS ── #}
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8" id="stat-cards">
-        {% with d=day_summary %}
-        {% if d.planned_minutes or d.focused_minutes %}
-        <div class="s-card">
-            <p class="s-label">Planned</p>
-            <p class="s-value">{{ d.planned }}</p>
-            <span class="s-badge">{{ d.blocks }} block{{ d.blocks|pluralize }}</span>
+    {% with d=day_summary %}
+    {% if d.planned_minutes or d.focused_minutes %}
+    <div class="stats stats-vertical sm:stats-horizontal w-full mb-8 bg-base-300 border border-neutral shadow-lg" id="stat-cards">
+        <div class="stat">
+            <div class="stat-figure text-primary/60"><i data-lucide="calendar-clock" class="w-7 h-7"></i></div>
+            <div class="stat-title text-neutral-content text-[10px] uppercase tracking-[0.2em] font-bold">Planned</div>
+            <div class="stat-value text-base-content text-3xl">{{ d.planned }}</div>
+            <div class="stat-desc text-neutral-content">{{ d.blocks }} block{{ d.blocks|pluralize }}</div>
         </div>
-        <div class="s-card">
-            <p class="s-label">Focused</p>
-            <p class="s-value">{{ d.focused }}</p>
-            <span class="s-badge">{{ d.sessions }} session{{ d.sessions|pluralize }}</span>
+        <div class="stat">
+            <div class="stat-figure text-primary"><i data-lucide="timer" class="w-7 h-7"></i></div>
+            <div class="stat-title text-neutral-content text-[10px] uppercase tracking-[0.2em] font-bold">Focused</div>
+            <div class="stat-value text-primary text-3xl">{{ d.focused }}</div>
+            <div class="stat-desc text-neutral-content">{{ d.sessions }} session{{ d.sessions|pluralize }}</div>
         </div>
-        <div class="s-card">
-            <p class="s-label">Plan done</p>
-            <p class="s-value">{% if d.done_percent is not None %}{{ d.done_percent }}%{% else %}—{% endif %}</p>
-            <span class="s-badge">focused / planned</span>
+        <div class="stat">
+            <div class="stat-figure">
+                <div class="radial-progress text-primary bg-primary/10" role="progressbar"
+                    aria-valuenow="{{ d.done_percent|default:0 }}" aria-label="Plan done"
+                    style="--value: {{ d.done_percent|default:0 }}; --size: 3.4rem; --thickness: 5px;">
+                    <i data-lucide="target" class="w-4 h-4"></i>
+                </div>
+            </div>
+            <div class="stat-title text-neutral-content text-[10px] uppercase tracking-[0.2em] font-bold">Plan done</div>
+            <div class="stat-value text-base-content text-3xl">{% if d.done_percent is not None %}{{ d.done_percent }}%{% else %}—{% endif %}</div>
+            <div class="stat-desc text-neutral-content">focused of planned</div>
         </div>
-        <div class="s-card">
-            <p class="s-label">Top block</p>
-            <p class="s-value truncate">{{ d.top_block|default:"—" }}</p>
-            {% if d.top_block_time %}<span class="s-badge">{{ d.top_block_time }}</span>{% endif %}
+        <div class="stat">
+            <div class="stat-figure text-primary/60"><i data-lucide="trophy" class="w-7 h-7"></i></div>
+            <div class="stat-title text-neutral-content text-[10px] uppercase tracking-[0.2em] font-bold">Top block</div>
+            <div class="stat-value text-base-content text-3xl truncate max-w-[10rem]">{{ d.top_block|default:"—" }}</div>
+            <div class="stat-desc text-neutral-content">{{ d.top_block_time|default:"nothing planned" }}</div>
         </div>
-        {% else %}
-        <div class="col-span-4 text-center py-8 text-neutral-content text-sm opacity-60">
-            Nothing planned or focused on this day.
-        </div>
-        {% endif %}
-        {% endwith %}
     </div>
+    {% else %}
+    <div class="bg-base-300 border border-neutral rounded-2xl mb-8 text-center py-8 text-neutral-content text-sm opacity-60" id="stat-cards">
+        Nothing planned or focused on this day.
+    </div>
+    {% endif %}
+    {% endwith %}
 
     {# ── DONUT + ACTION LIST ── #}
     <div class="bg-base-300 border border-neutral rounded-2xl p-8 mb-6 shadow-lg">
@@ -217,44 +227,6 @@
         height: 100%;
         border-radius: 99px;
         transition: width .7s cubic-bezier(.16, 1, .3, 1);
-    }
-
-    #stat-cards .s-card {
-        background: #121f1b;
-        border: 1px solid #26403a;
-        border-radius: 16px;
-        padding: 1.25rem 1.5rem;
-        transition: border-color .2s;
-    }
-
-    #stat-cards .s-card:hover {
-        border-color: rgba(77, 255, 170, .22);
-    }
-
-    #stat-cards .s-label {
-        font-size: 9px;
-        color: #7aaa96;
-        text-transform: uppercase;
-        letter-spacing: .2em;
-        font-weight: 700;
-        margin-bottom: .6rem;
-    }
-
-    #stat-cards .s-value {
-        font-size: 26px;
-        font-weight: 700;
-        color: #f0faf5;
-        line-height: 1;
-        margin-bottom: .4rem;
-    }
-
-    #stat-cards .s-badge {
-        font-size: 9px;
-        padding: 2px 8px;
-        border-radius: 999px;
-        background: rgba(77, 255, 170, .1);
-        color: #4dffaa;
-        font-weight: 700;
     }
 
     .wbc {
