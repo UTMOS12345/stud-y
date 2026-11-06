@@ -95,3 +95,27 @@ class FocusLinkTests(TestCase):
         block = make_block(self.user)
         response = self.client.get(reverse('schedule'), {'date': '2026-01-05'})
         self.assertContains(response, f"{reverse('pomodoro')}?block={block.id}")
+
+
+class BlockModeTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='t', email='t@t.com', password='pw12345!x')
+        self.client.force_login(self.user)
+
+    def post(self, body):
+        return self.client.post(reverse('pomodoro_save_session'), json.dumps(body), content_type='application/json')
+
+    def test_long_block_run_is_saved(self):
+        block = make_block(self.user, datetime.time(8, 30), datetime.time(17, 45))
+        self.assertEqual(self.post({'focused_seconds': 9 * 3600 + 15 * 60, 'block_id': block.id}).status_code, 201)
+        self.assertEqual(BlockSession.objects.get().focused_seconds, 33300)
+
+    def test_more_than_16_hours_is_rejected(self):
+        self.assertEqual(self.post({'focused_seconds': 16 * 3600 + 1}).status_code, 400)
+
+    def test_page_has_block_times_for_block_mode(self):
+        block = make_block(self.user)
+        response = self.client.get(reverse('pomodoro'), {'block': block.id})
+        self.assertContains(response, 'data-start="09:00" data-end="10:00"')
+        self.assertContains(response, 'data-date="2026-01-05"')
+        self.assertContains(response, 'id="block-mode-btn"')

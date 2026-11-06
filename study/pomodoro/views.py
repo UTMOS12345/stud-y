@@ -11,8 +11,8 @@ from django.views.decorators.http import require_POST
 from accounts.models import Profile
 from schedule.models import BlockSession, ScheduleBlock
 
-# Longest focus session we accept, the same as the longest pomodoro allowed in settings
-MAX_SESSION_SECONDS = 120 * 60
+# Longest focus session we accept: block mode can time a whole block, like a school day
+MAX_SESSION_SECONDS = 16 * 3600
 
 
 def today_bounds():
@@ -32,11 +32,11 @@ def pomodoro(request):
     # blocks you can focus on: today's, plus one picked from the schedule (?block=)
     blocks = list(ScheduleBlock.objects.filter(
         schedule__user=request.user, schedule__date=timezone.localdate(),
-    ).select_related('action'))
+    ).select_related('action', 'schedule'))
     selected_id = None
     requested = request.GET.get('block', '')
     if requested.isdigit():
-        picked = ScheduleBlock.objects.filter(pk=requested, schedule__user=request.user).select_related('action').first()
+        picked = ScheduleBlock.objects.filter(pk=requested, schedule__user=request.user).select_related('action', 'schedule').first()
         if picked:
             selected_id = picked.id
             if picked not in blocks:
@@ -53,6 +53,7 @@ def pomodoro(request):
         'long_break_interval': profile.default_long_break_interval,
         'today_sessions': today['count'],
         'today_focused_seconds': today['seconds'] or 0,
+        'today': timezone.localdate(),
         'blocks': blocks,
         'selected_block_id': selected_id,
         'block_from_link': requested.isdigit() and selected_id is not None,

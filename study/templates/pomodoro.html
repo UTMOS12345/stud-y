@@ -4,7 +4,7 @@
 {% block title %}stud-y — pomodoro{% endblock %}
 
 {% block content %}
-<div class="h-full w-full flex flex-col items-center justify-center p-4 animate-up relative">
+<div id="pomodoro-root" class="h-full w-full flex flex-col items-center justify-center p-4 animate-up relative">
 
     <div class="flex flex-col items-center gap-6">
 
@@ -80,6 +80,8 @@
                             class="px-7 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] transition-all bg-primary/20 text-primary border border-primary/30 cursor-pointer">WORK</button>
                         <button id="break-mode-btn"
                             class="px-7 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] transition-all text-neutral-content/40 hover:text-primary/70 cursor-pointer">BREAK</button>
+                        <button id="block-mode-btn" title="Time the whole block instead of a pomodoro"
+                            class="hidden px-7 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] transition-all text-neutral-content/40 hover:text-primary/70 cursor-pointer">BLOCK</button>
                     </div>
                 </div>
 
@@ -106,7 +108,9 @@
                 <option value="{{ block.id }}" {% if block.id == selected_block_id %}selected{% endif %}
                     data-title="{{ block.title }}"
                     data-meta="{{ block.start_time|time:'H:i' }}–{{ block.end_time|time:'H:i' }}{% if block.action %} · {{ block.action.name }}{% endif %}"
-                    data-color="{% if block.action %}{{ block.action.color }}{% else %}#6B7280{% endif %}">{{ block.title }}</option>
+                    data-color="{% if block.action %}{{ block.action.color }}{% else %}#6B7280{% endif %}"
+                    data-date="{{ block.schedule.date|date:'Y-m-d' }}"
+                    data-start="{{ block.start_time|time:'H:i' }}" data-end="{{ block.end_time|time:'H:i' }}">{{ block.title }}</option>
                 {% endfor %}
             </select>
 
@@ -225,13 +229,15 @@
         const TODAY_SESSIONS = parseInt("{{ today_sessions|default:0 }}", 10);
         const TODAY_FOCUSED_SECONDS = parseInt("{{ today_focused_seconds|default:0 }}", 10);
         const BLOCK_FROM_LINK = {{ block_from_link|yesno:"true,false" }};
+        const TODAY = "{{ today|date:'Y-m-d' }}";
         // ───────────────────────────────────────────────────────────────────
 
         const circumference = 2 * Math.PI * 255;
 
         let endTime = null;
         let isRunning = false;
-        let mode = 'work';          // 'work' | 'short_break' | 'long_break'
+        let mode = 'work';          // 'work' | 'short_break' | 'long_break' | 'block'
+        let blockTotal = 0;         // length of the timed block in seconds (block mode)
         let sessionsCompleted = 0;
         let totalFocusedSeconds = 0;
         let timerInterval = null;
@@ -245,6 +251,7 @@
         const pauseIcon = document.getElementById('pause-icon');
         const workModeBtn = document.getElementById('work-mode-btn');
         const breakModeBtn = document.getElementById('break-mode-btn');
+        const blockModeBtn = document.getElementById('block-mode-btn');
         const sessionsCount = document.getElementById('sessions-count');
         const timeCount = document.getElementById('time-count');
         const sessionLabel = document.getElementById('session-label');
@@ -258,6 +265,7 @@
 
         function durationForMode(m) {
             if (m === 'work') return WORK_TIME;
+            if (m === 'block') return blockTotal || WORK_TIME;
             if (m === 'long_break') return LONG_BREAK_TIME;
             return SHORT_BREAK_TIME;
         }
@@ -265,6 +273,7 @@
         function labelForMode(m) {
             if (m === 'work') return 'work';
             if (m === 'long_break') return 'long break';
+            if (m === 'block') return 'block';
             return 'break';
         }
 
@@ -275,9 +284,13 @@
         }
 
         function formatTime(seconds) {
-            const mins = Math.floor(seconds / 60);
+            const hours = Math.floor(seconds / 3600);
+            const mins = Math.floor(seconds / 60) % 60;
             const secs = seconds % 60;
-            return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            const pad = n => String(n).padStart(2, '0');
+            // long blocks get hours, and a smaller font so they fit the circle
+            timerDisplay.style.fontSize = hours ? '104px' : '140px';
+            return hours ? `${hours}:${pad(mins)}:${pad(secs)}` : `${pad(Math.floor(seconds / 60))}:${pad(secs)}`;
         }
 
         // ── Display ────────────────────────────────────────────────────────
@@ -329,7 +342,9 @@
             const activeClass = "px-7 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] transition-all bg-primary/20 text-primary border border-primary/30 cursor-pointer";
             const inactiveClass = "px-7 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] transition-all text-neutral-content/40 hover:text-primary/70 cursor-pointer";
             workModeBtn.className = (mode === 'work') ? activeClass : inactiveClass;
-            breakModeBtn.className = (mode !== 'work') ? activeClass : inactiveClass;
+            breakModeBtn.className = (mode === 'short_break' || mode === 'long_break') ? activeClass : inactiveClass;
+            blockModeBtn.className = ((mode === 'block') ? activeClass : inactiveClass) +
+                (blockSelect && blockSelect.value ? '' : ' hidden');
             sessionLabel.textContent = labelForMode(mode);
             updateCycleDots();
         }
@@ -342,6 +357,7 @@
             localStorage.setItem('pomodoro_mode', mode);
             localStorage.setItem('pomodoro_timeLeft', timeLeft);
             localStorage.setItem('pomodoro_totalTime', durationForMode(mode));
+            localStorage.setItem('pomodoro_blockTotal', blockTotal);
         }
 
         function loadState() {
@@ -357,6 +373,8 @@
             localStorage.removeItem('pomodoro_sessionsCompleted');
             localStorage.removeItem('pomodoro_totalFocusedSeconds');
             mode = savedMode;
+            blockTotal = parseInt(localStorage.getItem('pomodoro_blockTotal')) || 0;
+            if (mode === 'block' && !(blockSelect.value && blockTotal)) mode = 'work';
 
             if (savedIsRunning && savedEndTime) {
                 const remaining = Math.round((parseInt(savedEndTime) - Date.now()) / 1000);
@@ -477,9 +495,45 @@
             saveState();
         }
 
+        /** Save the time spent so far on a block run that is stopped early. */
+        function saveBlockProgress() {
+            if (mode !== 'block') return;
+            const focused = blockTotal - timeLeft;
+            if (focused >= 60) {
+                sessionsCompleted++;
+                totalFocusedSeconds += focused;
+                recordSession(focused);
+                updateStats();
+            }
+        }
+
+        /** Seconds to time for a block: what is left of it if it is running now, else its full length. */
+        function blockSeconds(option) {
+            const toMinutes = hm => { const [h, m] = hm.split(':').map(Number); return h * 60 + m; };
+            const start = toMinutes(option.dataset.start) * 60;
+            const end = toMinutes(option.dataset.end) * 60;
+            const now = new Date();
+            const nowSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+            if (option.dataset.date === TODAY && start <= nowSeconds && nowSeconds < end) return end - nowSeconds;
+            return end - start;
+        }
+
+        function startBlockMode() {
+            const option = blockSelect.selectedOptions[0];
+            if (!option || !option.value) return;
+            blockTotal = blockSeconds(option);
+            switchMode('block');
+        }
+
         function complete() {
             pause();
-            if (mode === 'work') {
+            if (mode === 'block') {
+                sessionsCompleted++;
+                totalFocusedSeconds += blockTotal;
+                recordSession(blockTotal);
+                updateStats();
+                switchMode('work');
+            } else if (mode === 'work') {
                 sessionsCompleted++;
                 totalFocusedSeconds += WORK_TIME;
                 recordSession(WORK_TIME);
@@ -491,6 +545,7 @@
         }
 
         function switchMode(newMode) {
+            if (mode === 'block' && newMode !== 'block') saveBlockProgress();
             mode = newMode;
             timeLeft = durationForMode(mode);
             endTime = null;
@@ -502,7 +557,15 @@
         // ── Event listeners ────────────────────────────────────────────────
 
         startBtn.addEventListener('click', () => isRunning ? pause() : start());
-        resetBtn.addEventListener('click', () => { pause(); timeLeft = durationForMode(mode); updateDisplay(); saveState(); });
+        resetBtn.addEventListener('click', () => {
+            pause();
+            saveBlockProgress();
+            if (mode === 'block') { startBlockMode(); return; }  // fresh run of the same block
+            timeLeft = durationForMode(mode);
+            updateDisplay();
+            saveState();
+        });
+        blockModeBtn.addEventListener('click', () => { if (!isRunning) startBlockMode(); });
         workModeBtn.addEventListener('click', () => { if (!isRunning) switchMode('work'); });
         breakModeBtn.addEventListener('click', () => { if (!isRunning) switchMode('short_break'); });
 
@@ -561,15 +624,34 @@
             pickerBtn.classList.toggle('bp-chosen', !!color);
             // and inside the timer circle
             sessionTarget.textContent = color ? option.dataset.title : 'active session';
-            sessionTarget.style.color = color || '';
+            sessionTarget.style.color = color ? 'var(--color-primary)' : '';
+            // the whole timer takes the block's color, back to the theme color without one
+            const root = document.getElementById('pomodoro-root');
+            if (color) {
+                root.style.setProperty('--color-primary', color);
+                root.style.setProperty('--glow-color', `color-mix(in srgb, ${color} 9%, transparent)`);
+            } else {
+                root.style.removeProperty('--color-primary');
+                root.style.removeProperty('--glow-color');
+            }
+            blockModeBtn.classList.toggle('hidden', !color);
             pickerList.querySelectorAll('.bp-option').forEach(row =>
                 row.setAttribute('aria-selected', row.dataset.value === blockSelect.value));
         }
 
         function chooseBlock(value) {
+            const changed = value !== blockSelect.value;
+            if (changed && mode === 'block') {
+                // keep what was done on the old block before moving on
+                pause();
+                saveBlockProgress();
+            }
             blockSelect.value = value;
             localStorage.setItem('pomodoro_block', value);
             showChoice();
+            if (changed && mode === 'block') {
+                if (value) startBlockMode(); else switchMode('work');
+            }
         }
 
         function openPicker() {

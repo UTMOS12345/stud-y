@@ -25,7 +25,7 @@ Most study apps do one thing: a to-do list, a timer, or a calendar. stud-y puts 
 - **Accounts:** sign up and log in with email and password
 - **Dashboard:** what is on now and what is next, today's plan, focus time today and this week, a week chart and your focus streak
 - **Schedule:** plan a day with time blocks (each new action gets its own color), pick days from a date selector, and save a day as a reusable template
-- **Pomodoro:** focus sessions with configurable times; pick the block you are working on, or start from the focus button on any block
+- **Pomodoro:** focus sessions with configurable times; pick the block you are working on (the timer takes its color), or switch to block mode to time the whole block
 - **Focus tracking:** every finished session is saved (and kept in the browser until the server has it, so going offline loses nothing)
 - **Statistics:** planned vs focused time per day, per week and per block, all-time records, a 5-week focus calendar and the hours you focus best
 - **Settings:** profile, Pomodoro times, time zone, password change and a light theme
