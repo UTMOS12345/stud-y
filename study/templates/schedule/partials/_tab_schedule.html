@@ -195,6 +195,12 @@
                                     </p>
                                     <p class="text-xl font-bold text-primary total-duration-label">--</p>
                                 </div>
+                                {% if item.block.focused_minutes %}
+                                <div>
+                                    <p class="text-xs uppercase tracking-widest text-base-content/50 font-bold">Focused</p>
+                                    <p class="text-xl font-bold text-base-content/80">{{ item.block.focused_minutes }} m.</p>
+                                </div>
+                                {% endif %}
                                 <div class="text-right opacity-0 transition-opacity duration-500 active-info">
                                     <p class="text-xs uppercase tracking-widest font-bold opacity-80"
                                         style="color: {{ item.block.action.color|default:'#3B82F6' }};">

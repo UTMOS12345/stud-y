@@ -7,6 +7,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.db import transaction, IntegrityError
+from django.db.models import Sum
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 
@@ -273,7 +274,13 @@ def schedule_view(request):
         form = ScheduleBlockForm(user=request.user)
 
     # Load the blocks once and reuse them for the list, gaps and statistics
-    blocks = list(schedule.blocks.select_related('action')) if schedule else []
+    # (with the focus time from Pomodoro sessions, in the same query)
+    blocks = list(
+        schedule.blocks.select_related('action').annotate(focused_seconds=Sum('sessions__focused_seconds'))
+    ) if schedule else []
+    for b in blocks:
+        b.focused_seconds = b.focused_seconds or 0
+        b.focused_minutes = b.focused_seconds // 60
     if schedule is None:
         schedule = DaySchedule(user=request.user, date=selected_date)  # not saved, used for the date only
 
@@ -288,6 +295,7 @@ def schedule_view(request):
             'endMins':   b.end_time.hour   * 60 + b.end_time.minute,
             'title':     b.title,
             'blockType': b.block_type,
+            'focusedSecs': b.focused_seconds,
         })
 
     # Build schedule with gaps for display

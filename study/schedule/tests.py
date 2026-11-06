@@ -6,7 +6,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from accounts.models import User
-from .models import Action, DaySchedule, DayTemplate, ScheduleBlock, TemplateBlock
+from .models import Action, BlockSession, DaySchedule, DayTemplate, ScheduleBlock, TemplateBlock
 from .views import _build_schedule_with_gaps, _week_hours
 
 T = datetime.time
@@ -70,6 +70,18 @@ class ScheduleViewTests(ScheduleTestCase):
             self.add_block(datetime.date(2026, 1, 5), T(h), T(h, 45), title=f'b{h}')
         with self.assertNumQueries(9):
             self.client.get(self.url, {'date': '2026-01-05'})
+
+    def test_blocks_show_focused_time(self):
+        block = self.add_block(datetime.date(2026, 1, 5), T(9), T(10), title='Algebra')
+        self.add_block(datetime.date(2026, 1, 5), T(11), T(12), title='Reading')
+        now = datetime.datetime(2026, 1, 5, 9, 30, tzinfo=datetime.timezone.utc)
+        for seconds in (1500, 900):
+            BlockSession.objects.create(user=self.user, block=block, start_time=now, end_time=now,
+                                        focused_seconds=seconds)
+        response = self.client.get(self.url, {'date': '2026-01-05'})
+        focused = {b.title: b.focused_minutes for b in response.context['blocks']}
+        self.assertEqual(focused, {'Algebra': 40, 'Reading': 0})
+        self.assertContains(response, '40 m.')
 
     def test_duplicate_action_name(self):
         response = self.post_json(self.url, {'action': 'create_action', 'name': 'Math'})
