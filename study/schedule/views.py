@@ -119,7 +119,7 @@ def _build_schedule_with_gaps(blocks):
 def _save_action(user, action_type, data):
     """Create or update an Action from the JSON sent by the schedule / template pages."""
     name      = data.get('name', '').strip()
-    color     = data.get('color', '#3B82F6')
+    color     = data.get('color') or Action.next_color(user)
     icon      = data.get('icon_name', 'activity')
     action_id = data.get('action_id')
     if not name:
@@ -281,6 +281,7 @@ def schedule_view(request):
     # Build schedule with gaps for display
     schedule_with_gaps = _build_schedule_with_gaps(blocks)
 
+    actions = list(Action.objects.filter(user=request.user))
     week = week_stats(request.user, selected_date)
     subjects = subject_stats(request.user, selected_date)
 
@@ -290,7 +291,8 @@ def schedule_view(request):
         'schedule_with_gaps': schedule_with_gaps,
         'form':          form,
         'templates':     DayTemplate.objects.filter(user=request.user),
-        'actions':       Action.objects.filter(user=request.user),
+        'actions':       actions,
+        'next_action_color': Action.next_color(request.user, [a.color for a in actions]),
         'selected_date': selected_date,
         'week':          week,
         'subjects_json': json.dumps(subjects),
@@ -390,6 +392,7 @@ def template_detail_view(request, template_id):
     context = {
         'template': template,
         'actions':  Action.objects.filter(user=request.user),
+        'next_action_color': Action.next_color(request.user),
         'form':     form,
     }
     return render(request, 'schedule/partials/template_editor.html', context)

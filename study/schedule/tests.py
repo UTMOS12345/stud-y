@@ -275,3 +275,26 @@ class TimezoneTests(ScheduleTestCase):
     def test_new_users_get_app_timezone(self):
         user = User.objects.create_user(username='n', email='n@n.com', password='pw12345!x')
         self.assertEqual(user.profile.timezone, 'Asia/Tashkent')
+
+
+class ActionColorTests(ScheduleTestCase):
+    def test_new_actions_get_different_colors(self):
+        # setUp made 'Math' with the default blue
+        for name in ['English', 'Coding', 'History']:
+            self.post_json(self.url, {'action': 'create_action', 'name': name})
+        colors = list(Action.objects.order_by('id').values_list('color', flat=True))
+        self.assertEqual(colors, ['#3B82F6', '#10B981', '#F59E0B', '#EF4444'])
+
+    def test_picked_color_is_kept(self):
+        self.post_json(self.url, {'action': 'create_action', 'name': 'Art', 'color': '#123456'})
+        self.assertEqual(Action.objects.get(name='Art').color, '#123456')
+
+    def test_new_action_form_suggests_next_color(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.context['next_action_color'], '#10B981')
+        self.assertContains(response, 'value = "#10B981"')
+
+    def test_palette_wraps_around(self):
+        for i in range(15):
+            Action.objects.create(user=self.user, name=f'a{i}', color=Action.next_color(self.user))
+        self.assertEqual(Action.objects.count(), 16)

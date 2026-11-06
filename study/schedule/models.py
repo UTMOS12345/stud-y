@@ -5,6 +5,13 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
 from django.db import models, transaction 
 
+# Default colors for new actions, picked in this order so every action looks different
+ACTION_COLORS = [
+    '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899',
+    '#06B6D4', '#84CC16', '#F97316', '#14B8A6', '#6366F1', '#EAB308',
+]
+
+
 class Action(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='actions')
     name = models.CharField(max_length=100)
@@ -18,6 +25,19 @@ class Action(models.Model):
 
     def __str__(self):
         return self.name
+
+    @classmethod
+    def next_color(cls, user, colors=None):
+        """The first palette color this user's actions don't use yet
+        (after all twelve are taken, start the palette again).
+        Pass `colors` when the user's actions are already loaded."""
+        if colors is None:
+            colors = cls.objects.filter(user=user).values_list('color', flat=True)
+        used = {c.upper() for c in colors}
+        for color in ACTION_COLORS:
+            if color not in used:
+                return color
+        return ACTION_COLORS[len(used) % len(ACTION_COLORS)]
 
 class DaySchedule(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='day_schedules')
