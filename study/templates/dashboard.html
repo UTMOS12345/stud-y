@@ -1,77 +1,171 @@
 {% extends "base.html" %}
-{% load i18n %}
 
 {% block title %}stud-y — dashboard{% endblock %}
 
 {% block content %}
-<div class="h-full flex items-center justify-center p-8 animate-up">
+<div class="max-w-5xl mx-auto px-6 md:px-10 py-10 animate-up">
 
-    <div class="flex flex-col items-center gap-6 text-center max-w-sm">
+    <header class="mb-10">
+        <p class="text-[10px] text-neutral-content tracking-[0.3em] uppercase mb-2">{{ today|date:"l, d F" }}</p>
+        <h1 class="font-serif italic font-bold text-base-content leading-tight" style="font-size: 40px; letter-spacing: -1px;">
+            today<span class="text-primary">.</span>
+        </h1>
+    </header>
 
-        <!-- pulsing dot -->
-        <div class="relative flex items-center justify-center">
-            <div class="w-2 h-2 rounded-full bg-primary" style="box-shadow: 0 0 12px rgba(77,255,170,0.7);
-                  animation: pulse 2.4s ease-in-out infinite;"></div>
-            <div class="absolute w-8 h-8 rounded-full border border-primary/20"
-                style="animation: ping 2.4s ease-in-out infinite;"></div>
-        </div>
-
-        <!-- heading -->
-        <div>
-            <h1 class="font-serif italic font-bold text-base-content leading-tight mb-2"
-                style="font-size: 36px; letter-spacing: -0.4px;">
-                coming soon.
-            </h1>
-            <p class="text-[11px] text-neutral-content tracking-[0.1em] uppercase">
-                dashboard is under construction
+    {# ── NOW / NEXT ── #}
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <div class="db-card">
+            <p class="db-label">Now</p>
+            {% if current %}
+            <div class="flex items-center gap-3 mb-1">
+                <span class="db-dot" style="background: {{ current.color }};"></span>
+                <h2 class="text-xl font-bold text-base-content truncate">{{ current.title }}</h2>
+            </div>
+            <p class="text-xs text-neutral-content mb-4">
+                {{ current.start_time|time:"H:i" }}–{{ current.end_time|time:"H:i" }}
+                {% if current.action %}· {{ current.action.name }}{% endif %}
+                · {{ current.minutes_left }} min left
             </p>
+            <div class="db-track mb-5"><div class="db-fill" style="width: {{ current.progress }}%; background: {{ current.color }};"></div></div>
+            <a href="{% url 'pomodoro' %}?block={{ current.id }}" class="db-button">
+                <i data-lucide="timer" class="w-4 h-4"></i> Focus on it
+            </a>
+            {% else %}
+            <h2 class="text-xl font-bold text-base-content/60 mb-1">Free time</h2>
+            <p class="text-xs text-neutral-content mb-5">Nothing is planned right now.</p>
+            <a href="{% url 'pomodoro' %}" class="db-button db-button-quiet">
+                <i data-lucide="timer" class="w-4 h-4"></i> Start a focus session
+            </a>
+            {% endif %}
         </div>
 
-        <!-- divider -->
-        <div class="w-16 h-px bg-neutral"></div>
-
-        <!-- status tags -->
-        <div class="flex items-center gap-2">
-            <span class="px-2 py-1 rounded text-[9px] tracking-[0.12em] uppercase
-                   border border-primary/20 text-primary/70" style="background: rgba(77,255,170,0.04);">
-                in progress
-            </span>
-            <span class="px-2 py-1 rounded text-[9px] tracking-[0.12em] uppercase
-                   border border-neutral text-neutral-content/50">
-                v0.1
-            </span>
+        <div class="db-card">
+            <p class="db-label">Next</p>
+            {% if upcoming %}
+            <div class="flex items-center gap-3 mb-1">
+                <span class="db-dot" style="background: {{ upcoming.color }};"></span>
+                <h2 class="text-xl font-bold text-base-content truncate">{{ upcoming.title }}</h2>
+            </div>
+            <p class="text-xs text-neutral-content">
+                {{ upcoming.start_time|time:"H:i" }}–{{ upcoming.end_time|time:"H:i" }}
+                {% if upcoming.action %}· {{ upcoming.action.name }}{% endif %}
+            </p>
+            <p class="text-3xl font-bold text-primary mt-4">in {{ upcoming.starts_in }}</p>
+            {% else %}
+            <h2 class="text-xl font-bold text-base-content/60 mb-1">Nothing else today</h2>
+            <p class="text-xs text-neutral-content">Plan tomorrow on the schedule page.</p>
+            {% endif %}
         </div>
+    </section>
 
-    </div>
-
+    {# ── TODAY'S PLAN ── #}
+    <section class="db-card">
+        <div class="flex items-center justify-between mb-5">
+            <p class="db-label" style="margin-bottom: 0;">Today's plan</p>
+            <a href="{% url 'schedule' %}" class="text-[10px] uppercase tracking-[0.2em] font-bold text-primary/70 hover:text-primary">
+                Open schedule →
+            </a>
+        </div>
+        {% for b in blocks %}
+        <div class="db-row {% if b.is_done %}opacity-50{% endif %} {% if b.is_current %}db-row-current{% endif %}">
+            <span class="text-xs font-mono text-neutral-content w-24 flex-shrink-0">{{ b.start_time|time:"H:i" }}–{{ b.end_time|time:"H:i" }}</span>
+            <span class="db-dot" style="background: {{ b.color }};"></span>
+            <span class="flex-1 min-w-0 truncate text-sm font-bold text-base-content">{{ b.title }}</span>
+            <span class="text-[11px] font-mono text-neutral-content whitespace-nowrap">
+                {% if b.focused_seconds %}<span class="text-primary">{{ b.focused }}</span> / {% endif %}{{ b.planned }}
+            </span>
+            <a href="{% url 'pomodoro' %}?block={{ b.id }}" class="text-base-content/40 hover:text-primary" title="Focus on this block">
+                <i data-lucide="timer" class="w-4 h-4"></i>
+            </a>
+        </div>
+        {% empty %}
+        <div class="text-center py-8">
+            <p class="text-sm text-neutral-content mb-4">No blocks planned for today.</p>
+            <a href="{% url 'schedule' %}" class="db-button">
+                <i data-lucide="calendar-plus" class="w-4 h-4"></i> Plan your day
+            </a>
+        </div>
+        {% endfor %}
+    </section>
 </div>
 
 <style>
-    @keyframes pulse {
-
-        0%,
-        100% {
-            opacity: 1;
-            transform: scale(1);
-        }
-
-        50% {
-            opacity: 0.5;
-            transform: scale(0.85);
-        }
+    .db-card {
+        background: var(--color-base-200);
+        border: 1px solid color-mix(in srgb, var(--color-primary), transparent 85%);
+        border-radius: 1.25rem;
+        padding: 1.5rem 1.75rem;
     }
 
-    @keyframes ping {
-        0% {
-            transform: scale(0.8);
-            opacity: 0.6;
-        }
+    .db-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: .25em;
+        text-transform: uppercase;
+        color: var(--color-primary);
+        opacity: .7;
+        margin-bottom: 1rem;
+    }
 
-        80%,
-        100% {
-            transform: scale(2.2);
-            opacity: 0;
-        }
+    .db-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .db-track {
+        height: 6px;
+        border-radius: 99px;
+        overflow: hidden;
+        background: color-mix(in srgb, var(--color-base-content), transparent 88%);
+    }
+
+    .db-fill {
+        height: 100%;
+        border-radius: 99px;
+    }
+
+    .db-button {
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+        padding: .6rem 1.1rem;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: .15em;
+        text-transform: uppercase;
+        color: var(--color-primary);
+        border: 1px solid color-mix(in srgb, var(--color-primary), transparent 60%);
+        background: color-mix(in srgb, var(--color-primary), transparent 90%);
+        transition: background .15s;
+    }
+
+    .db-button:hover {
+        background: color-mix(in srgb, var(--color-primary), transparent 80%);
+    }
+
+    .db-button-quiet {
+        color: var(--color-base-content);
+        border-color: color-mix(in srgb, var(--color-base-content), transparent 80%);
+        background: transparent;
+    }
+
+    .db-row {
+        display: flex;
+        align-items: center;
+        gap: .9rem;
+        padding: .7rem .75rem;
+        border-radius: .75rem;
+    }
+
+    .db-row:hover {
+        background: color-mix(in srgb, var(--color-base-content), transparent 95%);
+    }
+
+    .db-row-current {
+        background: color-mix(in srgb, var(--color-primary), transparent 92%);
     }
 </style>
 {% endblock %}
