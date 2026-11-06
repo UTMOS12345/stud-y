@@ -140,19 +140,32 @@ class ScheduleBlock(models.Model):
         ]
 
 class BlockSession(models.Model):
+    """One finished Pomodoro focus session, optionally tied to a schedule block."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='focus_sessions')
     block = models.ForeignKey(
         ScheduleBlock,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name='sessions'
     )
     start_time = models.DateTimeField(db_index=True)
     end_time = models.DateTimeField(null=True, blank=True)
-    
+    focused_seconds = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['-start_time']
+
     @property
     def duration(self):
         if self.start_time and self.end_time:
             return self.end_time - self.start_time
         return None
+
+    def __str__(self):
+        return f"{self.user} {self.start_time:%Y-%m-%d %H:%M} ({self.focused_seconds // 60} min)"
+
+
 class DayTemplate(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='templates')
     name = models.CharField(max_length=100)

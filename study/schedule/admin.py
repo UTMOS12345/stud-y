@@ -49,8 +49,11 @@ class ActionAdmin(admin.ModelAdmin):
 
 @admin.register(BlockSession)
 class BlockSessionAdmin(admin.ModelAdmin):
-    list_display = ('block', 'start_time', 'end_time')
-    list_select_related = ('block',)
+    list_display = ('user', 'block', 'start_time', 'focused_seconds')
+    list_filter = ('start_time',)
+    search_fields = ('user__email', 'block__title')
+    date_hierarchy = 'start_time'
+    list_select_related = ('user', 'block')
 
 
 admin.site.register(TemplateBlock)
