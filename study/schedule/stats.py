@@ -117,3 +117,17 @@ def summary(subjects, block_count):
         'top_subject': top['name'] if top else None,
         'top_subject_time': format_minutes(top['planned_minutes']) if top else '',
     }
+
+
+def week_subjects(user, day):
+    """subject_stats() for the whole week holding `day`, with bar widths (0-100)
+    and readable times ready for the template."""
+    monday = week_start(day)
+    rows = subject_stats(user, monday, monday + datetime.timedelta(days=6))
+    longest = max([max(r['planned_minutes'], r['focused_minutes']) for r in rows] + [1])
+    for r in rows:
+        r['planned'] = format_minutes(r['planned_minutes'])
+        r['focused'] = format_minutes(r['focused_minutes'])
+        r['planned_width'] = round(r['planned_minutes'] * 100 / longest)
+        r['focused_width'] = round(r['focused_minutes'] * 100 / longest)
+    return rows

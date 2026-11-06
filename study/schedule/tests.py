@@ -7,7 +7,7 @@ from django.urls import reverse
 
 from accounts.models import User
 from .models import Action, BlockSession, DaySchedule, DayTemplate, ScheduleBlock, TemplateBlock
-from .stats import subject_stats, week_stats
+from .stats import subject_stats, week_stats, week_subjects
 from .views import _build_schedule_with_gaps
 
 T = datetime.time
@@ -69,7 +69,8 @@ class ScheduleViewTests(ScheduleTestCase):
     def test_query_count_stays_small(self):
         for h in range(8, 14):
             self.add_block(datetime.date(2026, 1, 5), T(h), T(h, 45), title=f'b{h}')
-        with self.assertNumQueries(12):
+        # a fixed number, it does not grow with the number of blocks or sessions
+        with self.assertNumQueries(14):
             self.client.get(self.url, {'date': '2026-01-05'})
 
     def test_blocks_show_focused_time(self):
@@ -181,6 +182,20 @@ class HelperTests(ScheduleTestCase):
     def test_empty_day_summary(self):
         summary = self.client.get(self.url, {'date': '2026-01-05'}).context['day_summary']
         self.assertEqual((summary['planned_minutes'], summary['done_percent'], summary['top_subject']), (0, None, None))
+
+    def test_week_subjects(self):
+        english = Action.objects.create(user=self.user, name='English', color='#10B981')
+        self.add_block(datetime.date(2026, 1, 5), T(9), T(11))                   # Mon, Math 2h
+        reading = self.add_block(datetime.date(2026, 1, 8), T(9), T(10), action=english)  # Thu
+        self.add_block(datetime.date(2026, 1, 13), T(9), T(12))                  # next week
+        ended = datetime.datetime(2026, 1, 8, 6, 0, tzinfo=datetime.timezone.utc)
+        BlockSession.objects.create(user=self.user, block=reading, start_time=ended, end_time=ended,
+                                    focused_seconds=1800)
+        rows = week_subjects(self.user, datetime.date(2026, 1, 7))
+        self.assertEqual([(r['name'], r['planned'], r['focused'], r['planned_width'], r['focused_width']) for r in rows],
+                         [('Math', '2h', '0m', 100, 0), ('English', '1h', '30m', 50, 25)])
+        response = self.client.get(self.url, {'date': '2026-01-07'})
+        self.assertContains(response, 'This Week by Subject')
 
     def test_gaps(self):
         blocks = [

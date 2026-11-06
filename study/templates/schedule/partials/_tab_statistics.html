@@ -147,6 +147,35 @@
         <div class="flex items-end justify-between gap-4 px-2" style="height:180px;" id="week-bars"></div>
     </div>
 
+    {# ── WEEK BY SUBJECT ── #}
+    <div class="bg-base-300 border border-neutral rounded-2xl p-8 mt-6 shadow-lg">
+        <div class="mb-6">
+            <h3 class="text-[10px] font-bold text-base-content uppercase tracking-[0.2em] mb-1">
+                This Week by Subject
+            </h3>
+            <p class="text-[10px] text-neutral-content font-mono opacity-60">
+                Planned vs focused, Monday to Sunday
+            </p>
+        </div>
+        {% for s in week_subjects %}
+        <div class="ws-row">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2.5">
+                    <span class="ws-dot" style="background: {{ s.color }};"></span>
+                    <span class="text-[13px] font-bold text-base-content">{{ s.name }}</span>
+                </div>
+                <span class="text-[11px] text-neutral-content font-mono">
+                    {{ s.focused }} <span class="opacity-50">/ {{ s.planned }}</span>
+                </span>
+            </div>
+            <div class="ws-track"><div class="ws-bar" style="width: {{ s.planned_width }}%; background: {{ s.color }}; opacity: .25;"></div></div>
+            <div class="ws-track"><div class="ws-bar" style="width: {{ s.focused_width }}%; background: {{ s.color }};"></div></div>
+        </div>
+        {% empty %}
+        <p class="text-sm text-neutral-content opacity-50 text-center py-6">Nothing planned or focused this week.</p>
+        {% endfor %}
+    </div>
+
 </div>
 
 {# ─── STYLES ─── #}
@@ -297,6 +326,30 @@
 
     .wbc:hover .wb-tip {
         opacity: 1;
+    }
+
+    .ws-row {
+        padding: 10px 0;
+    }
+
+    .ws-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .ws-track {
+        height: 4px;
+        border-radius: 99px;
+        background: rgba(122, 170, 150, .12);
+        overflow: hidden;
+        margin-top: 4px;
+    }
+
+    .ws-bar {
+        height: 100%;
+        border-radius: 99px;
     }
 
     /* toggle track/thumb — peer-* via JS since we can't rely on Tailwind JIT for peer inside label */
