@@ -131,3 +131,21 @@ def week_subjects(user, day):
         r['planned_width'] = round(r['planned_minutes'] * 100 / longest)
         r['focused_width'] = round(r['focused_minutes'] * 100 / longest)
     return rows
+
+
+def focus_streak(user, today, look_back_days=366):
+    """How many days in a row, up to today, have at least one focus session.
+    A streak that reached yesterday still counts while today has no session yet."""
+    since = today - datetime.timedelta(days=look_back_days)
+    days = {
+        timezone.localtime(ended).date()
+        for ended in BlockSession.objects.filter(
+            user=user, end_time__gte=day_start(since),
+        ).values_list('end_time', flat=True)
+    }
+    day = today if today in days else today - datetime.timedelta(days=1)
+    streak = 0
+    while day in days:
+        streak += 1
+        day -= datetime.timedelta(days=1)
+    return streak

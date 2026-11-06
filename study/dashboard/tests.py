@@ -80,3 +80,24 @@ class NumbersTests(DashboardTestCase):
     def test_new_user_numbers(self):
         context = self.get().context
         self.assertEqual((context['day']['focused'], context['week_percent']), ('0m', None))
+
+
+class StreakTests(DashboardTestCase):
+    def focus_on(self, *days_ago):
+        for n in days_ago:
+            ended = NOW - datetime.timedelta(days=n)
+            BlockSession.objects.create(user=self.user, start_time=ended, end_time=ended, focused_seconds=1500)
+
+    def test_streak_counts_days_in_a_row(self):
+        self.focus_on(0, 0, 1, 2, 4)  # gap on day 3
+        self.assertEqual(self.get().context['streak'], 3)
+
+    def test_streak_still_alive_before_todays_first_session(self):
+        self.focus_on(1, 2)
+        self.assertEqual(self.get().context['streak'], 2)
+
+    def test_streak_broken(self):
+        self.focus_on(2, 3)
+        response = self.get()
+        self.assertEqual(response.context['streak'], 0)
+        self.assertContains(response, 'start a streak today')

@@ -5,11 +5,21 @@
 {% block content %}
 <div class="max-w-5xl mx-auto px-6 md:px-10 py-10 animate-up">
 
-    <header class="mb-10">
-        <p class="text-[10px] text-neutral-content tracking-[0.3em] uppercase mb-2">{{ today|date:"l, d F" }}</p>
-        <h1 class="font-serif italic font-bold text-base-content leading-tight" style="font-size: 40px; letter-spacing: -1px;">
-            today<span class="text-primary">.</span>
-        </h1>
+    <header class="mb-10 flex items-end justify-between gap-4 flex-wrap">
+        <div>
+            <p class="text-[10px] text-neutral-content tracking-[0.3em] uppercase mb-2">{{ today|date:"l, d F" }}</p>
+            <h1 class="font-serif italic font-bold text-base-content leading-tight" style="font-size: 40px; letter-spacing: -1px;">
+                today<span class="text-primary">.</span>
+            </h1>
+        </div>
+        <div class="db-streak {% if not streak %}opacity-60{% endif %}" title="Days in a row with at least one focus session">
+            <i data-lucide="flame" class="w-4 h-4"></i>
+            {% if streak %}
+            <span><b>{{ streak }}</b>-day streak</span>
+            {% else %}
+            <span>start a streak today</span>
+            {% endif %}
+        </div>
     </header>
 
     {# ── NUMBERS ── #}
@@ -129,6 +139,23 @@
         color: var(--color-primary);
         opacity: .7;
         margin-bottom: 1rem;
+    }
+
+    .db-streak {
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+        padding: .5rem 1rem;
+        border-radius: 999px;
+        font-size: 11px;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+        color: var(--color-primary);
+        border: 1px solid color-mix(in srgb, var(--color-primary), transparent 75%);
+    }
+
+    .db-streak b {
+        font-size: 14px;
     }
 
     .db-number {

@@ -4,7 +4,7 @@ from django.shortcuts import render
 from django.utils import timezone
 
 from schedule.models import ScheduleBlock
-from schedule.stats import format_minutes, minutes_between, subject_stats, summary, week_stats
+from schedule.stats import focus_streak, format_minutes, minutes_between, subject_stats, summary, week_stats
 
 
 def today_blocks(user, today):
@@ -53,6 +53,7 @@ def dashboard(request):
     return render(request, 'dashboard.html', {
         'today': now.date(),
         'day': day,
+        'streak': focus_streak(request.user, now.date()),
         'week_planned': round(week_planned, 1),
         'week_focused': round(week_focused, 1),
         'week_percent': min(100, round(week_focused * 100 / week_planned)) if week_planned else None,
