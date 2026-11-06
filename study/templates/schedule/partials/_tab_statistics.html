@@ -5,6 +5,7 @@
     const SCHEDULE_BLOCKS = {{ blocks_json| safe }};
     const SELECTED_DATE = "{{ selected_date|date:'Y-m-d' }}";
     const WEEK = {{ week_json|safe }};
+    const SUBJECTS = {{ subjects_json|safe }};
 </script>
 
 <div class="animate-up max-w-4xl mx-auto px-4 py-8">
@@ -268,6 +269,11 @@
             return h > 0 ? h + 'h' : m + 'm';
         }
         function fmtH(mins) { return (mins / 60).toFixed(1) + 'h'; }
+        function esc(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
 
         /* ── date nav ── */
         (function () {
@@ -284,14 +290,11 @@
 
         function buildDataset(withEmpty) {
             if (!withEmpty) {
-                // original scheduled blocks only
-                const src = [...SCHEDULE_BLOCKS].sort((a, b) => a.startMins - b.startMins);
-                return src.map(b => ({
-                    action: b.action,
-                    color: b.color,
-                    startMins: b.startMins,
-                    endMins: b.endMins,
-                    mins: b.endMins - b.startMins,
+                // one slice per subject
+                return SUBJECTS.filter(s => s.planned_minutes > 0).map(s => ({
+                    action: s.name,
+                    color: s.color,
+                    mins: s.planned_minutes,
                     empty: false,
                 }));
             }
@@ -399,16 +402,21 @@
 
             /* ── action list ── */
             const el = document.getElementById('action-list');
-            if (!dataset.length) { el.innerHTML = ''; return; }
+            if (!dataset.length && !SUBJECTS.length) { el.innerHTML = ''; return; }
 
-            // sort: scheduled by duration desc, then empties at bottom
+            // one row per subject (planned and focused), then the empty gaps
             const listItems = [
-                ...scheduled.sort((a, b) => b.mins - a.mins),
+                ...SUBJECTS.map(s => ({
+                    action: s.name, color: s.color, mins: s.planned_minutes,
+                    focused: s.focused_minutes, empty: false,
+                })),
                 ...(withEmpty ? dataset.filter(d => d.empty) : []),
             ];
 
             el.innerHTML = listItems.map(d => {
-                const pct = Math.round(d.mins / totalAll * 100);
+                const pct = totalAll ? Math.round(d.mins / totalAll * 100) : 0;
+                const focusedLine = d.empty ? '' :
+                    `<div style="font-size:10px;color:#4dffaa;opacity:.8;margin-top:2px;">focused ${fmtDuration(d.focused || 0)}</div>`;
                 const dot = d.empty
                     ? `<div style="width:10px;height:10px;border-radius:2px;flex-shrink:0;
                        background:#26403a;border:1px solid #3a5a52;"></div>`
@@ -428,11 +436,11 @@
           <div style="display:flex;align-items:center;gap:10px;">
             ${dot}
             <div>
-              <div style="${nameStyle}">${d.empty ? (d.label || 'Empty') : d.action}</div>
+              <div style="${nameStyle}">${esc(d.empty ? (d.label || 'Empty') : d.action)}</div>
               <div style="font-size:10px;color:#7aaa96;">${pct}%</div>
             </div>
           </div>
-          <div style="${timeStyle}">${fmtDuration(d.mins)}</div>
+          <div style="${timeStyle};text-align:right;">${d.empty ? fmtDuration(d.mins) : (d.mins ? fmtDuration(d.mins) + ' planned' : '—')}${focusedLine}</div>
         </div>
         <div class="a-bar-wrap">
           <div class="a-bar-fill" style="width:0%;background:${barColor};"

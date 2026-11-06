@@ -51,3 +51,39 @@ def week_stats(user, day):
         }
         for i in range(7)
     ]
+
+
+NO_SUBJECT = {'name': 'No subject', 'color': '#6B7280'}
+
+
+def subject_stats(user, first_day, last_day=None):
+    """Planned and focused minutes per action (subject) between two dates.
+    Focus sessions without a block, or on a block without an action, go to 'No subject'.
+    Sorted by planned time, then focused time. Two queries."""
+    last_day = last_day or first_day
+    subjects = {}
+
+    def row(action_id, name, color):
+        if action_id is None:
+            action_id, name, color = None, NO_SUBJECT['name'], NO_SUBJECT['color']
+        return subjects.setdefault(action_id, {
+            'name': name, 'color': color, 'planned_minutes': 0, 'focused_minutes': 0,
+        })
+
+    for action_id, name, color, start, end in ScheduleBlock.objects.filter(
+        schedule__user=user, schedule__date__range=(first_day, last_day),
+    ).values_list('action_id', 'action__name', 'action__color', 'start_time', 'end_time'):
+        row(action_id, name, color)['planned_minutes'] += minutes_between(start, end)
+
+    for action_id, name, color, seconds in BlockSession.objects.filter(
+        user=user,
+        end_time__gte=day_start(first_day),
+        end_time__lt=day_start(last_day + datetime.timedelta(days=1)),
+    ).values_list('block__action_id', 'block__action__name', 'block__action__color', 'focused_seconds'):
+        row(action_id, name, color)['focused_minutes'] += seconds / 60
+
+    result = list(subjects.values())
+    for r in result:
+        r['focused_minutes'] = round(r['focused_minutes'])
+    result.sort(key=lambda r: (-r['planned_minutes'], -r['focused_minutes'], r['name']))
+    return result

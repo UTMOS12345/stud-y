@@ -7,7 +7,7 @@ from django.urls import reverse
 
 from accounts.models import User
 from .models import Action, BlockSession, DaySchedule, DayTemplate, ScheduleBlock, TemplateBlock
-from .stats import week_stats
+from .stats import subject_stats, week_stats
 from .views import _build_schedule_with_gaps
 
 T = datetime.time
@@ -69,7 +69,7 @@ class ScheduleViewTests(ScheduleTestCase):
     def test_query_count_stays_small(self):
         for h in range(8, 14):
             self.add_block(datetime.date(2026, 1, 5), T(h), T(h, 45), title=f'b{h}')
-        with self.assertNumQueries(10):
+        with self.assertNumQueries(12):
             self.client.get(self.url, {'date': '2026-01-05'})
 
     def test_blocks_show_focused_time(self):
@@ -146,6 +146,26 @@ class HelperTests(ScheduleTestCase):
         with timezone.override('Asia/Tashkent'):
             week = week_stats(self.user, datetime.date(2026, 1, 12))
         self.assertEqual(week[0]['focused_hours'], 1.0)
+
+    def test_subject_stats(self):
+        day = datetime.date(2026, 1, 5)
+        english = Action.objects.create(user=self.user, name='English', color='#10B981')
+        algebra = self.add_block(day, T(9), T(10))                      # Math 60
+        self.add_block(day, T(18), T(18, 30))                           # Math 30, same subject
+        reading = self.add_block(day, T(11), T(13), action=english)     # English 120
+        self.add_block(datetime.date(2026, 1, 6), T(9), T(10))          # other day
+        ended = datetime.datetime(2026, 1, 5, 10, 0, tzinfo=datetime.timezone.utc)
+        for block, seconds in [(algebra, 1500), (reading, 1500), (reading, 1500), (None, 600)]:
+            BlockSession.objects.create(user=self.user, block=block, start_time=ended, end_time=ended,
+                                        focused_seconds=seconds)
+        with self.assertNumQueries(2):
+            rows = subject_stats(self.user, day)
+        self.assertEqual([(r['name'], r['planned_minutes'], r['focused_minutes']) for r in rows],
+                         [('English', 120, 50), ('Math', 90, 25), ('No subject', 0, 10)])
+        self.assertEqual(rows[0]['color'], '#10B981')
+        # a range adds up both days, so Math moves to the top
+        rows = subject_stats(self.user, day, day + datetime.timedelta(days=1))
+        self.assertEqual((rows[0]['name'], rows[0]['planned_minutes']), ('Math', 150))
 
     def test_gaps(self):
         blocks = [
