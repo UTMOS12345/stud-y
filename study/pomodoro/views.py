@@ -2,6 +2,7 @@ import datetime
 import json
 
 from django.contrib.auth.decorators import login_required
+from django.db.models import Count, Sum
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.utils import timezone
@@ -14,15 +15,27 @@ from schedule.models import BlockSession
 MAX_SESSION_SECONDS = 120 * 60
 
 
+def today_bounds():
+    """Start and end of today in the user's time zone."""
+    start = timezone.make_aware(datetime.datetime.combine(timezone.localdate(), datetime.time.min))
+    return start, start + datetime.timedelta(days=1)
+
+
 @login_required
 def pomodoro(request):
     profile, _ = Profile.objects.get_or_create(user=request.user)
+    start, end = today_bounds()
+    today = BlockSession.objects.filter(
+        user=request.user, end_time__gte=start, end_time__lt=end,
+    ).aggregate(count=Count('id'), seconds=Sum('focused_seconds'))
 
     context = {
         'pomodoro_time': profile.default_pomodoro_duration,
         'short_break_time': profile.default_short_break_duration,
         'long_break_time': profile.default_long_break_duration,
         'long_break_interval': profile.default_long_break_interval,
+        'today_sessions': today['count'],
+        'today_focused_seconds': today['seconds'] or 0,
     }
 
     return render(request, 'pomodoro.html', context)

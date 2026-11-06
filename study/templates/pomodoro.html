@@ -133,6 +133,9 @@
         const SHORT_BREAK_TIME = parseInt("{{ short_break_time|default:5 }}", 10) * 60;
         const LONG_BREAK_TIME = parseInt("{{ long_break_time|default:15 }}", 10) * 60;
         const LONG_BREAK_INTERVAL = parseInt("{{ long_break_interval|default:4 }}", 10);
+        // sessions the server already has for today
+        const TODAY_SESSIONS = parseInt("{{ today_sessions|default:0 }}", 10);
+        const TODAY_FOCUSED_SECONDS = parseInt("{{ today_focused_seconds|default:0 }}", 10);
         // ───────────────────────────────────────────────────────────────────
 
         const circumference = 2 * Math.PI * 255;
@@ -250,8 +253,6 @@
             localStorage.setItem('pomodoro_mode', mode);
             localStorage.setItem('pomodoro_timeLeft', timeLeft);
             localStorage.setItem('pomodoro_totalTime', durationForMode(mode));
-            localStorage.setItem('pomodoro_sessionsCompleted', sessionsCompleted);
-            localStorage.setItem('pomodoro_totalFocusedSeconds', totalFocusedSeconds);
         }
 
         function loadState() {
@@ -260,8 +261,12 @@
             const savedMode = localStorage.getItem('pomodoro_mode') || 'work';
             const savedTimeLeft = parseInt(localStorage.getItem('pomodoro_timeLeft')) || WORK_TIME;
 
-            sessionsCompleted = parseInt(localStorage.getItem('pomodoro_sessionsCompleted') || 0);
-            totalFocusedSeconds = parseInt(localStorage.getItem('pomodoro_totalFocusedSeconds') || 0);
+            // today's totals come from the server, plus sessions still waiting to be sent
+            const waiting = pendingSessions();
+            sessionsCompleted = TODAY_SESSIONS + waiting.length;
+            totalFocusedSeconds = TODAY_FOCUSED_SECONDS + waiting.reduce((sum, s) => sum + s.focused_seconds, 0);
+            localStorage.removeItem('pomodoro_sessionsCompleted');
+            localStorage.removeItem('pomodoro_totalFocusedSeconds');
             mode = savedMode;
 
             if (savedIsRunning && savedEndTime) {

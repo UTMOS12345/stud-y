@@ -33,3 +33,23 @@ class SaveSessionTests(TestCase):
         self.client.logout()
         self.assertEqual(self.post({'focused_seconds': 60}).status_code, 302)
         self.assertFalse(BlockSession.objects.exists())
+
+
+class PomodoroPageTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='t', email='t@t.com', password='pw12345!x')
+        self.client.force_login(self.user)
+
+    def test_counts_only_todays_sessions(self):
+        import datetime
+        from django.utils import timezone
+        now = timezone.now()
+        for ended, seconds in [(now, 1500), (now, 600), (now - datetime.timedelta(days=2), 1500)]:
+            BlockSession.objects.create(user=self.user, start_time=ended - datetime.timedelta(seconds=seconds),
+                                        end_time=ended, focused_seconds=seconds)
+        other = User.objects.create_user(username='o', email='o@o.com', password='pw12345!x')
+        BlockSession.objects.create(user=other, start_time=now, end_time=now, focused_seconds=900)
+
+        response = self.client.get(reverse('pomodoro'))
+        self.assertEqual(response.context['today_sessions'], 2)
+        self.assertEqual(response.context['today_focused_seconds'], 2100)
