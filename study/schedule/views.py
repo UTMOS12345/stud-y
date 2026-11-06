@@ -13,6 +13,7 @@ from django.core.exceptions import ValidationError
 
 from .models import DaySchedule, DayTemplate, Action, ScheduleBlock, TemplateBlock
 from .forms import ScheduleBlockForm
+from .stats import week_stats
 
 logger = logging.getLogger(__name__)
 
@@ -26,27 +27,6 @@ def _block_minutes(block):
         - datetime.datetime.combine(datetime.date.min, block.start_time)
     )
     return int(delta.total_seconds() / 60)
-
-
-def _week_hours(user, selected_date):
-    """
-    Return a list of 7 floats (Mon–Sun) representing scheduled hours
-    for the week that contains selected_date. Uses one query for the whole week.
-    """
-    week_start = selected_date - timedelta(days=selected_date.weekday())
-    week_end = week_start + timedelta(days=6)
-
-    minutes_by_day = [0] * 7
-    rows = ScheduleBlock.objects.filter(
-        schedule__user=user,
-        schedule__date__range=(week_start, week_end),
-    ).values_list('schedule__date', 'start_time', 'end_time')
-
-    for day, start, end in rows:
-        mins = (end.hour * 60 + end.minute) - (start.hour * 60 + start.minute)
-        minutes_by_day[(day - week_start).days] += mins
-
-    return [round(m / 60, 1) for m in minutes_by_day]
 
 
 def _format_duration(minutes):
@@ -301,6 +281,8 @@ def schedule_view(request):
     # Build schedule with gaps for display
     schedule_with_gaps = _build_schedule_with_gaps(blocks)
 
+    week = week_stats(request.user, selected_date)
+
     context = {
         'schedule':      schedule,
         'blocks':        blocks,
@@ -309,7 +291,9 @@ def schedule_view(request):
         'templates':     DayTemplate.objects.filter(user=request.user),
         'actions':       Action.objects.filter(user=request.user),
         'selected_date': selected_date,
-        'week_hours':    _week_hours(request.user, selected_date),
+        'week':          week,
+        'week_json':     json.dumps([{'label': d['label'], 'planned': d['planned_hours'],
+                                      'focused': d['focused_hours']} for d in week]),
         'blocks_json':   json.dumps(blocks_data),
     }
     return render(request, 'schedule/schedule.html', context)

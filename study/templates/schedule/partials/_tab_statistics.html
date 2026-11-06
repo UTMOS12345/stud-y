@@ -4,7 +4,7 @@
 <script>
     const SCHEDULE_BLOCKS = {{ blocks_json| safe }};
     const SELECTED_DATE = "{{ selected_date|date:'Y-m-d' }}";
-    const WEEK_HOURS = {{ week_hours| safe }};
+    const WEEK = {{ week_json|safe }};
 </script>
 
 <div class="animate-up max-w-4xl mx-auto px-4 py-8">
@@ -106,12 +106,18 @@
                     Weekly Activity
                 </h3>
                 <p class="text-[10px] text-neutral-content font-mono opacity-60">
-                    Scheduled hours by day this week
+                    Planned vs focused hours by day this week
                 </p>
             </div>
-            <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral/20 border border-neutral/40">
-                <div class="w-2 h-2 rounded-full bg-primary"></div>
-                <span class="text-[10px] font-bold uppercase tracking-widest text-neutral-content">Scheduled</span>
+            <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral/20 border border-neutral/40">
+                    <div class="w-2 h-2 rounded-full bg-primary/30"></div>
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-neutral-content">Planned</span>
+                </div>
+                <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral/20 border border-neutral/40">
+                    <div class="w-2 h-2 rounded-full bg-primary"></div>
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-neutral-content">Focused</span>
+                </div>
             </div>
         </div>
         <div class="flex items-end justify-between gap-4 px-2" style="height:180px;" id="week-bars"></div>
@@ -191,6 +197,17 @@
 
     .wbc .wb:hover {
         background: rgba(77, 255, 170, .26);
+    }
+
+    .wbc .wb.focused,
+    .wbc.today .wb.focused {
+        background: #4dffaa;
+        opacity: .75;
+    }
+
+    .wbc .wb.focused:hover,
+    .wbc.today .wb.focused:hover {
+        opacity: 1;
     }
 
     .wbc.today .wb {
@@ -458,27 +475,24 @@
       </div>`).join('');
         })();
 
-        /* ── weekly bars ── */
+        /* ── weekly bars: planned and focused side by side ── */
         (function () {
-            const hours = Array.isArray(WEEK_HOURS) ? WEEK_HOURS : [0, 0, 0, 0, 0, 0, 0];
-            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-            const maxH = Math.max(...hours, 0.1);
+            const maxH = Math.max(...WEEK.map(d => Math.max(d.planned, d.focused)), 0.1);
             const MAX_PX = 130;
             const jsDay = new Date(SELECTED_DATE + 'T00:00:00').getDay();
             const todayIdx = jsDay === 0 ? 6 : jsDay - 1;
-            document.getElementById('week-bars').innerHTML = days.map((d, i) => {
-                const barH = Math.max(Math.round((hours[i] / maxH) * MAX_PX), 4);
-                const cls = i === todayIdx ? 'wbc today' : 'wbc';
-                return `
-        <div class="${cls}">
-          <div style="height:${MAX_PX}px;width:100%;display:flex;align-items:flex-end;">
-            <div class="wb" style="height:${barH}px;width:100%;">
-              <div class="wb-tip">${hours[i].toFixed(1)}h</div>
-            </div>
+            const bar = (hours, cls, tip) => `
+              <div class="wb ${cls}" style="height:${Math.max(Math.round((hours / maxH) * MAX_PX), 4)}px;flex:1;">
+                <div class="wb-tip">${tip} ${hours.toFixed(1)}h</div>
+              </div>`;
+            document.getElementById('week-bars').innerHTML = WEEK.map((d, i) => `
+        <div class="${i === todayIdx ? 'wbc today' : 'wbc'}">
+          <div style="height:${MAX_PX}px;width:100%;display:flex;align-items:flex-end;gap:4px;">
+            ${bar(d.planned, '', 'planned')}
+            ${bar(d.focused, 'focused', 'focused')}
           </div>
-          <span class="wl">${d}</span>
-        </div>`;
-            }).join('');
+          <span class="wl">${d.label}</span>
+        </div>`).join('');
         })();
 
         /* ── toggle ── */

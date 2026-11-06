@@ -7,7 +7,8 @@ from django.urls import reverse
 
 from accounts.models import User
 from .models import Action, BlockSession, DaySchedule, DayTemplate, ScheduleBlock, TemplateBlock
-from .views import _build_schedule_with_gaps, _week_hours
+from .stats import week_stats
+from .views import _build_schedule_with_gaps
 
 T = datetime.time
 
@@ -68,7 +69,7 @@ class ScheduleViewTests(ScheduleTestCase):
     def test_query_count_stays_small(self):
         for h in range(8, 14):
             self.add_block(datetime.date(2026, 1, 5), T(h), T(h, 45), title=f'b{h}')
-        with self.assertNumQueries(9):
+        with self.assertNumQueries(10):
             self.client.get(self.url, {'date': '2026-01-05'})
 
     def test_blocks_show_focused_time(self):
@@ -121,14 +122,30 @@ class DeleteActionTests(ScheduleTestCase):
 
 
 class HelperTests(ScheduleTestCase):
-    def test_week_hours(self):
+    def test_week_stats(self):
         self.add_block(datetime.date(2026, 1, 5), T(9), T(10, 30))   # Monday
         self.add_block(datetime.date(2026, 1, 5), T(11), T(12))
         self.add_block(datetime.date(2026, 1, 7), T(8), T(9, 15))    # Wednesday
         self.add_block(datetime.date(2026, 1, 12), T(9), T(10))      # next week, not counted
-        with self.assertNumQueries(1):
-            hours = _week_hours(self.user, datetime.date(2026, 1, 7))
-        self.assertEqual(hours, [2.5, 0.0, 1.2, 0.0, 0.0, 0.0, 0.0])
+        # focus: 45 min on Monday, 30 min on Wednesday, one session next week
+        for day, seconds in [(5, 1500), (5, 1200), (7, 1800), (12, 1500)]:
+            ended = datetime.datetime(2026, 1, day, 10, 0, tzinfo=datetime.timezone.utc)
+            BlockSession.objects.create(user=self.user, start_time=ended, end_time=ended, focused_seconds=seconds)
+        with self.assertNumQueries(2):
+            week = week_stats(self.user, datetime.date(2026, 1, 7))
+        self.assertEqual([d['planned_hours'] for d in week], [2.5, 0.0, 1.2, 0.0, 0.0, 0.0, 0.0])
+        self.assertEqual([d['focused_hours'] for d in week], [0.8, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0])
+        self.assertEqual(week[0]['date'], datetime.date(2026, 1, 5))
+        self.assertEqual(week[6]['label'], 'Sun')
+
+    def test_week_stats_uses_the_users_day(self):
+        # 22:00 UTC on Sunday is already Monday in Tashkent (UTC+5)
+        ended = datetime.datetime(2026, 1, 11, 22, 0, tzinfo=datetime.timezone.utc)
+        BlockSession.objects.create(user=self.user, start_time=ended, end_time=ended, focused_seconds=3600)
+        from django.utils import timezone
+        with timezone.override('Asia/Tashkent'):
+            week = week_stats(self.user, datetime.date(2026, 1, 12))
+        self.assertEqual(week[0]['focused_hours'], 1.0)
 
     def test_gaps(self):
         blocks = [
