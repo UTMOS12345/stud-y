@@ -7,7 +7,7 @@ from django.urls import reverse
 
 from accounts.models import User
 from .models import Action, BlockSession, DaySchedule, DayTemplate, ScheduleBlock, TemplateBlock
-from .stats import block_stats, longest_run, records, week_stats, week_blocks
+from .stats import block_stats, heat_level, longest_run, recent_focus, records, week_stats, week_blocks
 from .views import _build_schedule_with_gaps
 
 T = datetime.time
@@ -70,7 +70,7 @@ class ScheduleViewTests(ScheduleTestCase):
         for h in range(8, 14):
             self.add_block(datetime.date(2026, 1, 5), T(h), T(h, 45), title=f'b{h}')
         # a fixed number, it does not grow with the number of blocks or sessions
-        with self.assertNumQueries(15):
+        with self.assertNumQueries(16):
             self.client.get(self.url, {'date': '2026-01-05'})
 
     def test_blocks_show_focused_time(self):
@@ -328,3 +328,36 @@ class RecordsTests(ScheduleTestCase):
         response = self.client.get(self.url, {'date': '2026-01-05'})
         self.assertContains(response, 'All time')
         self.assertEqual(response.context['records']['sessions'], 1)
+
+
+class RecentFocusTests(ScheduleTestCase):
+    def test_calendar_and_hours(self):
+        from django.utils import timezone
+        utc = datetime.timezone.utc
+        # in UTC to keep the hours simple
+        with timezone.override('UTC'):
+            for ended, seconds in [
+                (datetime.datetime(2026, 1, 7, 10, 30, tzinfo=utc), 3600),  # 9:30-10:30 -> 30 min at 9, 30 at 10
+                (datetime.datetime(2026, 1, 7, 10, 50, tzinfo=utc), 1200),  # 10:30-10:50 -> 20 at 10
+                (datetime.datetime(2025, 12, 1, 9, 0, tzinfo=utc), 1500),   # too old
+            ]:
+                BlockSession.objects.create(user=self.user, start_time=ended, end_time=ended, focused_seconds=seconds)
+            with self.assertNumQueries(1):
+                recent = recent_focus(self.user, datetime.date(2026, 1, 7))
+
+        calendar = recent['calendar']
+        self.assertEqual((len(calendar), len(calendar[0])), (5, 7))
+        self.assertEqual(calendar[0][0]['date'], datetime.date(2025, 12, 8))   # Monday 4 weeks back
+        wednesday = calendar[4][2]
+        self.assertEqual((wednesday['date'], wednesday['minutes'], wednesday['level'], wednesday['is_selected']),
+                         (datetime.date(2026, 1, 7), 80, 3, True))
+        self.assertEqual([h['minutes'] for h in recent['hours'][9:11]], [30, 50])
+        self.assertEqual((recent['peak_hour'], recent['hours'][10]['height'], recent['total']), (10, 100, '1h 20m'))
+
+    def test_empty(self):
+        recent = recent_focus(self.user, datetime.date(2026, 1, 7))
+        self.assertIsNone(recent['peak_hour'])
+        self.assertEqual(recent['total'], '0m')
+
+    def test_heat_levels(self):
+        self.assertEqual([heat_level(m) for m in (0, 10, 45, 90, 200)], [0, 1, 2, 3, 4])

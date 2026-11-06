@@ -190,6 +190,55 @@
     </div>
     {% endwith %}
 
+    {# ── LAST WEEKS + BEST HOURS ── #}
+    {% with rf=recent %}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+        <div class="bg-base-300 border border-neutral rounded-2xl p-8 shadow-lg">
+            <div class="flex items-start justify-between mb-5 gap-4">
+                <div>
+                    <h3 class="text-[10px] font-bold text-base-content uppercase tracking-[0.2em] mb-1">Last 5 weeks</h3>
+                    <p class="text-[10px] text-neutral-content font-mono opacity-60">{{ rf.total }} focused</p>
+                </div>
+                <div class="flex items-center gap-1 text-[9px] text-neutral-content uppercase tracking-widest">
+                    less
+                    {% for level in "01234" %}<span class="hm-cell hm-{{ level }}" style="width: 10px; height: 10px;"></span>{% endfor %}
+                    more
+                </div>
+            </div>
+            <div class="grid grid-cols-7 gap-1.5 mb-1.5">
+                {% for label in "MTWTFSS" %}<span class="text-center text-[9px] font-bold text-neutral-content">{{ label }}</span>{% endfor %}
+            </div>
+            <div class="grid grid-cols-7 gap-1.5">
+                {% for row in rf.calendar %}{% for cell in row %}
+                <div class="tooltip" data-tip="{{ cell.date|date:'D d M' }} · {% if cell.is_future %}ahead{% else %}{{ cell.time }}{% endif %}">
+                    <a href="?date={{ cell.date|date:'Y-m-d' }}" aria-label="{{ cell.date|date:'D d M' }}"
+                        class="hm-cell hm-{{ cell.level }} {% if cell.is_future %}hm-future{% endif %} {% if cell.is_selected %}hm-selected{% endif %}"></a>
+                </div>
+                {% endfor %}{% endfor %}
+            </div>
+        </div>
+
+        <div class="bg-base-300 border border-neutral rounded-2xl p-8 shadow-lg">
+            <div class="mb-5">
+                <h3 class="text-[10px] font-bold text-base-content uppercase tracking-[0.2em] mb-1">Best hours</h3>
+                <p class="text-[10px] text-neutral-content font-mono opacity-60">
+                    {% if rf.peak_hour is not None %}you focus most around {{ rf.peak_hour|stringformat:"02d" }}:00{% else %}no focus sessions in these weeks{% endif %}
+                </p>
+            </div>
+            <div class="flex items-end gap-[3px]" style="height: 150px;">
+                {% for h in rf.hours %}
+                <div class="tooltip flex-1 h-full flex items-end" data-tip="{{ h.hour|stringformat:'02d' }}:00 · {{ h.minutes }}m">
+                    <div class="hr-bar {% if h.hour == rf.peak_hour %}hr-peak{% endif %}" style="height: {{ h.height }}%;"></div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="flex gap-[3px] mt-2 text-[9px] font-bold text-neutral-content">
+                {% for h in rf.hours %}<span class="flex-1 text-center overflow-visible whitespace-nowrap">{% if h.hour|divisibleby:6 %}{{ h.hour|stringformat:"02d" }}{% endif %}</span>{% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endwith %}
+
     {# ── WEEK BY BLOCK ── #}
     <div class="bg-base-300 border border-neutral rounded-2xl p-8 mt-6 shadow-lg">
         <div class="mb-6">
@@ -331,6 +380,49 @@
 
     .wbc:hover .wb-tip {
         opacity: 1;
+    }
+
+    .hm-cell {
+        display: block;
+        width: 100%;
+        aspect-ratio: 1;
+        border-radius: 4px;
+        background: color-mix(in srgb, var(--color-neutral), transparent 40%);
+        transition: transform .15s;
+    }
+
+    a.hm-cell:hover {
+        transform: scale(1.12);
+    }
+
+    .hm-1 { background: color-mix(in srgb, var(--color-primary), transparent 78%); }
+    .hm-2 { background: color-mix(in srgb, var(--color-primary), transparent 55%); }
+    .hm-3 { background: color-mix(in srgb, var(--color-primary), transparent 30%); }
+    .hm-4 { background: var(--color-primary); }
+
+    .hm-future {
+        background: transparent;
+        border: 1px dashed color-mix(in srgb, var(--color-neutral-content), transparent 70%);
+    }
+
+    .hm-selected {
+        outline: 2px solid var(--color-base-content);
+        outline-offset: 1px;
+    }
+
+    .hr-bar {
+        width: 100%;
+        min-height: 2px;
+        border-radius: 3px 3px 1px 1px;
+        background: color-mix(in srgb, var(--color-primary), transparent 55%);
+    }
+
+    .tooltip:hover .hr-bar {
+        background: color-mix(in srgb, var(--color-primary), transparent 20%);
+    }
+
+    .hr-bar.hr-peak {
+        background: var(--color-primary);
     }
 
     .ws-row {

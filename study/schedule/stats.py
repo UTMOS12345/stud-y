@@ -184,3 +184,68 @@ def records(user):
         'longest_streak': longest_run(set(per_day)),
         'active_days': len(per_day),
     }
+
+
+def heat_level(minutes):
+    """0-4, like a contribution calendar."""
+    if minutes <= 0:
+        return 0
+    if minutes < 30:
+        return 1
+    if minutes < 60:
+        return 2
+    if minutes < 120:
+        return 3
+    return 4
+
+
+def recent_focus(user, day, weeks=5):
+    """Focus over the last `weeks` weeks up to the week holding `day`, one query:
+    - calendar: rows of 7 days (Mon-Sun) with minutes and a 0-4 level
+    - hours: focused minutes for each hour of the day (0-23), split across hours
+      when a session runs past the hour"""
+    first = week_start(day) - datetime.timedelta(weeks=weeks - 1)
+    last = week_start(day) + datetime.timedelta(days=6)
+    per_day = {}
+    per_hour = [0.0] * 24
+
+    for ended, seconds in BlockSession.objects.filter(
+        user=user, end_time__gte=day_start(first), end_time__lt=day_start(last + datetime.timedelta(days=1)),
+    ).values_list('end_time', 'focused_seconds'):
+        local_end = timezone.localtime(ended)
+        per_day[local_end.date()] = per_day.get(local_end.date(), 0) + seconds / 60
+
+        # spread the focused minutes over the hours the session covered
+        start = local_end - datetime.timedelta(seconds=seconds)
+        while start < local_end:
+            next_hour = (start + datetime.timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
+            chunk_end = min(next_hour, local_end)
+            per_hour[start.hour] += (chunk_end - start).total_seconds() / 60
+            start = chunk_end
+
+    today = timezone.localdate()
+    calendar = []
+    for w in range(weeks):
+        row = []
+        for d in range(7):
+            date = first + datetime.timedelta(days=w * 7 + d)
+            minutes = round(per_day.get(date, 0))
+            row.append({
+                'date': date,
+                'minutes': minutes,
+                'time': format_minutes(minutes),
+                'level': heat_level(minutes),
+                'is_future': date > today,
+                'is_selected': date == day,
+            })
+        calendar.append(row)
+
+    tallest = max(per_hour + [1])
+    hours = [{'hour': h, 'minutes': round(m), 'height': round(m * 100 / tallest)} for h, m in enumerate(per_hour)]
+    peak = max(hours, key=lambda h: h['minutes'])
+    return {
+        'calendar': calendar,
+        'hours': hours,
+        'peak_hour': peak['hour'] if peak['minutes'] else None,
+        'total': format_minutes(sum(per_day.values())),
+    }
