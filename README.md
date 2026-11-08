@@ -23,7 +23,7 @@ Most study apps do one thing: a to-do list, a timer, or a calendar. stud-y puts 
 ## Features
 
 - **Accounts:** sign up and log in with email and password
-- **Dashboard:** what is on now and what is next, today's plan, focus time today and this week, a week chart and your focus streak
+- **Dashboard:** what is on now and what is next, today's habits, today's plan, focus time today and this week, a week chart and your focus streak
 - **Schedule:** plan a day with time blocks that can run past midnight (each new action gets its own color), pick days from a date selector, and save a day as a reusable template
 - **Pomodoro:** focus sessions with configurable times; pick the block you are working on (the timer takes its color), or switch to block mode to time the whole block
 - **Focus tracking:** every finished session is saved (and kept in the browser until the server has it, so going offline loses nothing)
@@ -116,8 +116,8 @@ The front end uses Django templates with [Tailwind CSS](https://tailwindcss.com)
 - [x] Add `psycopg2` to `requirements.txt`
 - [ ] Sign in with Google
 - [x] Stop tracking `node_modules/` and `__pycache__/` in git
-- [ ] Reminders and notifications before a block starts
-- [ ] Mobile-friendly layout
+- [x] Reminders before a block starts (while a tab is open)
+- [x] Mobile-friendly layout
 - [x] Tests for the schedule and login (`python manage.py test`)
 - [x] Tests for the Pomodoro timer, statistics and dashboard
 - [ ] Password reset by email

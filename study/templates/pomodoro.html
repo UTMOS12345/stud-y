@@ -4,7 +4,7 @@
 {% block title %}stud-y — pomodoro{% endblock %}
 
 {% block content %}
-<div id="pomodoro-root" class="h-full w-full flex flex-col items-center justify-center p-4 animate-up relative">
+<div id="pomodoro-root" class="min-h-full w-full flex flex-col items-center justify-center p-4 animate-up relative">
 
     <div class="flex flex-col items-center gap-6">
 
@@ -13,11 +13,11 @@
             </div>
         </div>
 
-        <div class="absolute rounded-full opacity-60 blur-[100px] w-[540px] h-[540px] pointer-events-none"
+        <div class="pomo-fit absolute rounded-full opacity-60 blur-[100px] w-[540px] h-[540px] pointer-events-none"
             style="background: var(--glow-color);">
         </div>
 
-        <div class="relative flex items-center justify-center rounded-full border border-primary/20 overflow-hidden"
+        <div class="pomo-fit relative flex items-center justify-center rounded-full border border-primary/20 overflow-hidden"
             style="background: color-mix(in srgb, var(--color-base-200), transparent 25%);
                     box-shadow: 0 0 80px rgba(0, 0, 0, 0.05), inset 0 0 40px var(--glow-color);
                     backdrop-filter: blur(24px);
@@ -99,7 +99,7 @@
             </div>
         </div>
 
-        <div class="flex flex-col items-center gap-10 mt-2">
+        <div class="flex flex-col items-center gap-10 mt-2 max-w-full">
 
             {# value lives in this hidden select, the button and list below drive it #}
             <select id="block-select" class="hidden" aria-hidden="true" tabindex="-1">
@@ -115,7 +115,7 @@
                 {% endfor %}
             </select>
 
-            <div id="block-picker" class="relative w-[440px] max-w-[90vw]">
+            <div id="block-picker" class="relative w-[440px] max-w-full">
                 <button id="block-picker-btn" type="button" aria-haspopup="listbox" aria-expanded="false"
                     class="bp-button w-full flex items-center gap-4 px-5 py-4 rounded-2xl border text-left cursor-pointer transition-all">
                     <span id="bp-dot" class="bp-dot"></span>
@@ -587,6 +587,15 @@
 
         window.addEventListener('beforeunload', saveState);
         setInterval(() => { if (isRunning) saveState(); }, 5000);
+
+        // The circle is drawn at 540px, shrink it to fit small screens
+        function fitTimer() {
+            const room = document.getElementById('pomodoro-root').clientWidth - 32;
+            const zoom = Math.min(1, room / 540);
+            document.querySelectorAll('.pomo-fit').forEach(el => { el.style.zoom = zoom; });
+        }
+        fitTimer();
+        window.addEventListener('resize', fitTimer);
 
         // ── Block picker ───────────────────────────────────────────────────
         // A block picked from the schedule wins, otherwise keep the last choice

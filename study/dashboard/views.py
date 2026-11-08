@@ -3,6 +3,7 @@ from django.db.models import Sum
 from django.shortcuts import render
 from django.utils import timezone
 
+from habits.views import recent_days
 from schedule.models import ScheduleBlock
 from schedule.stats import block_stats, carried_over_block, focus_streak, format_minutes, summary, week_stats
 
@@ -69,6 +70,7 @@ def dashboard(request):
 
     return render(request, 'dashboard.html', {
         'today': now.date(),
+        'habits': recent_days(request.user, now.date()),
         'day': day,
         'streak': focus_streak(request.user, now.date()),
         'week': week,

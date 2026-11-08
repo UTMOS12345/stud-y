@@ -39,18 +39,43 @@ def month_score(habit, values, first, last, today):
     return round(sum(values[d] for d in in_month) / days)
 
 
+def load_habits(user, since):
+    """The user's habits and {habit id: {date: value}} from `since` on. Two queries."""
+    habits = list(Habit.objects.filter(user=user))
+    values = {habit.id: {} for habit in habits}
+    for habit_id, date, value in HabitEntry.objects.filter(
+        habit__user=user, date__gte=since,
+    ).values_list('habit_id', 'date', 'value'):
+        values[habit_id][date] = value
+    return habits, values
+
+
+def recent_days(user, today, days=7):
+    """The last few days of every habit, today last, for the dashboard."""
+    habits, values = load_habits(user, today - datetime.timedelta(days=HISTORY_DAYS))
+    dates = [today - datetime.timedelta(days=n) for n in range(days - 1, -1, -1)]
+    return {
+        'days': [{'number': d.day, 'letter': WEEKDAY_LETTERS[d.weekday()], 'is_today': d == today} for d in dates],
+        'rows': [{
+            'habit': habit,
+            'streak': current_streak(set(values[habit.id]), today),
+            'cells': [{
+                'date': d,
+                'value': values[habit.id].get(d, 0),
+                'is_future': False,
+                'is_today': d == today,
+            } for d in dates],
+        } for habit in habits],
+        'done_today': sum(1 for habit in habits if values[habit.id].get(today) == 100),
+    }
+
+
 def month_grid(user, first, today):
     """Everything the calendar needs for one month. Two queries, however many habits."""
     last = first.replace(day=calendar.monthrange(first.year, first.month)[1])
     days = [first + datetime.timedelta(days=n) for n in range(last.day)]
 
-    habits = list(Habit.objects.filter(user=user))
-    values = {habit.id: {} for habit in habits}
-    since = min(first, today - datetime.timedelta(days=HISTORY_DAYS))
-    for habit_id, date, value in HabitEntry.objects.filter(
-        habit__user=user, date__gte=since,
-    ).values_list('habit_id', 'date', 'value'):
-        values[habit_id][date] = value
+    habits, values = load_habits(user, min(first, today - datetime.timedelta(days=HISTORY_DAYS)))
 
     rows = []
     for habit in habits:

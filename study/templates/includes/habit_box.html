@@ -1,0 +1,5 @@
+<button type="button" class="hb-cell {% if cell.is_today %}hb-cell-today{% endif %}" style="--c: {{ row.habit.color }}; --fill: {{ cell.value }}%;"
+                    data-habit="{{ row.habit.id }}" data-kind="{{ row.habit.kind }}" data-date="{{ cell.date|date:'Y-m-d' }}"
+                    data-label="{{ cell.date|date:'D, d M' }}" data-value="{{ cell.value }}"
+                    data-url="{% url 'habit_entry' row.habit.id %}"
+                    {% if cell.is_future %}disabled{% endif %}></button>

@@ -64,11 +64,7 @@
                     </button>
                 </div>
                 {% for cell in row.cells %}
-                <button type="button" class="hb-cell {% if cell.is_today %}hb-cell-today{% endif %}" style="--c: {{ row.habit.color }}; --fill: {{ cell.value }}%;"
-                    data-habit="{{ row.habit.id }}" data-kind="{{ row.habit.kind }}" data-date="{{ cell.date|date:'Y-m-d' }}"
-                    data-label="{{ cell.date|date:'D, d M' }}" data-value="{{ cell.value }}"
-                    data-url="{% url 'habit_entry' row.habit.id %}"
-                    {% if cell.is_future %}disabled{% endif %}></button>
+                {% include "includes/habit_box.html" %}
                 {% endfor %}
                 <div class="hb-score" data-score-for="{{ row.habit.id }}">
                     <b class="score">{% if row.score is not None %}{{ row.score }}%{% else %}—{% endif %}</b>
@@ -85,18 +81,6 @@
         <button type="button" onclick="openHabitForm()" class="hb-new mx-auto"><i data-lucide="plus" class="w-4 h-4"></i> Create your first habit</button>
     </div>
     {% endif %}
-</div>
-
-{# percent picker, shared by every percent box #}
-<div id="hb-pop" class="hidden" role="dialog" aria-label="Set percent">
-    <div class="flex items-baseline justify-between mb-3">
-        <span id="hb-pop-date" class="text-[10px] uppercase tracking-[0.2em] text-neutral-content font-bold"></span>
-        <span class="text-2xl font-bold text-base-content"><span id="hb-pop-value">0</span>%</span>
-    </div>
-    <input id="hb-pop-range" type="range" min="0" max="100" step="5" class="w-full cursor-pointer" aria-label="Percent">
-    <div class="grid grid-cols-5 gap-1.5 mt-3">
-        <button type="button" data-set="0">0</button><button type="button" data-set="25">25</button><button type="button" data-set="50">50</button><button type="button" data-set="75">75</button><button type="button" data-set="100">100</button>
-    </div>
 </div>
 
 {# new / edit form #}
@@ -143,6 +127,8 @@
     </form>
 </div>
 
+{% include "includes/habit_boxes.html" %}
+
 <style>
     .hb-nav {
         display: inline-flex; align-items: center; justify-content: center;
@@ -167,6 +153,15 @@
         gap: 4px;
         align-items: center;
         min-width: calc(250px + var(--days) * 32px);
+    }
+
+    @media (max-width: 640px) {
+        .hb-grid { grid-template-columns: 124px repeat(var(--days), 34px) 50px; min-width: max-content; }
+        .hb-card { padding: .5rem; }
+        .hb-title small { display: none; }
+        .hb-name { gap: .35rem; padding: 0 .25rem; box-shadow: 4px 0 0 var(--color-base-300); }
+        .hb-corner { box-shadow: 4px 0 0 var(--color-base-300); }
+        .hb-corner-end { box-shadow: none; }
     }
 
     .hb-corner, .hb-day { font-size: 10px; color: var(--color-neutral-content); }
@@ -197,39 +192,9 @@
     .hb-edit:hover { color: var(--color-primary); }
     @media (hover: none) { .hb-edit { opacity: .7; } }
 
-    .hb-cell {
-        width: 100%; height: 58px; position: relative; cursor: pointer; border-radius: 8px;
-        background: linear-gradient(to top, var(--c) var(--fill), color-mix(in srgb, var(--color-base-content), transparent 92%) var(--fill));
-        transition: transform .1s;
-    }
-    .hb-cell:hover:not(:disabled) { transform: scale(1.1); z-index: 1; }
-    .hb-cell:focus-visible { outline: 2px solid var(--color-base-content); outline-offset: 1px; }
-    .hb-cell:disabled { cursor: default; background: transparent; border: 1px dashed color-mix(in srgb, var(--color-neutral-content), transparent 80%); }
-    .hb-cell-today:not(:disabled) { box-shadow: 0 0 0 1.5px var(--color-primary); }
-    .hb-cell[data-kind="percent"]::after {
-        content: attr(data-shown); position: absolute; inset: 0; display: grid; place-items: center;
-        font-size: 10px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, .9), 0 0 3px rgba(0, 0, 0, .9);
-    }
-    .hb-cell.is-full:not([data-kind="percent"])::after {
-        content: "✓"; position: absolute; inset: 0; display: grid; place-items: center;
-        font-size: 15px; font-weight: 700; color: rgba(0, 0, 0, .65);
-    }
-
     .hb-score { display: flex; flex-direction: column; align-items: center; justify-content: center; }
     .hb-score b { font-size: 13px; color: var(--color-base-content); }
     .hb-score small { display: inline-flex; align-items: center; gap: 2px; font-size: 10px; color: var(--color-neutral-content); }
-
-    #hb-pop {
-        position: fixed; z-index: 900; width: 230px; padding: 1rem;
-        background: var(--color-base-200); border-radius: 1rem;
-        border: 1px solid color-mix(in srgb, var(--color-primary), transparent 70%);
-        box-shadow: 0 16px 40px rgba(0, 0, 0, .4);
-    }
-    #hb-pop button {
-        cursor: pointer; font-size: 11px; font-weight: 700; padding: .35rem 0; border-radius: .5rem;
-        color: var(--color-base-content); background: color-mix(in srgb, var(--color-base-content), transparent 92%);
-    }
-    #hb-pop button:hover { color: var(--color-primary); }
 
     .hb-label { display: block; font-size: 10px; font-weight: 900; letter-spacing: .2em; text-transform: uppercase; margin: 0 0 .5rem .25rem; color: var(--color-base-content); }
     .hb-input { width: 100%; padding: .85rem 1rem; border-radius: .6rem; color: var(--color-primary); background: var(--color-base-300); border: 1px solid color-mix(in srgb, var(--color-neutral), transparent 50%); }
@@ -256,18 +221,7 @@
         const CSRF = '{{ csrf_token }}';
         const FALLBACK_COLOR = '{{ next_color }}';
 
-        // ── boxes ──────────────────────────────────────────────────────────
-        function paint(cell, value) {
-            cell.dataset.value = value;
-            cell.style.setProperty('--fill', value + '%');
-            cell.classList.toggle('is-full', value === 100);
-            cell.dataset.shown = value ? value : '';
-            cell.title = cell.dataset.label + (value ? ' · ' + value + '%' : '');
-        }
-        const cells = [...document.querySelectorAll('.hb-cell')];
-        cells.forEach(cell => paint(cell, Number(cell.dataset.value)));
-
-        function showNumbers(habitId, data) {
+        window.onHabitSaved = function (habitId, data) {
             const score = document.querySelector(`[data-score-for="${habitId}"]`);
             score.querySelector('.score').textContent = data.score === null ? '—' : data.score + '%';
             score.querySelector('.streak').textContent = data.streak;
@@ -275,90 +229,15 @@
             document.getElementById('sum-average').textContent =
                 data.summary.month_average === null ? '—' : data.summary.month_average + '%';
             document.getElementById('sum-streak').textContent = data.summary.best_streak;
-        }
-
-        // saves run one after another, so quick clicks can't arrive out of order
-        let saving = Promise.resolve();
-        function save(cell, value) {
-            const before = Number(cell.dataset.value);
-            paint(cell, value);
-            saving = saving.then(async () => {
-                try {
-                    const response = await fetch(cell.dataset.url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-                        body: JSON.stringify({ date: cell.dataset.date, value: value }),
-                    });
-                    const data = await response.json();
-                    if (!response.ok) throw new Error(data.error);
-                    showNumbers(cell.dataset.habit, data);
-                } catch (e) {
-                    paint(cell, before);
-                    toast(e.message || 'Could not save, check your connection', 'error');
-                }
-            });
-        }
-
-        const NEXT = {
-            check: { 0: 100, 100: 0 },
-            three: { 0: 50, 50: 100, 100: 0 },
         };
 
-        // ── percent picker ─────────────────────────────────────────────────
-        const pop = document.getElementById('hb-pop');
-        const range = document.getElementById('hb-pop-range');
-        const number = document.getElementById('hb-pop-value');
-        let popCell = null;
-
-        function closePop() {
-            pop.classList.add('hidden');
-            if (popCell) popCell.focus({ preventScroll: true });
-            popCell = null;
-        }
-
-        function openPop(cell) {
-            popCell = cell;
-            document.getElementById('hb-pop-date').textContent = cell.dataset.label;
-            range.value = cell.dataset.value;
-            range.style.accentColor = getComputedStyle(cell).getPropertyValue('--c');
-            number.textContent = cell.dataset.value;
-            pop.classList.remove('hidden');
-            const box = cell.getBoundingClientRect();
-            const left = Math.max(8, Math.min(box.left + box.width / 2 - pop.offsetWidth / 2, innerWidth - pop.offsetWidth - 8));
-            const below = box.bottom + 8;
-            const top = below + pop.offsetHeight > innerHeight ? box.top - pop.offsetHeight - 8 : below;
-            pop.style.left = left + 'px';
-            pop.style.top = Math.max(8, top) + 'px';
-            range.focus();
-        }
-
-        function setPercent(value) {
-            if (popCell && Number(popCell.dataset.value) !== value) save(popCell, value);
-        }
-
-        range.addEventListener('input', () => {
-            number.textContent = range.value;
-            if (popCell) popCell.style.setProperty('--fill', range.value + '%');
-        });
-        range.addEventListener('change', () => setPercent(Number(range.value)));
-        pop.querySelectorAll('[data-set]').forEach(button => button.addEventListener('click', () => {
-            setPercent(Number(button.dataset.set));
-            closePop();
-        }));
-
-        cells.forEach(cell => cell.addEventListener('click', e => {
-            e.stopPropagation();
-            if (cell.dataset.kind === 'percent') {
-                if (popCell === cell) closePop(); else openPop(cell);
-                return;
-            }
-            closePop();
-            save(cell, NEXT[cell.dataset.kind][Number(cell.dataset.value)]);
-        }));
-        document.addEventListener('click', e => { if (popCell && !pop.contains(e.target)) closePop(); });
-        document.addEventListener('keydown', e => { if (e.key === 'Escape' && popCell) closePop(); });
+        // on a narrow screen, start at today rather than the 1st
         const scroller = document.querySelector('.hb-scroll');
-        if (scroller) scroller.addEventListener('scroll', () => { if (popCell) closePop(); });
+        const todayCell = document.querySelector('.hb-cell-today');
+        if (scroller && todayCell) {
+            scroller.scrollLeft = todayCell.offsetLeft - scroller.clientWidth + todayCell.offsetWidth * 3;
+        }
+
 
         // ── new / edit form ────────────────────────────────────────────────
         const modal = document.getElementById('habitModal');

@@ -2460,6 +2460,9 @@
   .max-h-\[320px\] {
     max-height: 320px;
   }
+  .min-h-full {
+    min-height: 100%;
+  }
   .w-0 {
     width: calc(var(--spacing) * 0);
   }
@@ -2538,14 +2541,14 @@
   .max-w-\[10rem\] {
     max-width: 10rem;
   }
-  .max-w-\[90vw\] {
-    max-width: 90vw;
-  }
   .max-w-\[120px\] {
     max-width: 120px;
   }
   .max-w-\[300px\] {
     max-width: 300px;
+  }
+  .max-w-full {
+    max-width: 100%;
   }
   .max-w-md {
     max-width: var(--container-md);
@@ -2564,6 +2567,9 @@
   }
   .flex-shrink-0 {
     flex-shrink: 0;
+  }
+  .shrink {
+    flex-shrink: 1;
   }
   .grow {
     flex-grow: 1;
@@ -2603,6 +2609,9 @@
   }
   .cursor-pointer {
     cursor: pointer;
+  }
+  .resize {
+    resize: both;
   }
   .resize-none {
     resize: none;
@@ -4288,6 +4297,239 @@
 .block-row.compact .block-times span {
   font-size: .85rem;
   line-height: 1.2;
+}
+@media (max-width: 640px) {
+  #sidebar {
+    width: 52px !important;
+  }
+  #sidebar .px-3 {
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+  #sidebar .nav-text {
+    display: none;
+  }
+  #topbar {
+    padding-left: .75rem;
+    padding-right: .75rem;
+    height: 60px !important;
+    min-height: 60px !important;
+  }
+  #topbar #datestamp {
+    display: none;
+  }
+  #topbar #clock {
+    font-size: 24px !important;
+  }
+  #topbar > div:nth-of-type(2) {
+    padding-left: 0 !important;
+  }
+  #profile-btn {
+    margin: 0 !important;
+    padding: .35rem .5rem;
+  }
+  #profile-btn > span {
+    display: none;
+  }
+  #profile-menu {
+    width: min(280px, calc(100vw - 72px)) !important;
+  }
+  #tab-schedule, #tab-templates, #tab-statistics {
+    padding: .25rem .5rem;
+  }
+  #tab-schedule main > header {
+    padding: .75rem .25rem;
+  }
+  #tab-schedule main > div {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  #date-display-btn {
+    padding: .6rem 1rem;
+  }
+  #date-display-btn span {
+    font-size: 11px;
+    letter-spacing: .15em;
+    white-space: nowrap;
+  }
+  #lowerbar {
+    height: 4.25rem;
+    padding: 0 .25rem;
+  }
+  #lowerbar .icon-container {
+    padding: .25rem .6rem;
+  }
+  #lowerbar svg {
+    width: 1.2rem;
+    height: 1.2rem;
+  }
+  #lowerbar .tab-btn {
+    gap: .1rem;
+    padding: 0;
+  }
+  #lowerbar span {
+    font-size: 9px;
+  }
+  #floating-add-btn {
+    width: 3.25rem;
+    height: 3.25rem;
+    right: .75rem;
+    bottom: 5rem;
+    border-radius: 16px;
+    font-size: 1.5rem;
+  }
+  .block-row {
+    gap: .4rem;
+  }
+  .block-row .block-times {
+    width: 2.6rem;
+  }
+  .block-row .block-times span {
+    font-size: .75rem;
+  }
+  .block-row [data-block-card], .block-row.medium [data-block-card] {
+    padding: .85rem;
+  }
+  .block-row .block-top {
+    flex-wrap: wrap;
+    margin-bottom: .75rem;
+    gap: .5rem;
+  }
+  .block-row .block-top > div:first-child {
+    flex-wrap: wrap;
+    gap: .5rem;
+    min-width: 0;
+  }
+  .block-row h3 {
+    font-size: 1rem;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+  }
+  .block-row .action-bubble {
+    padding: .15rem .6rem;
+    gap: .3rem;
+    box-shadow: none;
+  }
+  .block-row .action-bubble span {
+    font-size: .65rem;
+  }
+  .block-row .action-bubble svg {
+    width: .85rem;
+    height: .85rem;
+  }
+  .block-row .block-desc {
+    font-size: .8rem;
+  }
+  .block-row > .flex-1 {
+    min-width: 0;
+  }
+  .block-row .block-top > div:first-child > div:last-child {
+    min-width: 0;
+  }
+  .block-row [data-block-card].px-12 {
+    padding: .4rem .6rem;
+  }
+  .block-row [data-block-card].px-12 > div:first-child {
+    min-width: 0;
+  }
+  .block-row [data-block-card].px-12 h3 {
+    font-size: .85rem;
+  }
+  .block-row.compact [data-block-card] {
+    padding: .4rem .6rem;
+  }
+  .block-row.compact .block-top {
+    flex-wrap: nowrap;
+    margin-bottom: 0;
+  }
+  .block-row.compact .block-top > div:first-child {
+    flex-wrap: nowrap;
+    flex: 1;
+  }
+  .block-row.compact .action-bubble, .block-row.compact .status-dot, .block-row.compact [data-block-card] .border-2.rounded-full:not(.status-dot) {
+    display: none;
+  }
+  .block-row.compact .block-top > div:last-child {
+    gap: .5rem;
+  }
+  .block-row.compact h3 {
+    font-size: .85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .block-row.compact p {
+    font-size: .6rem;
+  }
+  #tab-templates h2 {
+    font-size: 1.5rem;
+    letter-spacing: .1em;
+    overflow-wrap: anywhere;
+  }
+  #tab-templates .space-y-12 {
+    margin-top: .5rem;
+  }
+  #block-picker {
+    width: calc(100vw - 52px - 32px);
+  }
+  #settings-shell {
+    flex-direction: column;
+  }
+  #settings-shell > aside {
+    width: 100%;
+    border-right: 0;
+    border-bottom: 1px solid var(--color-neutral);
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  #settings-shell > aside > div:first-child {
+    display: none;
+  }
+  #settings-shell nav {
+    display: flex;
+    gap: .25rem;
+    padding: .35rem .5rem;
+  }
+  #settings-shell nav > * {
+    margin: 0 !important;
+  }
+  #settings-shell nav > div {
+    display: contents;
+  }
+  #settings-shell nav > div > div:first-child, #settings-shell nav > div:last-child {
+    display: none;
+  }
+  #settings-shell nav a {
+    flex: none;
+    padding: .45rem .7rem;
+    gap: .4rem;
+  }
+  #settings-shell nav a > svg:last-child, #settings-shell nav a p + p {
+    display: none;
+  }
+  #settings-shell > main {
+    min-height: 0;
+    width: 100%;
+  }
+  #settings-shell > main .p-12 {
+    padding: 1rem;
+  }
+  #settings-shell > main .px-12 {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  #settings-shell label {
+    min-width: 0;
+  }
+  #settings-shell label > .flex-1 {
+    min-width: 0;
+  }
+  #settings-shell .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  #settings-shell input, #settings-shell select, #settings-shell textarea {
+    max-width: 100%;
+  }
 }
 @layer base {
   :root {

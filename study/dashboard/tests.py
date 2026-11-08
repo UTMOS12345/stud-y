@@ -5,6 +5,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from accounts.models import User
+from habits.models import Habit, HabitEntry
 from schedule.models import Action, BlockSession, DaySchedule, ScheduleBlock
 
 T = datetime.time
@@ -132,3 +133,42 @@ class OvernightDashboardTests(DashboardTestCase):
         context = self.get().context
         self.assertIsNone(context['current'])
         self.assertEqual((context['upcoming'].title, context['blocks'][0].planned), ('Sleep', '13h'))
+
+
+class HabitsOnDashboardTests(DashboardTestCase):
+    def habit(self, name='Read', kind='check', user=None):
+        return Habit.objects.create(user=user or self.user, name=name, kind=kind, color='#10B981')
+
+    def test_last_seven_days_end_today(self):
+        habit = self.habit()
+        HabitEntry.objects.create(habit=habit, date=TODAY, value=100)
+        HabitEntry.objects.create(habit=habit, date=TODAY - datetime.timedelta(days=1), value=100)
+        HabitEntry.objects.create(habit=habit, date=TODAY - datetime.timedelta(days=9), value=100)
+        response = self.get()
+        habits = response.context['habits']
+        cells = habits['rows'][0]['cells']
+        self.assertEqual([c['value'] for c in cells], [0, 0, 0, 0, 0, 100, 100])
+        self.assertEqual(cells[-1]['date'], TODAY)
+        self.assertTrue(cells[-1]['is_today'])
+        self.assertEqual((habits['rows'][0]['streak'], habits['done_today']), (2, 1))
+        self.assertContains(response, 'data-kind="check"')
+
+    def test_partial_today_is_not_done(self):
+        HabitEntry.objects.create(habit=self.habit(kind='three'), date=TODAY, value=50)
+        self.assertEqual(self.get().context['habits']['done_today'], 0)
+
+    def test_crosses_the_month_boundary(self):
+        # Jan 5 looks back into December
+        habit = self.habit()
+        HabitEntry.objects.create(habit=habit, date=datetime.date(2025, 12, 30), value=100)
+        self.assertEqual(self.get().context['habits']['rows'][0]['cells'][0]['value'], 100)
+
+    def test_only_your_habits(self):
+        other = User.objects.create_user(username='o', email='o@o.com', password='pw12345!x')
+        self.habit('Theirs', user=other)
+        self.assertNotContains(self.get(), 'Theirs')
+
+    def test_no_habits_invites_you_to_create_one(self):
+        response = self.get()
+        self.assertContains(response, 'Create a habit')
+        self.assertNotContains(response, 'hb-pop')
