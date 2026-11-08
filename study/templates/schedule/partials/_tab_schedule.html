@@ -27,18 +27,18 @@
 
         <!-- Schedule Container -->
         <div class="flex-1 overflow-y-auto px-8 pb-32 scrollbar-hide">
-            <div class="space-y-12 w-full max-w-7xl mx-auto">
+            <div class="space-y-4 w-full max-w-7xl mx-auto">
                 {% for item in schedule_with_gaps %}
 
                 {% if item.is_empty %}
                 <!-- EMPTY BLOCK -->
-                <div class="flex gap-8 group min-h-[160px] w-full"
+                <div class="block-row compact flex gap-8 group w-full" style="min-height: {{ item.height }}px;"
                     data-block-start="{% with h=item.start_time.hour m=item.start_time.minute %}{{ h|stringformat:'02d' }}:{{ m|stringformat:'02d' }}{% endwith %}"
                     data-block-end="{% with h=item.end_time.hour m=item.end_time.minute %}{{ h|stringformat:'02d' }}:{{ m|stringformat:'02d' }}{% endwith %}"
                     data-is-empty="true">
 
                     <!-- Time Column -->
-                    <div class="w-24 flex-shrink-0 flex flex-col justify-between py-2 text-right">
+                    <div class="block-times w-24 flex-shrink-0 flex flex-col justify-between py-2 text-right">
                         <span class="text-xl font-bold text-base-content/40 tracking-tighter">
                             {{ item.start_time|time:"H:i" }}
                         </span>
@@ -54,7 +54,7 @@
                             class="bg-base-200/40 rounded-2xl p-12 border border-base-300/20 transition-all duration-300 opacity-60 hover:opacity-80">
 
                             <!-- Top Row: Empty Label -->
-                            <div class="flex justify-between items-start gap-4 mb-8">
+                            <div class="block-top flex justify-between items-start gap-4 mb-8">
                                 <div class="flex items-center gap-4">
                                     <!-- Empty Badge -->
                                     <div class="flex-shrink-0 px-6 py-3 rounded-full flex items-center justify-center gap-3 font-black shadow-lg transition-all duration-300 border-2"
@@ -69,7 +69,7 @@
                                             —
                                         </h3>
                                         <p class="text-xs uppercase tracking-widest text-base-500/50 font-bold mt-1">
-                                            Unscheduled
+                                            Unscheduled<span class="compact-only"> · {{ item.duration_formatted }}</span>
                                         </p>
                                     </div>
                                 </div>
@@ -83,7 +83,7 @@
                             </div>
 
                             <!-- Stats Row: Total Time | Time Left -->
-                            <div class="flex justify-between items-end mb-6">
+                            <div class="block-stats flex justify-between items-end mb-6">
                                 <div>
                                     <p class="text-xs uppercase tracking-widest text-base-400/50 font-bold">Duration</p>
                                     <p class="text-xl font-bold text-base-content/50">
@@ -113,9 +113,9 @@
 
                 {% elif item.is_carried_over %}
                 <!-- BLOCK CONTINUING FROM THE EVENING BEFORE -->
-                <div class="flex gap-8 group w-full"
+                <div class="block-row compact flex gap-8 group w-full"
                     data-block-start="00:00" data-block-end="{{ item.end_time|time:'H:i' }}">
-                    <div class="w-24 flex-shrink-0 flex flex-col justify-between py-2 text-right">
+                    <div class="block-times w-24 flex-shrink-0 flex flex-col justify-between py-2 text-right">
                         <span class="text-xl font-bold text-base-content/40 tracking-tighter">00:00</span>
                         <span class="text-xl font-bold text-base-content tracking-tighter">{{ item.end_time|time:"H:i" }}</span>
                     </div>
@@ -134,12 +134,12 @@
 
                 {% else %}
                 <!-- SCHEDULED BLOCK -->
-                <div class="flex gap-8 group min-h-[160px] w-full"
+                <div class="block-row {{ item.block.display_density }} flex gap-8 group w-full" style="min-height: {{ item.block.display_height }}px;"
                     data-block-start="{{ item.block.start_time|time:'H:i' }}"
                     data-block-end="{{ item.block.end_time|time:'H:i' }}">
 
                     <!-- Time Column -->
-                    <div class="w-24 flex-shrink-0 flex flex-col justify-between py-2 text-right">
+                    <div class="block-times w-24 flex-shrink-0 flex flex-col justify-between py-2 text-right">
                         <span class="text-xl font-bold text-base-content tracking-tighter">
                             {{ item.block.start_time|time:"H:i" }}
                         </span>
@@ -155,7 +155,7 @@
                             class="bg-base-200 rounded-2xl p-12 border border-base-300/50 transition-all duration-300 opacity-100">
 
                             <!-- Top Row: Action Bubble + Title + Status Dot -->
-                            <div class="flex justify-between items-start gap-4 mb-8">
+                            <div class="block-top flex justify-between items-start gap-4 mb-8">
                                 <div class="flex items-center gap-4">
                                     <!-- Action Bubble with Icon and Name -->
                                     {% if item.block.action %}
@@ -183,7 +183,7 @@
                                             {{ item.block.title }}
                                         </h3>
                                         <p class="text-xs uppercase tracking-widest text-base-500 font-bold mt-1">
-                                            {% if item.block.block_type == 'fixed' %}Fixed{% else %}Flexible{% endif %}
+                                            {% if item.block.block_type == 'fixed' %}Fixed{% else %}Flexible{% endif %}<span class="compact-only"> · {{ item.duration_formatted }}{% if item.block.description %} · {{ item.block.description }}{% endif %}</span>
                                         </p>
                                     </div>
                                 </div>
@@ -210,7 +210,7 @@
                             </div>
 
                             <!-- Stats Row: Total Time | Time Left -->
-                            <div class="flex justify-between items-end mb-6">
+                            <div class="block-stats flex justify-between items-end mb-6">
                                 <div>
                                     <p class="text-xs uppercase tracking-widest text-primary font-bold">Total Duration
                                     </p>
@@ -244,7 +244,7 @@
 
                             <!-- Description -->
                             {% if item.block.description %}
-                            <p class="text-base text-base-content/80 leading-relaxed">
+                            <p class="block-desc text-base text-base-content/80 leading-relaxed">
                                 {{ item.block.description|linebreaksbr }}
                             </p>
                             {% endif %}
@@ -672,14 +672,14 @@
 
         async function deleteActionData() {
             const id = document.getElementById('manageActionId').value;
-            if (!id || !confirm('Delete this action? Blocks using it will keep their time but lose the action.')) return;
+            if (!id || !await askConfirm('Delete this action? Blocks using it will keep their time but lose the action.', { ok: 'Delete', danger: true })) return;
             const res = await fetch(window.location.href, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
                 body: JSON.stringify({ action: 'delete_action', action_id: id })
             });
             if (res.ok) window.location.reload();
-            else alert((await res.json()).error || 'Error deleting action');
+            else toast((await res.json()).error || 'Error deleting action', 'error');
         }
 
         async function saveActionData() {
@@ -688,7 +688,7 @@
             const color = document.getElementById('actionColorInput').value;
             const icon = document.getElementById('actionIconInput').value || 'activity';
 
-            if (!name) { alert('Name is required'); return; }
+            if (!name) { toast('Name is required', 'error'); return; }
 
             const type = id ? 'update_action' : 'create_action';
             const body = { action: type, name: name, color: color, icon_name: icon };
@@ -701,7 +701,7 @@
                     body: JSON.stringify(body)
                 });
                 if (response.ok) window.location.reload();
-                else alert((await response.json()).error || 'Error saving action');
+                else toast((await response.json()).error || 'Error saving action', 'error');
             } catch (e) { console.error(e); }
         }
 
@@ -730,7 +730,7 @@
         }
 
         async function deleteBlock(id) {
-            if (!confirm('Are you sure?')) return;
+            if (!await askConfirm('Delete this block?', { ok: 'Delete', danger: true })) return;
             const response = await fetch(window.location.href, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
@@ -759,7 +759,7 @@
 
         async function convertToTemplate() {
             const name = document.getElementById('newTemplateName').value;
-            if (!name) { alert("Please enter a template name"); return; }
+            if (!name) { toast("Please enter a template name", 'error'); return; }
 
             const response = await fetch(window.location.href, {
                 method: 'POST',
@@ -768,17 +768,17 @@
             });
 
             if (response.ok) {
-                alert("Template saved successfully!");
+                toastAfterReload("Template saved successfully!");
                 window.location.reload();
             } else {
                 const err = await response.json();
-                alert("Error: " + err.error);
+                toast("Error: " + err.error, 'error');
             }
         }
 
         async function applyTemplate() {
             const templateId = document.getElementById('selectTemplateId').value;
-            if (!templateId) { alert("Please select a template"); return; }
+            if (!templateId) { toast("Please select a template", 'error'); return; }
 
             const response = await fetch(window.location.href, {
                 method: 'POST',
@@ -788,10 +788,10 @@
 
             if (response.ok) {
                 const result = await response.json();
-                alert(result.message); // Shows how many were applied/skipped
+                toastAfterReload(result.message); // Shows how many were applied/skipped
                 window.location.reload();
             } else {
-                alert("Error applying template");
+                toast("Error applying template", 'error');
             }
         }
 

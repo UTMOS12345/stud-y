@@ -444,3 +444,94 @@ class OvernightTests(ScheduleTestCase):
         self.client.post(url, self.block_form(start_time='22:30', end_time='06:45', ends_next_day='on'))
         self.assertTrue(TemplateBlock.objects.get().ends_next_day)
         self.assertContains(self.client.get(url), 'Ends the next day')
+
+
+class CardSizeTests(TestCase):
+    def block(self, start, end, next_day=False):
+        return TemplateBlock(start_time=start, end_time=end, ends_next_day=next_day)
+
+    def test_longer_blocks_are_taller(self):
+        spans = [(T(9), T(9, 15)), (T(9), T(9, 45)), (T(9), T(10)), (T(9), T(11, 30)), (T(9), T(12)), (T(8, 30), T(17, 45))]
+        heights = [self.block(a, b).display_height for a, b in spans]
+        self.assertEqual(heights, sorted(heights))
+        self.assertEqual(len(set(heights)), len(heights))
+
+    def test_density_and_cap(self):
+        self.assertEqual(self.block(T(9), T(9, 15)).display_density, 'compact')
+        self.assertEqual(self.block(T(9), T(10)).display_density, 'medium')
+        self.assertEqual(self.block(T(9), T(12)).display_density, 'large')
+        self.assertLessEqual(self.block(T(0), T(23, 59)).display_height, 380)
+
+    def test_template_blocks_have_a_readable_duration(self):
+        self.assertEqual(self.block(T(22, 30), T(6, 45), True).duration_display, '8 h. 15 m.')
+
+
+class ApplyRangeTests(ScheduleTestCase):
+    def setUp(self):
+        super().setUp()
+        self.template = DayTemplate.objects.create(user=self.user, name='School')
+        TemplateBlock.objects.create(template=self.template, action=self.action, title='A',
+                                     start_time=T(9), end_time=T(10))
+
+    def apply(self, **extra):
+        body = {'action': 'apply_template_range', 'template_id': self.template.id,
+                'start': '2026-01-05', 'end': '2026-01-11', 'weekdays': [0, 1, 2, 3, 4]}
+        body.update(extra)
+        return self.post_json(self.url, body)
+
+    def test_only_chosen_weekdays_get_blocks(self):
+        response = self.apply()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual((response.json()['days'], response.json()['applied']), (5, 5))
+        self.assertEqual(sorted(ScheduleBlock.objects.values_list('schedule__date__day', flat=True)), [5, 6, 7, 8, 9])
+
+    def test_existing_blocks_are_skipped_and_counted(self):
+        self.add_block(datetime.date(2026, 1, 5), T(9, 30), T(11))
+        data = self.apply().json()
+        self.assertEqual((data['applied'], data['skipped']), (4, 1))
+
+    def test_bad_requests(self):
+        for extra in [{'start': 'x'}, {'end': '2026-01-01'}, {'weekdays': []}, {'weekdays': [9]}, {'weekdays': None},
+                      {'end': '2026-12-31'}, {'start': '2026-01-05', 'end': '2026-01-05', 'weekdays': [6]}]:
+            self.assertEqual(self.apply(**extra).status_code, 400, extra)
+        self.assertFalse(ScheduleBlock.objects.exists())
+
+    def test_someone_elses_template(self):
+        other = User.objects.create_user(username='o', email='o@o.com', password='pw12345!x')
+        theirs = DayTemplate.objects.create(user=other, name='X')
+        self.assertEqual(self.apply(template_id=theirs.id).status_code, 404)
+
+    def test_empty_template(self):
+        self.template.template_blocks.all().delete()
+        self.assertEqual(self.apply().status_code, 400)
+        self.assertFalse(DaySchedule.objects.exists())
+
+
+class UpcomingBlocksTests(ScheduleTestCase):
+    # 10:30 in Tashkent on Jan 5
+    NOW = datetime.datetime(2026, 1, 5, 5, 30, tzinfo=datetime.timezone.utc)
+
+    def titles(self):
+        with mock.patch('django.utils.timezone.now', return_value=self.NOW):
+            return [b['title'] for b in self.client.get(reverse('upcoming_blocks')).json()['blocks']]
+
+    def test_next_24_hours_only(self):
+        day, next_day = datetime.date(2026, 1, 5), datetime.date(2026, 1, 6)
+        self.add_block(day, T(9), T(10), title='past')
+        self.add_block(day, T(11), T(12), title='soon')
+        self.add_block(next_day, T(8), T(9), title='tomorrow')
+        self.add_block(next_day, T(11), T(12), title='too far')
+        self.assertEqual(sorted(self.titles()), ['soon', 'tomorrow'])
+
+    def test_start_time_is_in_the_users_zone(self):
+        self.add_block(datetime.date(2026, 1, 5), T(11), T(12), title='soon')
+        with mock.patch('django.utils.timezone.now', return_value=self.NOW):
+            block = self.client.get(reverse('upcoming_blocks')).json()['blocks'][0]
+        self.assertEqual(block['starts_at'], int(self.NOW.timestamp() * 1000) + 30 * 60000)
+
+    def test_page_only_has_the_script_when_turned_on(self):
+        self.assertNotContains(self.client.get(self.url), 'remindedBlocks')
+        self.user.profile.reminder_minutes = 10
+        self.user.profile.save()
+        self.client.force_login(User.objects.get(pk=self.user.pk))
+        self.assertContains(self.client.get(self.url), 'remindedBlocks')

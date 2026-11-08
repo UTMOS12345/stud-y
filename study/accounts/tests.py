@@ -126,6 +126,25 @@ class SettingsUrlTest(TestCase):
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password('NewPass123!x'))
 
+    def test_your_timezone_is_always_offered_and_selected(self):
+        url = reverse('settings:preferences')
+        self.assertContains(self.client.get(url), '<option value="Asia/Tashkent" selected>')
+        profile = Profile.objects.get(user=self.user)
+        profile.timezone = 'Asia/Baku'
+        profile.save()
+        self.assertContains(self.client.get(url), '<option value="Asia/Baku" selected>')
+
+    def test_preferences_page_does_not_rewrite_the_timezone_list(self):
+        self.assertNotContains(self.client.get(reverse('settings:preferences')), 'allTimezones')
+
+    def test_reminder_only_accepts_offered_values(self):
+        url = reverse('settings:preferences')
+        base = {'timezone': 'UTC', 'theme_preference': 'dark', 'language_preference': 'en'}
+        self.client.post(url, {**base, 'reminder_minutes': '15'})
+        self.assertEqual(Profile.objects.get(user=self.user).reminder_minutes, 15)
+        self.client.post(url, {**base, 'reminder_minutes': '999'})
+        self.assertEqual(Profile.objects.get(user=self.user).reminder_minutes, 15)
+
     def test_language_only_accepts_supported_values(self):
         url = reverse('settings:preferences')
         self.client.post(url, {'timezone': 'UTC', 'theme_preference': 'dark', 'language_preference': 'x' * 50})

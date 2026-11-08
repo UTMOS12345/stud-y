@@ -38,14 +38,14 @@
 
         <!-- Blocks Container — identical structure to _tab_schedule.html -->
         <div class="flex-1 overflow-y-auto px-8 pb-32 scrollbar-hide">
-            <div class="space-y-12 w-full max-w-7xl mx-auto">
+            <div class="space-y-4 w-full max-w-7xl mx-auto">
 
                 {% for block in template.template_blocks.all %}
-                <div class="flex gap-8 group min-h-[160px] w-full" data-block-start="{{ block.start_time|time:'H:i' }}"
+                <div class="block-row {{ block.display_density }} flex gap-8 group w-full" style="min-height: {{ block.display_height }}px;" data-block-start="{{ block.start_time|time:'H:i' }}"
                     data-block-end="{{ block.end_time|time:'H:i' }}">
 
                     <!-- Time Column -->
-                    <div class="w-24 flex-shrink-0 flex flex-col justify-between py-2 text-right">
+                    <div class="block-times w-24 flex-shrink-0 flex flex-col justify-between py-2 text-right">
                         <span class="text-xl font-bold text-base-content tracking-tighter">
                             {{ block.start_time|time:"H:i" }}
                         </span>
@@ -60,7 +60,7 @@
                             class="bg-base-200 rounded-2xl p-12 border border-base-300/50 transition-all duration-300 opacity-100">
 
                             <!-- Top Row: Action Bubble + Title + Edit/Delete -->
-                            <div class="flex justify-between items-start gap-4 mb-8">
+                            <div class="block-top flex justify-between items-start gap-4 mb-8">
                                 <div class="flex items-center gap-4">
 
                                     <!-- Action Bubble -->
@@ -88,7 +88,7 @@
                                             {{ block.title }}
                                         </h3>
                                         <p class="text-xs uppercase tracking-widest text-base-500 font-bold mt-1">
-                                            {% if block.block_type == 'fixed' %}Fixed{% else %}Flexible{% endif %}
+                                            {% if block.block_type == 'fixed' %}Fixed{% else %}Flexible{% endif %}<span class="compact-only"> · {{ block.duration_display }}{% if block.description %} · {{ block.description }}{% endif %}</span>
                                         </p>
                                     </div>
                                 </div>
@@ -112,7 +112,7 @@
                             </div>
 
                             <!-- Stats Row: Total Duration (no live countdown for templates) -->
-                            <div class="flex justify-between items-end mb-6">
+                            <div class="block-stats flex justify-between items-end mb-6">
                                 <div>
                                     <p class="text-xs uppercase tracking-widest text-primary font-bold">Total Duration
                                     </p>
@@ -141,7 +141,7 @@
 
                             <!-- Description -->
                             {% if block.description %}
-                            <p class="text-base text-base-content/80 leading-relaxed">
+                            <p class="block-desc text-base text-base-content/80 leading-relaxed">
                                 {{ block.description|linebreaksbr }}
                             </p>
                             {% endif %}
@@ -452,14 +452,14 @@
 
         async function deleteActionData() {
             const id = document.getElementById('manageActionId').value;
-            if (!id || !confirm('Delete this action? Blocks using it will keep their time but lose the action.')) return;
+            if (!id || !await askConfirm('Delete this action? Blocks using it will keep their time but lose the action.', { ok: 'Delete', danger: true })) return;
             const res = await fetch(window.location.href, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
                 body: JSON.stringify({ action: 'delete_action', action_id: id })
             });
             if (res.ok) window.location.reload();
-            else alert((await res.json()).error || 'Error deleting action');
+            else toast((await res.json()).error || 'Error deleting action', 'error');
         }
 
         async function saveActionData() {
@@ -467,7 +467,7 @@
             const name = document.getElementById('actionNameInput').value;
             const color = document.getElementById('actionColorInput').value;
             const icon = document.getElementById('actionIconInput').value || 'activity';
-            if (!name) { alert('Name is required'); return; }
+            if (!name) { toast('Name is required', 'error'); return; }
 
             const type = id ? 'update_action' : 'create_action';
             const body = { action: type, name, color, icon_name: icon };
@@ -480,7 +480,7 @@
                     body: JSON.stringify(body)
                 });
                 if (res.ok) window.location.reload();
-                else alert((await res.json()).error || 'Error saving action');
+                else toast((await res.json()).error || 'Error saving action', 'error');
             } catch (e) { console.error(e); }
         }
 
@@ -517,7 +517,7 @@
         }
 
         async function deleteBlock(id) {
-            if (!confirm('Are you sure?')) return;
+            if (!await askConfirm('Delete this block?', { ok: 'Delete', danger: true })) return;
             const res = await fetch(window.location.href, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
@@ -553,14 +553,14 @@
 
         async function saveRename() {
             const name = document.getElementById('renameTemplateInput').value.trim();
-            if (!name) { alert('Name is required'); return; }
+            if (!name) { toast('Name is required', 'error'); return; }
             const res = await fetch(window.location.href, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
                 body: JSON.stringify({ action: 'rename_template', name })
             });
             if (res.ok) window.location.reload();
-            else alert('Error renaming template');
+            else toast('Error renaming template', 'error');
         }
 
         // ── CLICK-OUTSIDE CLOSE ──────────────────────────────────────────────────

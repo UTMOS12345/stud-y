@@ -1,0 +1,149 @@
+{# toast() and askConfirm(): the app's replacement for alert() and confirm() #}
+<div id="toasts" aria-live="polite"></div>
+
+<dialog id="confirm-dialog">
+    <p id="confirm-text"></p>
+    <div class="confirm-actions">
+        <button type="button" id="confirm-cancel">Cancel</button>
+        <button type="button" id="confirm-ok">Confirm</button>
+    </div>
+</dialog>
+
+<style>
+    #toasts {
+        position: fixed;
+        z-index: 3000;
+        right: 1.25rem;
+        top: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: .6rem;
+        max-width: min(24rem, calc(100vw - 2rem));
+        pointer-events: none;
+    }
+
+    .toast-item {
+        --tone: var(--color-primary);
+        pointer-events: auto;
+        cursor: pointer;
+        font-size: 13px;
+        line-height: 1.4;
+        color: var(--color-base-content);
+        background: var(--color-base-200);
+        border: 1px solid color-mix(in srgb, var(--tone), transparent 55%);
+        border-left: 3px solid var(--tone);
+        border-radius: .75rem;
+        padding: .8rem 1rem;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, .3);
+        animation: toast-in .2s ease-out;
+    }
+
+    .toast-item.error { --tone: var(--color-error); }
+    .toast-item.info { --tone: var(--color-neutral-content); }
+
+    @keyframes toast-in {
+        from { opacity: 0; transform: translateY(-6px); }
+    }
+
+    #confirm-dialog {
+        margin: auto;
+        width: min(26rem, calc(100vw - 2rem));
+        padding: 1.75rem;
+        color: var(--color-base-content);
+        background: var(--color-base-200);
+        border: 1px solid color-mix(in srgb, var(--color-primary), transparent 75%);
+        border-radius: 1.25rem;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, .45);
+    }
+
+    #confirm-dialog::backdrop {
+        background: rgba(0, 0, 0, .55);
+        backdrop-filter: blur(3px);
+    }
+
+    #confirm-text {
+        font-size: 14px;
+        line-height: 1.5;
+        margin-bottom: 1.5rem;
+    }
+
+    .confirm-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: .6rem;
+    }
+
+    .confirm-actions button {
+        cursor: pointer;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: .15em;
+        text-transform: uppercase;
+        padding: .65rem 1.2rem;
+        border-radius: .75rem;
+        border: 1px solid color-mix(in srgb, var(--color-base-content), transparent 80%);
+    }
+
+    #confirm-ok {
+        --tone: var(--color-primary);
+        color: var(--color-base-100);
+        background: var(--tone);
+        border-color: var(--tone);
+    }
+
+    #confirm-ok.danger { --tone: var(--color-error); }
+</style>
+
+<script>
+    (function () {
+        const box = document.getElementById('toasts');
+
+        window.toast = function (message, kind) {
+            const item = document.createElement('div');
+            item.className = 'toast-item ' + (kind || 'success');
+            item.textContent = message;
+            box.appendChild(item);
+            const remove = () => item.remove();
+            item.addEventListener('click', remove);
+            setTimeout(remove, kind === 'error' ? 6000 : 3500);
+        };
+
+        // for messages that must survive the page reload right after them
+        window.toastAfterReload = function (message, kind) {
+            try { sessionStorage.setItem('nextToast', JSON.stringify([message, kind])); } catch (e) { }
+        };
+
+        try {
+            const waiting = sessionStorage.getItem('nextToast');
+            if (waiting) {
+                sessionStorage.removeItem('nextToast');
+                toast(...JSON.parse(waiting));
+            }
+        } catch (e) { }
+
+        const dialog = document.getElementById('confirm-dialog');
+        const ok = document.getElementById('confirm-ok');
+        const cancel = document.getElementById('confirm-cancel');
+
+        // Resolves true or false. options: { ok: 'Delete', danger: true }
+        window.askConfirm = function (message, options) {
+            options = options || {};
+            document.getElementById('confirm-text').textContent = message;
+            ok.textContent = options.ok || 'Confirm';
+            ok.classList.toggle('danger', !!options.danger);
+            dialog.showModal();
+            ok.focus();
+            return new Promise(resolve => {
+                const finish = answer => {
+                    ok.onclick = cancel.onclick = dialog.oncancel = dialog.onclick = null;
+                    dialog.close();
+                    resolve(answer);
+                };
+                ok.onclick = () => finish(true);
+                cancel.onclick = () => finish(false);
+                dialog.oncancel = e => { e.preventDefault(); finish(false); };
+                dialog.onclick = e => { if (e.target === dialog) finish(false); };
+            });
+        };
+    })();
+</script>

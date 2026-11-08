@@ -56,6 +56,7 @@ def _build_schedule_with_gaps(blocks, carried_over=None):
                 'title': 'Empty',
                 'duration_mins': until - cursor,
                 'duration_formatted': _format_duration(until - cursor),
+                'height': min(110, 56 + (until - cursor) * 2 // 3),
             })
 
     if carried_over:
@@ -109,6 +110,49 @@ def _save_action(user, action_type, data):
     except IntegrityError:
         return JsonResponse({'error': f"You already have an action called '{name}'"}, status=400)
     return JsonResponse({'success': True})
+
+
+MAX_APPLY_DAYS = 92
+
+
+def _apply_template_range(user, data):
+    """Apply a template to every chosen weekday between two dates (both included)."""
+    template = DayTemplate.objects.filter(id=data.get('template_id'), user=user).first()
+    if not template:
+        return JsonResponse({'error': 'Template not found'}, status=404)
+    if not template.template_blocks.exists():
+        return JsonResponse({'error': 'This template has no blocks yet'}, status=400)
+
+    try:
+        first = date.fromisoformat(data.get('start'))
+        last = date.fromisoformat(data.get('end'))
+        weekdays = {int(d) for d in data.get('weekdays')}
+    except (TypeError, ValueError):
+        return JsonResponse({'error': 'Pick a date range and at least one weekday'}, status=400)
+    if last < first or not weekdays or not weekdays <= set(range(7)):
+        return JsonResponse({'error': 'Pick a date range and at least one weekday'}, status=400)
+    if (last - first).days >= MAX_APPLY_DAYS:
+        return JsonResponse({'error': f'Pick at most {MAX_APPLY_DAYS} days at a time'}, status=400)
+
+    days = [first + timedelta(days=n) for n in range((last - first).days + 1)]
+    days = [d for d in days if d.weekday() in weekdays]
+    if not days:
+        return JsonResponse({'error': 'None of those weekdays fall inside the range'}, status=400)
+
+    applied = skipped = 0
+    with transaction.atomic():
+        for day in days:
+            added, passed = template.apply_to_date_merge(day)
+            applied += added
+            skipped += passed
+    return JsonResponse({
+        'success': True,
+        'days': len(days),
+        'applied': applied,
+        'skipped': skipped,
+        'message': f"Applied to {len(days)} day{'s' if len(days) != 1 else ''}: "
+                   f"{applied} blocks added, {skipped} skipped (overlaps).",
+    })
 
 
 def _delete_action(user, data):
@@ -187,6 +231,9 @@ def schedule_view(request):
                         return JsonResponse({'error': 'This day has no blocks to save'}, status=400)
                     schedule.create_template_from_day(name)
                     return JsonResponse({'success': True})
+
+                elif action_type == 'apply_template_range':
+                    return _apply_template_range(request.user, data)
 
                 elif action_type == 'apply_template':
                     template = DayTemplate.objects.filter(
@@ -292,6 +339,24 @@ def schedule_view(request):
         'blocks_json':   json.dumps(blocks_data),
     }
     return render(request, 'schedule/schedule.html', context)
+
+
+@login_required
+def upcoming_blocks(request):
+    """Blocks starting within the next 24 hours, for the reminders."""
+    now = timezone.now()
+    today = timezone.localdate()
+    blocks = ScheduleBlock.objects.filter(
+        schedule__user=request.user,
+        schedule__date__range=(today, today + timedelta(days=1)),
+    ).select_related('schedule')
+
+    upcoming = []
+    for block in blocks:
+        starts = timezone.make_aware(datetime.datetime.combine(block.schedule.date, block.start_time))
+        if now < starts <= now + timedelta(hours=24):
+            upcoming.append({'id': block.id, 'title': block.title, 'starts_at': int(starts.timestamp() * 1000)})
+    return JsonResponse({'blocks': upcoming})
 
 
 # ─── template detail view ──────────────────────────────────────────────────────

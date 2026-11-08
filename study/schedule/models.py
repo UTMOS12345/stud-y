@@ -60,6 +60,31 @@ class BlockTimes:
     def duration_minutes(self):
         return self.end_minutes - self.start_minutes
 
+    @property
+    def duration_display(self):
+        h, m = divmod(self.duration_minutes, 60)
+        if h > 0:
+            return f"{h} h. {m} m." if m > 0 else f"{h} h."
+        return f"{m} m."
+
+    @property
+    def display_density(self):
+        """How much of the card a block shows, from its length."""
+        if self.duration_minutes < 60:
+            return 'compact'
+        return 'medium' if self.duration_minutes < 180 else 'large'
+
+    @property
+    def display_height(self):
+        """Card height in pixels: longer blocks are taller, with a cap so a
+        nine hour block doesn't fill the screen."""
+        minutes = self.duration_minutes
+        if minutes < 60:
+            return 56 + minutes * 2 // 3
+        if minutes < 180:
+            return 190 + (minutes - 60) // 3
+        return min(380, 280 + (minutes - 180) // 6)
+
     def check_times(self):
         if self.ends_next_day and self.start_time <= self.end_time:
             raise ValidationError("A block that ends the next day must end earlier in the day than it starts.")
@@ -142,15 +167,6 @@ class ScheduleBlock(BlockTimes, models.Model):
         choices=BlockType.choices,
         default=BlockType.FIXED
     )
-
-    @property
-    def duration_display(self):
-        total_mins = self.duration_minutes
-        h = total_mins // 60
-        m = total_mins % 60
-        if h > 0:
-            return f"{h} h. {m} m." if m > 0 else f"{h} h."
-        return f"{m} m."
 
     def clean(self):
         if self.start_time and self.end_time:

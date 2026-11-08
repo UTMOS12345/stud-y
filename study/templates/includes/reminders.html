@@ -1,0 +1,53 @@
+{# reminds the user before a block starts, while a tab is open #}
+<script>
+    (function () {
+        const LEAD = {{ user.profile.reminder_minutes }} * 60000;
+        const KEY = 'remindedBlocks';
+        let blocks = [];
+
+        function reminded() {
+            try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; }
+        }
+
+        function remember(block) {
+            const seen = reminded();
+            seen[block.id + ':' + block.starts_at] = block.starts_at;
+            // forget the ones already in the past
+            Object.keys(seen).forEach(k => { if (seen[k] < Date.now()) delete seen[k]; });
+            localStorage.setItem(KEY, JSON.stringify(seen));
+        }
+
+        function remind(block) {
+            const minutes = Math.max(1, Math.round((block.starts_at - Date.now()) / 60000));
+            const message = `${block.title} starts in ${minutes} min`;
+            toast(message, 'info');
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('stud-y', { body: message, tag: 'block-' + block.id });
+            }
+        }
+
+        function check() {
+            const now = Date.now();
+            const seen = reminded();
+            blocks.forEach(block => {
+                const inWindow = now >= block.starts_at - LEAD && now < block.starts_at;
+                if (inWindow && !seen[block.id + ':' + block.starts_at]) {
+                    remember(block);
+                    remind(block);
+                }
+            });
+        }
+
+        async function refresh() {
+            try {
+                const response = await fetch('{% url "upcoming_blocks" %}');
+                if (response.ok) blocks = (await response.json()).blocks;
+                check();
+            } catch (e) { /* offline, the next refresh tries again */ }
+        }
+
+        refresh();
+        setInterval(refresh, 10 * 60000);
+        setInterval(check, 20000);
+    })();
+</script>

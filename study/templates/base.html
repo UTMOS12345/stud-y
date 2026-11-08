@@ -34,6 +34,9 @@
         </main>
     </div>
 
+    {% include "includes/notify.html" %}
+    {% if user.is_authenticated and user.profile.reminder_minutes %}{% include "includes/reminders.html" %}{% endif %}
+
     <script>
         lucide.createIcons();
 

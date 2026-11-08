@@ -30,6 +30,7 @@ class Profile(models.Model):
         ('system', 'System'),
     ], default='dark')
     language_preference = models.CharField(max_length=10, default='en')
+    reminder_minutes = models.PositiveSmallIntegerField(default=0)  # minutes before a block, 0 is off
     
 
     def __str__(self):

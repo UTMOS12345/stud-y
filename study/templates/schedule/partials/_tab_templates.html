@@ -57,6 +57,12 @@
                     Edit Editor
                 </a>
 
+                <button onclick="openApplyRange({{ template.id }}, '{{ template.name|escapejs }}')"
+                    class="px-5 rounded-2xl border border-primary/30 text-primary hover:bg-primary/10 transition-all"
+                    title="Apply to several days">
+                    <i data-lucide="calendar-range" class="w-6 h-6"></i>
+                </button>
+
                 <button onclick="applyTemplateNow({{ template.id }})"
                     class="px-5 rounded-2xl border border-primary/30 text-primary hover:bg-primary/10 transition-all"
                     title="Apply to today">
@@ -79,6 +85,54 @@
     </div>
 </div>
 
+<!-- Apply to several days -->
+<div id="applyRangeModal" class="hidden fixed inset-0 z-[1000] flex items-center justify-center bg-base-100/90 backdrop-blur-md p-4">
+    <div class="bg-base-200 border-2 border-primary/20 w-full max-w-md rounded-[2.5rem] p-10 shadow-[0_0_50px_rgba(77,255,170,0.15)] animate-up">
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="text-2xl font-bold text-primary uppercase tracking-[0.3em] font-mono">Apply_Days</h2>
+            <button type="button" onclick="closeApplyRange()" class="text-base-content hover:text-primary transition-colors">
+                <i data-lucide="x-circle" class="w-8 h-8"></i>
+            </button>
+        </div>
+
+        <p id="applyRangeName" class="text-lg font-bold text-base-content mb-6"></p>
+
+        <label class="text-[10px] uppercase text-base-content font-black tracking-[0.2em] mb-2 block ml-1">Dates</label>
+        <input id="applyRangeDates" type="text" placeholder="Pick first and last day"
+            class="w-full bg-base-300 border border-neutral/20 rounded-lg p-4 text-primary font-mono focus:outline-none focus:ring-1 focus:ring-primary/50 mb-6">
+
+        <label class="text-[10px] uppercase text-base-content font-black tracking-[0.2em] mb-2 block ml-1">Weekdays</label>
+        <div class="grid grid-cols-7 gap-1.5 mb-8" id="applyRangeDays">
+            {% for label in "MTWTFSS" %}
+            <button type="button" data-day="{{ forloop.counter0 }}" onclick="this.classList.toggle('on')" class="day-chip">{{ label }}</button>
+            {% endfor %}
+        </div>
+
+        <button type="button" onclick="submitApplyRange()"
+            class="w-full py-4 rounded-2xl bg-primary text-primary-content font-bold uppercase tracking-[0.2em] hover:scale-[1.02] active:scale-95 transition-transform">
+            Apply
+        </button>
+    </div>
+</div>
+
+<style>
+    .day-chip {
+        aspect-ratio: 1;
+        border-radius: .6rem;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        color: var(--color-neutral-content);
+        border: 1px solid color-mix(in srgb, var(--color-neutral-content), transparent 70%);
+    }
+
+    .day-chip.on {
+        color: var(--color-primary-content);
+        background: var(--color-primary);
+        border-color: var(--color-primary);
+    }
+</style>
+
 <script>
     // Re-initialize icons when this partial is rendered or tab is switched
     if (window.lucide) { lucide.createIcons(); }
@@ -87,7 +141,7 @@
      * Delete a template via JSON POST
      */
     async function deleteTemplate(id, name) {
-        if (!confirm(`Permanently delete "${name}"?`)) return;
+        if (!await askConfirm(`Permanently delete "${name}"?`, { ok: 'Delete', danger: true })) return;
 
         try {
             const response = await fetch(window.location.href, {
@@ -105,10 +159,56 @@
             if (response.ok) {
                 window.location.reload();
             } else {
-                alert("Error deleting template.");
+                toast("Error deleting template.", 'error');
             }
         } catch (e) {
             console.error("Delete error:", e);
+        }
+    }
+
+    let applyRangeId = null;
+    let applyRangePicker = null;
+
+    function openApplyRange(id, name) {
+        applyRangeId = id;
+        document.getElementById('applyRangeName').textContent = name;
+        // Monday to Friday is the usual case
+        document.querySelectorAll('#applyRangeDays .day-chip').forEach(chip =>
+            chip.classList.toggle('on', Number(chip.dataset.day) < 5));
+        if (!applyRangePicker) {
+            applyRangePicker = flatpickr('#applyRangeDates', { mode: 'range', dateFormat: 'Y-m-d' });
+        }
+        applyRangePicker.clear();
+        document.getElementById('applyRangeModal').classList.remove('hidden');
+    }
+
+    function closeApplyRange() {
+        document.getElementById('applyRangeModal').classList.add('hidden');
+    }
+
+    async function submitApplyRange() {
+        const dates = applyRangePicker.selectedDates.map(d => applyRangePicker.formatDate(d, 'Y-m-d'));
+        const weekdays = [...document.querySelectorAll('#applyRangeDays .day-chip.on')].map(c => Number(c.dataset.day));
+        if (!dates.length) { toast('Pick the dates first', 'error'); return; }
+        if (!weekdays.length) { toast('Pick at least one weekday', 'error'); return; }
+
+        const response = await fetch(window.location.href, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+            body: JSON.stringify({
+                action: 'apply_template_range',
+                template_id: applyRangeId,
+                start: dates[0],
+                end: dates[dates.length - 1],
+                weekdays: weekdays,
+            }),
+        });
+        const data = await response.json();
+        if (response.ok) {
+            toastAfterReload(data.message);
+            window.location.reload();
+        } else {
+            toast(data.error || 'Could not apply the template', 'error');
         }
     }
 
@@ -116,7 +216,7 @@
      * Apply a template to the current day immediately
      */
     async function applyTemplateNow(id) {
-        if (!confirm("Apply this template to today's schedule? (Overlapping blocks will be skipped)")) return;
+        if (!await askConfirm("Apply this template to this day's schedule? Overlapping blocks will be skipped.", { ok: 'Apply' })) return;
 
         try {
             const response = await fetch(window.location.href, {
@@ -133,7 +233,7 @@
 
             if (response.ok) {
                 const data = await response.json();
-                alert(data.message || "Template applied successfully!");
+                toastAfterReload(data.message || "Template applied successfully!");
                 // Switch back to schedule tab to see changes
                 switchTab('schedule');
                 window.location.reload();

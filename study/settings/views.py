@@ -17,14 +17,26 @@ logger = logging.getLogger(__name__)
 COMMON_TIMEZONES = [
     'UTC',
     'Africa/Cairo', 'Africa/Johannesburg', 'Africa/Lagos',
-    'America/Anchorage', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'America/New_York', 'America/Toronto', 'America/Vancouver',
-    'Asia/Bangkok', 'Asia/Dubai', 'Asia/Hong_Kong', 'Asia/Jakarta', 'Asia/Kolkata', 'Asia/Shanghai', 'Asia/Singapore', 'Asia/Tashkent', 'Asia/Tokyo',
+    'America/Anchorage', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'America/New_York',
+    'America/Toronto', 'America/Vancouver',
+    'Asia/Bangkok', 'Asia/Dubai', 'Asia/Hong_Kong', 'Asia/Jakarta', 'Asia/Kolkata', 'Asia/Shanghai',
+    'Asia/Singapore', 'Asia/Tashkent', 'Asia/Tokyo',
     'Australia/Brisbane', 'Australia/Sydney',
     'Europe/Berlin', 'Europe/London', 'Europe/Moscow', 'Europe/Paris',
-    'Pacific/Auckland', 'Pacific/Fiji'
+    'Pacific/Auckland', 'Pacific/Fiji',
 ]
 
+
+def timezones_for(profile):
+    """The list to offer, always including the zone the user already has."""
+    if profile.timezone in COMMON_TIMEZONES:
+        return COMMON_TIMEZONES
+    return [profile.timezone] + COMMON_TIMEZONES
+
 # (min, max) for each pomodoro setting, matching the inputs in pomodoro_section.html
+REMINDER_CHOICES = [(0, 'Off'), (5, '5 minutes before'), (10, '10 minutes before'),
+                    (15, '15 minutes before'), (30, '30 minutes before')]
+
 POMODORO_LIMITS = {
     'default_pomodoro_duration': (1, 120),
     'default_short_break_duration': (1, 60),
@@ -68,7 +80,8 @@ def settings_view(request, section='profile'):
             # fall through and show the form with its errors
             return render(request, 'settings/settings_page.html', {
                 'profile': profile, 'user': request.user, 'active_section': section,
-                'timezones': COMMON_TIMEZONES, 'languages': SUPPORTED_LANGUAGES,
+                'timezones': timezones_for(profile), 'languages': SUPPORTED_LANGUAGES,
+                'reminder_choices': REMINDER_CHOICES,
                 'password_form': password_form,
             })
         # Sections without a form: send the user back instead of re-rendering on POST
@@ -78,8 +91,9 @@ def settings_view(request, section='profile'):
         'profile': profile,
         'user': request.user,
         'active_section': section,
-        'timezones': COMMON_TIMEZONES,
+        'timezones': timezones_for(profile),
         'languages': SUPPORTED_LANGUAGES,
+        'reminder_choices': REMINDER_CHOICES,
     }
     return render(request, 'settings/settings_page.html', context)
 
@@ -165,7 +179,13 @@ def handle_preferences_post(request, profile):
         if language in dict(SUPPORTED_LANGUAGES):
             profile.language_preference = language
 
-        # Update Checkbox
+        # Update reminders
+        try:
+            minutes = int(request.POST.get('reminder_minutes', 0))
+        except ValueError:
+            minutes = 0
+        if minutes in dict(REMINDER_CHOICES):
+            profile.reminder_minutes = minutes
 
         # We ONLY save the profile here.
         profile.save()
