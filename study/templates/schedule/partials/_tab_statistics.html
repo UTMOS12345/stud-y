@@ -505,6 +505,7 @@
             let gapIdx = 1;
 
             for (const b of src) {
+                const endMins = Math.min(b.endMins, DAY_MINS);  // this day's part only
                 if (b.startMins > cursor) {
                     result.push({
                         action: 'Empty',
@@ -520,11 +521,11 @@
                     action: b.action,
                     color: b.color,
                     startMins: b.startMins,
-                    endMins: b.endMins,
-                    mins: b.endMins - b.startMins,
+                    endMins: endMins,
+                    mins: endMins - b.startMins,
                     empty: false,
                 });
-                cursor = b.endMins;
+                cursor = endMins;
             }
 
             // trailing gap to midnight

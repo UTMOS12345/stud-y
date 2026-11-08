@@ -114,3 +114,21 @@ class WeekChartTests(DashboardTestCase):
                          [(100, 25), (50, 0), (0, 0)])
         self.assertTrue(week[0]['is_today'])
         self.assertFalse(week[1]['is_today'])
+
+
+class OvernightDashboardTests(DashboardTestCase):
+    def sleep(self, date):
+        schedule, _ = DaySchedule.objects.get_or_create(user=self.user, date=date)
+        return ScheduleBlock.objects.create(schedule=schedule, action=self.action, title='Sleep',
+                                            start_time=T(22), end_time=T(11), ends_next_day=True)
+
+    def test_last_nights_block_is_running_now(self):
+        self.sleep(datetime.date(2026, 1, 4))      # now is 10:30, it ends at 11:00
+        current = self.get().context['current']
+        self.assertEqual((current.title, current.minutes_left, current.progress), ('Sleep', 30, 96))
+
+    def test_tonights_block_is_next(self):
+        self.sleep(TODAY)
+        context = self.get().context
+        self.assertIsNone(context['current'])
+        self.assertEqual((context['upcoming'].title, context['blocks'][0].planned), ('Sleep', '13h'))

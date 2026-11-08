@@ -9,8 +9,19 @@ from .models import BlockSession, ScheduleBlock
 DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 
-def minutes_between(start, end):
-    return (end.hour * 60 + end.minute) - (start.hour * 60 + start.minute)
+def minutes_between(start, end, next_day=False):
+    minutes = (end.hour * 60 + end.minute) - (start.hour * 60 + start.minute)
+    return minutes + 24 * 60 if next_day else minutes
+
+
+def carried_over_block(user, day):
+    """The block that started the evening before `day` and runs into it, if any."""
+    return ScheduleBlock.objects.filter(
+        schedule__user=user,
+        schedule__date=day - datetime.timedelta(days=1),
+        ends_next_day=True,
+        end_time__gt=datetime.time.min,
+    ).select_related('action', 'schedule').first()
 
 
 def day_start(day):
@@ -29,11 +40,11 @@ def week_stats(user, day):
     planned = [0] * 7
     focused = [0] * 7
 
-    for date, start, end in ScheduleBlock.objects.filter(
+    for date, start, end, next_day in ScheduleBlock.objects.filter(
         schedule__user=user,
         schedule__date__range=(monday, monday + datetime.timedelta(days=6)),
-    ).values_list('schedule__date', 'start_time', 'end_time'):
-        planned[(date - monday).days] += minutes_between(start, end)
+    ).values_list('schedule__date', 'start_time', 'end_time', 'ends_next_day'):
+        planned[(date - monday).days] += minutes_between(start, end, next_day)
 
     for ended, seconds in BlockSession.objects.filter(
         user=user,
@@ -70,10 +81,10 @@ def block_stats(user, first_day, last_day=None):
             'name': name, 'color': color, 'planned_minutes': 0, 'focused_minutes': 0, 'sessions': 0,
         })
 
-    for action_id, name, color, start, end in ScheduleBlock.objects.filter(
+    for action_id, name, color, start, end, next_day in ScheduleBlock.objects.filter(
         schedule__user=user, schedule__date__range=(first_day, last_day),
-    ).values_list('action_id', 'action__name', 'action__color', 'start_time', 'end_time'):
-        row(action_id, name, color)['planned_minutes'] += minutes_between(start, end)
+    ).values_list('action_id', 'action__name', 'action__color', 'start_time', 'end_time', 'ends_next_day'):
+        row(action_id, name, color)['planned_minutes'] += minutes_between(start, end, next_day)
 
     for action_id, name, color, seconds in BlockSession.objects.filter(
         user=user,

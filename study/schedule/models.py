@@ -39,6 +39,39 @@ class Action(models.Model):
                 return color
         return ACTION_COLORS[len(used) % len(ACTION_COLORS)]
 
+MINUTES_IN_DAY = 24 * 60
+
+
+class BlockTimes:
+    """Time arithmetic shared by ScheduleBlock and TemplateBlock.
+    Minutes count from midnight of the block's own day, so a block that ends
+    the next day has an end above 1440."""
+
+    @property
+    def start_minutes(self):
+        return self.start_time.hour * 60 + self.start_time.minute
+
+    @property
+    def end_minutes(self):
+        end = self.end_time.hour * 60 + self.end_time.minute
+        return end + MINUTES_IN_DAY if self.ends_next_day else end
+
+    @property
+    def duration_minutes(self):
+        return self.end_minutes - self.start_minutes
+
+    def check_times(self):
+        if self.ends_next_day and self.start_time <= self.end_time:
+            raise ValidationError("A block that ends the next day must end earlier in the day than it starts.")
+        if not self.ends_next_day and self.start_time >= self.end_time:
+            raise ValidationError("End time must be after start time. If it ends after midnight, turn on 'Ends next day'.")
+
+    def overlaps(self, other, day_offset=0):
+        """day_offset: how many days after this block's day the other block is."""
+        shift = day_offset * MINUTES_IN_DAY
+        return other.start_minutes + shift < self.end_minutes and other.end_minutes + shift > self.start_minutes
+
+
 class DaySchedule(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='day_schedules')
     date = models.DateField(db_index=True)
@@ -75,6 +108,7 @@ class DaySchedule(models.Model):
                     description=block.description,
                     start_time=block.start_time,
                     end_time=block.end_time,
+                    ends_next_day=block.ends_next_day,
                     order=index,
                     block_type=block.block_type
                 )
@@ -83,7 +117,7 @@ class DaySchedule(models.Model):
 
             return new_template
 
-class ScheduleBlock(models.Model):
+class ScheduleBlock(BlockTimes, models.Model):
     class BlockType(models.TextChoices):
         FIXED = 'fixed', 'Fixed'
         FLEXIBLE = 'flexible', 'Flexible'
@@ -101,19 +135,13 @@ class ScheduleBlock(models.Model):
     
     start_time = models.TimeField()
     end_time = models.TimeField()
+    ends_next_day = models.BooleanField(default=False)
     
     block_type = models.CharField(
         max_length=20,
         choices=BlockType.choices,
         default=BlockType.FIXED
     )
-
-    @property
-    def duration_minutes(self):
-        dummy_date = datetime.date.min
-        delta = datetime.datetime.combine(dummy_date, self.end_time) - \
-                datetime.datetime.combine(dummy_date, self.start_time)
-        return int(delta.total_seconds() / 60)
 
     @property
     def duration_display(self):
@@ -126,25 +154,24 @@ class ScheduleBlock(models.Model):
 
     def clean(self):
         if self.start_time and self.end_time:
-            if self.start_time >= self.end_time:
-                raise ValidationError("End time must be after start time.")
-            
-            if self.schedule_id:
-                overlapping_blocks = ScheduleBlock.objects.filter(
-                    schedule=self.schedule,
-                    start_time__lt=self.end_time,
-                    end_time__gt=self.start_time
-                )
-            
-                if self.pk:
-                    overlapping_blocks = overlapping_blocks.exclude(pk=self.pk)
+            self.check_times()
 
-                if overlapping_blocks.exists():
-                    conflict = overlapping_blocks.first()
-                    raise ValidationError(
-                        f"Overlaps with existing block: '{conflict.title}' "
-                        f"({conflict.start_time} - {conflict.end_time})"
-                    )
+            if self.schedule_id:
+                # the days around this one count too, a block can run across midnight
+                day = self.schedule.date
+                nearby = ScheduleBlock.objects.filter(
+                    schedule__user_id=self.schedule.user_id,
+                    schedule__date__range=(day - datetime.timedelta(days=1), day + datetime.timedelta(days=1)),
+                ).select_related('schedule')
+                if self.pk:
+                    nearby = nearby.exclude(pk=self.pk)
+
+                for other in nearby:
+                    if self.overlaps(other, (other.schedule.date - day).days):
+                        raise ValidationError(
+                            f"Overlaps with existing block: '{other.title}' "
+                            f"({other.start_time} - {other.end_time})"
+                        )
 
     def save(self, *args, **kwargs):
         self.full_clean()
@@ -154,7 +181,8 @@ class ScheduleBlock(models.Model):
         ordering = ['start_time']
         constraints = [
             models.CheckConstraint(
-                condition=Q(end_time__gt=F('start_time')), 
+                condition=Q(ends_next_day=False, end_time__gt=F('start_time'))
+                | Q(ends_next_day=True, end_time__lt=F('start_time')),
                 name='check_block_time_valid'
             ),
         ]
@@ -197,13 +225,22 @@ class DayTemplate(models.Model):
         with transaction.atomic():
             schedule, _ = DaySchedule.objects.get_or_create(user=self.user, date=target_date)
 
-            # (start, end) of everything already on that day, loaded once
-            taken = list(schedule.blocks.values_list('start_time', 'end_time'))
+            # everything around that day as (start, end) minutes from its midnight, loaded once
+            taken = []
+            for date, start, end, next_day in ScheduleBlock.objects.filter(
+                schedule__user=self.user,
+                schedule__date__range=(target_date - datetime.timedelta(days=1),
+                                       target_date + datetime.timedelta(days=1)),
+            ).values_list('schedule__date', 'start_time', 'end_time', 'ends_next_day'):
+                shift = (date - target_date).days * MINUTES_IN_DAY
+                start_m = start.hour * 60 + start.minute + shift
+                end_m = end.hour * 60 + end.minute + shift + (MINUTES_IN_DAY if next_day else 0)
+                taken.append((start_m, end_m))
             new_blocks = []
             skipped_count = 0
 
             for t_block in self.template_blocks.all():
-                start, end = t_block.start_time, t_block.end_time
+                start, end = t_block.start_minutes, t_block.end_minutes
                 overlaps = any(start < t_end and end > t_start for t_start, t_end in taken)
                 if start >= end or overlaps:
                     skipped_count += 1
@@ -214,8 +251,9 @@ class DayTemplate(models.Model):
                     action_id=t_block.action_id,
                     title=t_block.title,
                     description=t_block.description,
-                    start_time=start,
-                    end_time=end,
+                    start_time=t_block.start_time,
+                    end_time=t_block.end_time,
+                    ends_next_day=t_block.ends_next_day,
                     block_type=t_block.block_type
                 ))
 
@@ -227,7 +265,7 @@ class DayTemplate(models.Model):
 
 
 
-class TemplateBlock(models.Model):
+class TemplateBlock(BlockTimes, models.Model):
     template = models.ForeignKey(
         DayTemplate, 
         on_delete=models.CASCADE, 
@@ -240,6 +278,7 @@ class TemplateBlock(models.Model):
     
     start_time = models.TimeField()
     end_time = models.TimeField()
+    ends_next_day = models.BooleanField(default=False)
     
     # ADD THIS FIELD so it matches ScheduleBlock:
     block_type = models.CharField(max_length=20, default='fixed')
@@ -249,24 +288,19 @@ class TemplateBlock(models.Model):
     def clean(self):
         # Same rules as ScheduleBlock: end after start, no overlaps inside one template
         if self.start_time and self.end_time:
-            if self.start_time >= self.end_time:
-                raise ValidationError("End time must be after start time.")
+            self.check_times()
 
             if self.template_id:
-                overlapping_blocks = TemplateBlock.objects.filter(
-                    template=self.template,
-                    start_time__lt=self.end_time,
-                    end_time__gt=self.start_time
-                )
+                others = TemplateBlock.objects.filter(template=self.template)
                 if self.pk:
-                    overlapping_blocks = overlapping_blocks.exclude(pk=self.pk)
+                    others = others.exclude(pk=self.pk)
 
-                conflict = overlapping_blocks.first()
-                if conflict:
-                    raise ValidationError(
-                        f"Overlaps with existing block: '{conflict.title}' "
-                        f"({conflict.start_time} - {conflict.end_time})"
-                    )
+                for other in others:
+                    if self.overlaps(other):
+                        raise ValidationError(
+                            f"Overlaps with existing block: '{other.title}' "
+                            f"({other.start_time} - {other.end_time})"
+                        )
 
     def save(self, *args, **kwargs):
         self.full_clean()

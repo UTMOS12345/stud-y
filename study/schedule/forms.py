@@ -4,7 +4,7 @@ from .models import ScheduleBlock, Action
 class ScheduleBlockForm(forms.ModelForm):
     class Meta:
         model = ScheduleBlock
-        fields = ['action', 'title', 'start_time', 'end_time', 'block_type', 'description']
+        fields = ['action', 'title', 'start_time', 'end_time', 'ends_next_day', 'block_type', 'description']
         widgets = {
             'action': forms.Select(attrs={
                 'class': 'hidden',
@@ -24,6 +24,7 @@ class ScheduleBlockForm(forms.ModelForm):
                 'placeholder': '00:00',
                 'type': 'time'
             }),
+            'ends_next_day': forms.CheckboxInput(attrs={'class': 'toggle toggle-primary toggle-sm'}),
             'block_type': forms.Select(attrs={
                 'class': 'w-full bg-base-300 border border-neutral/20 rounded-lg p-4 text-primary font-mono focus:outline-none'
             }),

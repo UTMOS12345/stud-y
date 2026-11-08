@@ -158,6 +158,13 @@
 
 /* ─── SCHEDULE / TEMPLATE EDITOR ─── */
 @layer components {
+  /* the themes don't set daisyUI's size variables, and the toggle collapses without them */
+  .toggle {
+    --border: 1px;
+    --radius-selector: 99px;
+    --depth: 0;
+  }
+
   .solid-card {
     @apply rounded-[2rem] p-8 border border-white/5 transition-all duration-300 w-full shadow-2xl;
   }

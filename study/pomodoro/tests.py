@@ -1,5 +1,6 @@
 import datetime
 import json
+from unittest import mock
 
 from django.test import TestCase
 from django.urls import reverse
@@ -151,3 +152,29 @@ class SessionTimeTests(TestCase):
         for value in ['soon', True, -5, 0, 1e30, [1]]:
             self.assertEqual(self.post({'focused_seconds': 1500, 'ended_at': value}).status_code, 400, value)
         self.assertFalse(BlockSession.objects.exists())
+
+
+class OvernightPickerTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='t', email='t@t.com', password='pw12345!x')
+        self.client.force_login(self.user)
+        # 01:00 in Tashkent on Jan 6
+        self.now = datetime.datetime(2026, 1, 5, 20, 0, tzinfo=datetime.timezone.utc)
+
+    def get(self):
+        with mock.patch('django.utils.timezone.now', return_value=self.now):
+            return self.client.get(reverse('pomodoro'))
+
+    def test_last_nights_block_is_offered_and_selected(self):
+        schedule = DaySchedule.objects.create(user=self.user, date=datetime.date(2026, 1, 5))
+        block = ScheduleBlock.objects.create(schedule=schedule, title='Sleep', start_time=datetime.time(22, 30),
+                                             end_time=datetime.time(6, 45), ends_next_day=True)
+        response = self.get()
+        self.assertEqual(response.context['selected_block_id'], block.id)
+        self.assertContains(response, 'data-next-day="1" data-carried="1"')
+
+    def test_finished_overnight_block_is_not_offered(self):
+        schedule = DaySchedule.objects.create(user=self.user, date=datetime.date(2026, 1, 5))
+        ScheduleBlock.objects.create(schedule=schedule, title='Sleep', start_time=datetime.time(22, 30),
+                                     end_time=datetime.time(0, 30), ends_next_day=True)
+        self.assertEqual(self.get().context['blocks'], [])

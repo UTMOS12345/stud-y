@@ -111,6 +111,27 @@
                     </div>
                 </div>
 
+                {% elif item.is_carried_over %}
+                <!-- BLOCK CONTINUING FROM THE EVENING BEFORE -->
+                <div class="flex gap-8 group w-full"
+                    data-block-start="00:00" data-block-end="{{ item.end_time|time:'H:i' }}">
+                    <div class="w-24 flex-shrink-0 flex flex-col justify-between py-2 text-right">
+                        <span class="text-xl font-bold text-base-content/40 tracking-tighter">00:00</span>
+                        <span class="text-xl font-bold text-base-content tracking-tighter">{{ item.end_time|time:"H:i" }}</span>
+                    </div>
+                    <div class="flex-1">
+                        <div data-block-card class="bg-base-200 rounded-2xl px-12 py-6 border border-base-300/50 transition-all duration-300 flex items-center justify-between gap-4">
+                            <div>
+                                <h3 class="text-xl font-bold tracking-wide" style="color: {{ item.block.action.color|default:'#3B82F6' }};">{{ item.block.title }}</h3>
+                                <p class="text-xs uppercase tracking-widest text-base-content/50 font-bold mt-1">Continues from yesterday · {{ item.duration_formatted }} this morning</p>
+                            </div>
+                            <a href="{% url 'pomodoro' %}?block={{ item.block.id }}" class="text-base-content/40 hover:text-primary transition-colors" title="Focus on this block">
+                                <i data-lucide="timer" class="w-5 h-5"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
                 {% else %}
                 <!-- SCHEDULED BLOCK -->
                 <div class="flex gap-8 group min-h-[160px] w-full"
@@ -123,7 +144,7 @@
                             {{ item.block.start_time|time:"H:i" }}
                         </span>
                         <span class="text-xl font-bold text-base-content/40 tracking-tighter">
-                            {{ item.block.end_time|time:"H:i" }}
+                            {{ item.block.end_time|time:"H:i" }}{% if item.block.ends_next_day %}<span class="text-xs align-top text-base-content/50 ml-0.5" title="Ends the next day">+1</span>{% endif %}
                         </span>
                     </div>
 
@@ -174,7 +195,7 @@
                                         <i data-lucide="timer" class="w-5 h-5"></i>
                                     </a>
                                     <button
-                                        onclick="editBlock({{ item.block.id }}, '{{ item.block.title|escapejs }}', '{{ item.block.action_id|default_if_none:'' }}', '{{ item.block.start_time|time:'H:i' }}', '{{ item.block.end_time|time:'H:i' }}', '{{ item.block.block_type|escapejs }}', '{{ item.block.description|escapejs }}')"
+                                        onclick="editBlock({{ item.block.id }}, '{{ item.block.title|escapejs }}', '{{ item.block.action_id|default_if_none:'' }}', '{{ item.block.start_time|time:'H:i' }}', '{{ item.block.end_time|time:'H:i' }}', '{{ item.block.block_type|escapejs }}', '{{ item.block.description|escapejs }}', {{ item.block.ends_next_day|yesno:'true,false' }})"
                                         class="text-base-content/40 hover:text-primary transition-colors" title="Edit">
                                         <i data-lucide="edit-2" class="w-5 h-5"></i>
                                     </button>
@@ -328,6 +349,12 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Ends next day -->
+                        <label class="flex items-center justify-between gap-4 cursor-pointer -mt-2">
+                            <span class="text-[10px] uppercase text-base-content font-black tracking-[0.2em] ml-1">Ends next day</span>
+                            {{ form.ends_next_day }}
+                        </label>
 
                         <!-- Block Type -->
                         <div>
@@ -544,7 +571,8 @@
                     if (!card) return;
 
                     const start = timeToMinutes(block.dataset.blockStart);
-                    const end = timeToMinutes(block.dataset.blockEnd);
+                    let end = timeToMinutes(block.dataset.blockEnd);
+                    if (end <= start) end += 24 * 60;  // ends the next day
                     const total = end - start;
 
                     if (totalLabel) totalLabel.innerText = formatDuration(total);
@@ -680,15 +708,17 @@
         function openModal() {
             document.getElementById('id_block_id').value = '';
             document.getElementById('id_title').value = '';
+            document.getElementById('id_ends_next_day').checked = false;
             document.getElementById('modal-title').innerText = 'Add_Block';
             document.getElementById('addBlockModal').classList.remove('hidden');
         }
 
-        function editBlock(id, title, actionId, startTime, endTime, blockType, description) {
+        function editBlock(id, title, actionId, startTime, endTime, blockType, description, endsNextDay) {
             document.getElementById('id_block_id').value = id;
             document.getElementById('id_title').value = title;
             document.getElementById('id_start_time')._flatpickr.setDate(startTime);
             document.getElementById('id_end_time')._flatpickr.setDate(endTime);
+            document.getElementById('id_ends_next_day').checked = endsNextDay;
             document.getElementById('id_block_type').value = blockType;
             document.getElementById('id_description').value = description;
             document.getElementById('modal-title').innerText = 'Edit_Block';

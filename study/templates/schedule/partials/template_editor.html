@@ -50,7 +50,7 @@
                             {{ block.start_time|time:"H:i" }}
                         </span>
                         <span class="text-xl font-bold text-base-content/40 tracking-tighter">
-                            {{ block.end_time|time:"H:i" }}
+                            {{ block.end_time|time:"H:i" }}{% if block.ends_next_day %}<span class="text-xs align-top text-base-content/50 ml-0.5" title="Ends the next day">+1</span>{% endif %}
                         </span>
                     </div>
 
@@ -238,6 +238,12 @@
                             </div>
                         </div>
 
+                        <!-- Ends next day -->
+                        <label class="flex items-center justify-between gap-4 cursor-pointer -mt-2">
+                            <span class="text-[10px] uppercase text-base-content font-black tracking-[0.2em] ml-1">Ends next day</span>
+                            {{ form.ends_next_day }}
+                        </label>
+
                         <!-- Block Type -->
                         <div>
                             <label
@@ -399,7 +405,8 @@
                 document.querySelectorAll('[data-block-start]').forEach(block => {
                     const totalLabel = block.querySelector('.total-duration-label');
                     const start = timeToMinutes(block.dataset.blockStart);
-                    const end = timeToMinutes(block.dataset.blockEnd);
+                    let end = timeToMinutes(block.dataset.blockEnd);
+                    if (end <= start) end += 24 * 60;  // ends the next day
                     if (totalLabel) totalLabel.innerText = formatDuration(end - start);
                 });
             }
@@ -482,6 +489,7 @@
         function openModal() {
             document.getElementById('id_block_id').value = '';
             document.getElementById('id_title').value = '';
+            document.getElementById('id_ends_next_day').checked = false;
             document.getElementById('modal-title').innerText = 'Add_Block';
             // Clear action selection
             document.querySelectorAll('.action-select-btn').forEach(b => {
@@ -492,11 +500,12 @@
             document.getElementById('addBlockModal').classList.remove('hidden');
         }
 
-        function editBlock(id, title, actionId, startTime, endTime, blockType, description) {
+        function editBlock(id, title, actionId, startTime, endTime, blockType, description, endsNextDay) {
             document.getElementById('id_block_id').value = id;
             document.getElementById('id_title').value = title;
             document.getElementById('id_start_time')._flatpickr.setDate(startTime);
             document.getElementById('id_end_time')._flatpickr.setDate(endTime);
+            document.getElementById('id_ends_next_day').checked = endsNextDay;
             document.getElementById('id_block_type').value = blockType;
             document.getElementById('id_description').value = description;
             document.getElementById('modal-title').innerText = 'Edit_Block';

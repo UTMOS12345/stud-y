@@ -10,6 +10,7 @@ from django.views.decorators.http import require_POST
 
 from accounts.models import Profile
 from schedule.models import BlockSession, ScheduleBlock
+from schedule.stats import carried_over_block
 
 # Longest focus session we accept: block mode can time a whole block, like a school day
 MAX_SESSION_SECONDS = 16 * 3600
@@ -33,6 +34,15 @@ def pomodoro(request):
     blocks = list(ScheduleBlock.objects.filter(
         schedule__user=request.user, schedule__date=timezone.localdate(),
     ).select_related('action', 'schedule'))
+    # last evening's block, while it is still running this morning
+    now = timezone.localtime().time()
+    carried_over = carried_over_block(request.user, timezone.localdate())
+    if carried_over and now < carried_over.end_time:
+        carried_over.is_carried_over = True
+        blocks.insert(0, carried_over)
+    else:
+        carried_over = None
+
     selected_id = None
     requested = request.GET.get('block', '')
     if requested.isdigit():
@@ -42,8 +52,8 @@ def pomodoro(request):
             if picked not in blocks:
                 blocks.insert(0, picked)
     if selected_id is None:
-        now = timezone.localtime().time()
-        current = next((b for b in blocks if b.start_time <= now < b.end_time), None)
+        now_minutes = now.hour * 60 + now.minute
+        current = carried_over or next((b for b in blocks if b.start_minutes <= now_minutes < b.end_minutes), None)
         selected_id = current.id if current else None
 
     context = {

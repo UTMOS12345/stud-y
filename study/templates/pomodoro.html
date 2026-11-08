@@ -110,7 +110,8 @@
                     data-meta="{{ block.start_time|time:'H:i' }}–{{ block.end_time|time:'H:i' }}{% if block.action %} · {{ block.action.name }}{% endif %}"
                     data-color="{% if block.action %}{{ block.action.color }}{% else %}#6B7280{% endif %}"
                     data-date="{{ block.schedule.date|date:'Y-m-d' }}"
-                    data-start="{{ block.start_time|time:'H:i' }}" data-end="{{ block.end_time|time:'H:i' }}">{{ block.title }}</option>
+                    data-start="{{ block.start_time|time:'H:i' }}" data-end="{{ block.end_time|time:'H:i' }}"
+                    data-next-day="{{ block.ends_next_day|yesno:'1,' }}" data-carried="{{ block.is_carried_over|yesno:'1,' }}">{{ block.title }}</option>
                 {% endfor %}
             </select>
 
@@ -527,9 +528,10 @@
         function blockSeconds(option) {
             const toMinutes = hm => { const [h, m] = hm.split(':').map(Number); return h * 60 + m; };
             const start = toMinutes(option.dataset.start) * 60;
-            const end = toMinutes(option.dataset.end) * 60;
+            const end = toMinutes(option.dataset.end) * 60 + (option.dataset.nextDay ? 86400 : 0);
             const now = new Date();
             const nowSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+            if (option.dataset.carried) return end - 86400 - nowSeconds;  // started last evening, runs until this morning
             if (option.dataset.date === TODAY && start <= nowSeconds && nowSeconds < end) return end - nowSeconds;
             return end - start;
         }

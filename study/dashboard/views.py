@@ -4,7 +4,12 @@ from django.shortcuts import render
 from django.utils import timezone
 
 from schedule.models import ScheduleBlock
-from schedule.stats import focus_streak, format_minutes, minutes_between, block_stats, summary, week_stats
+from schedule.stats import block_stats, carried_over_block, focus_streak, format_minutes, summary, week_stats
+
+
+def add_display_fields(block):
+    block.planned = format_minutes(block.duration_minutes)
+    block.color = block.action.color if block.action else '#6B7280'
 
 
 def today_blocks(user, today):
@@ -16,23 +21,26 @@ def today_blocks(user, today):
         .order_by('start_time')
     )
     for b in blocks:
-        b.planned = format_minutes(minutes_between(b.start_time, b.end_time))
+        add_display_fields(b)
         b.focused = format_minutes((b.focused_seconds or 0) / 60)
-        b.color = b.action.color if b.action else '#6B7280'
     return blocks
 
 
-def now_and_next(blocks, now):
-    """The block running at `now` (or None) and the next one to start."""
-    current = next((b for b in blocks if b.start_time <= now < b.end_time), None)
-    upcoming = next((b for b in blocks if b.start_time > now), None)
+def now_and_next(blocks, now, carried_over=None):
+    """The block running at `now` (or None) and the next one to start.
+    carried_over is last evening's block that runs into today."""
+    now_minutes = now.hour * 60 + now.minute
+    current, position = None, now_minutes
+    if carried_over and now_minutes + 24 * 60 < carried_over.end_minutes:
+        current, position = carried_over, now_minutes + 24 * 60  # counted from yesterday's midnight
+    else:
+        current = next((b for b in blocks if b.start_minutes <= now_minutes < b.end_minutes), None)
+    upcoming = next((b for b in blocks if b.start_minutes > now_minutes), None)
     if current:
-        current.minutes_left = minutes_between(now, current.end_time)
-        current.progress = round(
-            minutes_between(current.start_time, now) * 100 / minutes_between(current.start_time, current.end_time)
-        )
+        current.minutes_left = current.end_minutes - position
+        current.progress = round((position - current.start_minutes) * 100 / current.duration_minutes)
     if upcoming:
-        upcoming.starts_in = format_minutes(minutes_between(now, upcoming.start_time))
+        upcoming.starts_in = format_minutes(upcoming.start_minutes - now_minutes)
     return current, upcoming
 
 
@@ -40,9 +48,13 @@ def now_and_next(blocks, now):
 def dashboard(request):
     now = timezone.localtime()
     blocks = today_blocks(request.user, now.date())
-    current, upcoming = now_and_next(blocks, now.time())
+    carried_over = carried_over_block(request.user, now.date())
+    if carried_over:
+        add_display_fields(carried_over)
+    current, upcoming = now_and_next(blocks, now.time(), carried_over)
+    now_minutes = now.hour * 60 + now.minute
     for b in blocks:
-        b.is_done = b.end_time <= now.time()
+        b.is_done = b.end_minutes <= now_minutes
         b.is_current = b is current
 
     day = summary(block_stats(request.user, now.date()), len(blocks))

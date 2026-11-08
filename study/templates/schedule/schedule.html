@@ -82,7 +82,8 @@
 
         document.querySelectorAll('[data-block-start]').forEach(block => {
             const start = timeToMinutes(block.dataset.blockStart);
-            const end = timeToMinutes(block.dataset.blockEnd);
+            let end = timeToMinutes(block.dataset.blockEnd);
+            if (end <= start) end += 24 * 60;  // ends the next day
             const total = end - start;
 
             const card = block.querySelector('[data-block-card]');

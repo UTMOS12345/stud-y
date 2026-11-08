@@ -13,21 +13,12 @@ from django.core.exceptions import ValidationError
 
 from .models import DaySchedule, DayTemplate, Action, ScheduleBlock, TemplateBlock
 from .forms import ScheduleBlockForm
-from .stats import block_stats, recent_focus, records, summary, week_stats, week_blocks
+from .stats import block_stats, carried_over_block, recent_focus, records, summary, week_stats, week_blocks
 
 logger = logging.getLogger(__name__)
 
 
 # ─── helpers ──────────────────────────────────────────────────────────────────
-
-def _block_minutes(block):
-    """Return the duration of a ScheduleBlock or TemplateBlock in minutes."""
-    delta = (
-        datetime.datetime.combine(datetime.date.min, block.end_time)
-        - datetime.datetime.combine(datetime.date.min, block.start_time)
-    )
-    return int(delta.total_seconds() / 60)
-
 
 def _format_duration(minutes):
     """Format duration in minutes to readable string."""
@@ -43,76 +34,59 @@ def _format_duration(minutes):
         return f"{m} m."
 
 
-def _build_schedule_with_gaps(blocks):
+def _build_schedule_with_gaps(blocks, carried_over=None):
     """
     Return schedule blocks with empty gaps inserted between them.
     Used to visualize idle time in the schedule view.
+    carried_over is a block from the evening before that runs into this day.
     """
-    if not blocks:
+    if not blocks and not carried_over:
         return []
-    
-    # Sort blocks by start time
+
     blocks = sorted(blocks, key=lambda b: b.start_time)
-    
     result = []
-    
-    # Check if there's a gap before the first block
-    first_start_mins = blocks[0].start_time.hour * 60 + blocks[0].start_time.minute
-    if first_start_mins > 0:
+    cursor, cursor_time = 0, datetime.time(0, 0)
+
+    def add_gap(until, until_time):
+        if until > cursor:
+            result.append({
+                'is_empty': True,
+                'start_time': cursor_time,
+                'end_time': until_time,
+                'title': 'Empty',
+                'duration_mins': until - cursor,
+                'duration_formatted': _format_duration(until - cursor),
+            })
+
+    if carried_over:
+        cursor = carried_over.end_minutes - 24 * 60
+        cursor_time = carried_over.end_time
         result.append({
-            'is_empty': True,
+            'is_empty': False,
+            'is_carried_over': True,
+            'block': carried_over,
             'start_time': datetime.time(0, 0),
-            'end_time': blocks[0].start_time,
-            'title': 'Empty',
-            'duration_mins': first_start_mins,
-            'duration_formatted': _format_duration(first_start_mins),
+            'end_time': carried_over.end_time,
+            'title': carried_over.title,
+            'duration_mins': cursor,
+            'duration_formatted': _format_duration(cursor),
         })
-    
-    # Add blocks and gaps between them
-    for i, block in enumerate(blocks):
-        block_mins = _block_minutes(block)
+
+    for block in blocks:
+        add_gap(block.start_minutes, block.start_time)
         result.append({
             'is_empty': False,
             'block': block,
             'start_time': block.start_time,
             'end_time': block.end_time,
             'title': block.title,
-            'duration_mins': block_mins,
-            'duration_formatted': _format_duration(block_mins),
+            'duration_mins': block.duration_minutes,
+            'duration_formatted': _format_duration(block.duration_minutes),
         })
-        
-        # Check for gap to next block
-        if i < len(blocks) - 1:
-            next_block = blocks[i + 1]
-            gap_mins = (
-                (next_block.start_time.hour * 60 + next_block.start_time.minute) -
-                (block.end_time.hour * 60 + block.end_time.minute)
-            )
-            if gap_mins > 0:
-                result.append({
-                    'is_empty': True,
-                    'start_time': block.end_time,
-                    'end_time': next_block.start_time,
-                    'title': 'Empty',
-                    'duration_mins': gap_mins,
-                    'duration_formatted': _format_duration(gap_mins),
-                })
-    
-    # Check if there's a gap after the last block
+        cursor, cursor_time = block.end_minutes, block.end_time
+
     # The day is shown as ending at 23:59, so count the last gap up to 23:59 too
-    last_end_mins = blocks[-1].end_time.hour * 60 + blocks[-1].end_time.minute
-    day_end_mins = 23 * 60 + 59
-    if last_end_mins < day_end_mins:
-        remaining_mins = day_end_mins - last_end_mins
-        result.append({
-            'is_empty': True,
-            'start_time': blocks[-1].end_time,
-            'end_time': datetime.time(23, 59),
-            'title': 'Empty',
-            'duration_mins': remaining_mins,
-            'duration_formatted': _format_duration(remaining_mins),
-        })
-    
+    add_gap(23 * 60 + 59, datetime.time(23, 59))
     return result
 
 
@@ -272,14 +246,27 @@ def schedule_view(request):
             'color':     b.action.color if b.action else '#3B82F6',
             'icon':      b.action.icon_name if b.action else 'activity',
             'startMins': b.start_time.hour * 60 + b.start_time.minute,
-            'endMins':   b.end_time.hour   * 60 + b.end_time.minute,
+            'endMins':   b.end_minutes,
             'title':     b.title,
             'blockType': b.block_type,
             'focusedSecs': b.focused_seconds,
         })
 
     # Build schedule with gaps for display
-    schedule_with_gaps = _build_schedule_with_gaps(blocks)
+    carried_over = carried_over_block(request.user, selected_date)
+    schedule_with_gaps = _build_schedule_with_gaps(blocks, carried_over)
+    if carried_over:
+        # the morning part fills that time in the full-day chart
+        blocks_data.append({
+            'action': carried_over.action.name if carried_over.action else '',
+            'color': carried_over.action.color if carried_over.action else '#3B82F6',
+            'icon': carried_over.action.icon_name if carried_over.action else 'activity',
+            'startMins': 0,
+            'endMins': carried_over.end_minutes - 24 * 60,
+            'title': carried_over.title,
+            'blockType': carried_over.block_type,
+            'focusedSecs': 0,
+        })
 
     actions = list(Action.objects.filter(user=request.user))
     week = week_stats(request.user, selected_date)
@@ -361,6 +348,7 @@ def template_detail_view(request, template_id):
                     instance.action      = cd.get('action')
                     instance.start_time  = cd['start_time']
                     instance.end_time    = cd['end_time']
+                    instance.ends_next_day = cd.get('ends_next_day', False)
                     instance.description = cd.get('description') or ''
                     instance.block_type  = cd.get('block_type', 'fixed')
                     instance.save()
@@ -377,6 +365,7 @@ def template_detail_view(request, template_id):
                         action      = cd.get('action'),
                         start_time  = cd['start_time'],
                         end_time    = cd['end_time'],
+                        ends_next_day = cd.get('ends_next_day', False),
                         description = cd.get('description') or '',
                         block_type  = cd.get('block_type', 'fixed'),
                         order       = last_order + 1,

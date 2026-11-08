@@ -2,6 +2,7 @@ import datetime
 import json
 from unittest import mock
 
+from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.urls import reverse
 
@@ -70,7 +71,7 @@ class ScheduleViewTests(ScheduleTestCase):
         for h in range(8, 14):
             self.add_block(datetime.date(2026, 1, 5), T(h), T(h, 45), title=f'b{h}')
         # a fixed number, it does not grow with the number of blocks or sessions
-        with self.assertNumQueries(16):
+        with self.assertNumQueries(17):
             self.client.get(self.url, {'date': '2026-01-05'})
 
     def test_blocks_show_focused_time(self):
@@ -361,3 +362,85 @@ class RecentFocusTests(ScheduleTestCase):
 
     def test_heat_levels(self):
         self.assertEqual([heat_level(m) for m in (0, 10, 45, 90, 200)], [0, 1, 2, 3, 4])
+
+
+class OvernightTests(ScheduleTestCase):
+    DAY = datetime.date(2026, 1, 5)
+    NEXT = datetime.date(2026, 1, 6)
+
+    def sleep(self, day=None, start=T(22, 30), end=T(6, 45)):
+        schedule, _ = DaySchedule.objects.get_or_create(user=self.user, date=day or self.DAY)
+        return ScheduleBlock.objects.create(schedule=schedule, action=self.action, title='Sleep',
+                                            start_time=start, end_time=end, ends_next_day=True)
+
+    def test_duration_crosses_midnight(self):
+        block = self.sleep()
+        self.assertEqual((block.duration_minutes, block.duration_display), (495, '8 h. 15 m.'))
+
+    def test_end_before_start_still_needs_the_switch(self):
+        response = self.client.post(f"{self.url}?date=2026-01-05", self.block_form(start_time='22:00', end_time='06:00'))
+        self.assertContains(response, 'Ends next day')
+        self.assertEqual(ScheduleBlock.objects.count(), 0)
+
+    def test_form_creates_overnight_block(self):
+        response = self.client.post(f"{self.url}?date=2026-01-05",
+                                    self.block_form(start_time='22:30', end_time='06:45', ends_next_day='on'))
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(ScheduleBlock.objects.get().ends_next_day)
+
+    def test_switch_needs_an_earlier_end(self):
+        self.client.post(f"{self.url}?date=2026-01-05",
+                         self.block_form(start_time='09:00', end_time='10:00', ends_next_day='on'))
+        self.assertEqual(ScheduleBlock.objects.count(), 0)
+
+    def test_overlaps_are_checked_across_midnight(self):
+        self.sleep()
+        with self.assertRaises(ValidationError):
+            self.add_block(self.NEXT, T(6), T(7))       # morning of the next day, during sleep
+        self.add_block(self.NEXT, T(6, 45), T(7))       # right after waking is fine
+        with self.assertRaises(ValidationError):
+            self.add_block(self.DAY, T(23), T(23, 30))  # same evening
+
+    def test_overnight_block_cannot_land_on_next_mornings_block(self):
+        self.add_block(self.NEXT, T(6), T(7))
+        with self.assertRaises(ValidationError):
+            self.sleep()
+
+    def test_schedule_gaps_on_both_days(self):
+        self.sleep()
+        today = self.client.get(self.url, {'date': '2026-01-05'}).context['schedule_with_gaps']
+        self.assertEqual([(g['is_empty'], g['duration_mins']) for g in today], [(True, 1350), (False, 495)])
+        next_day = self.client.get(self.url, {'date': '2026-01-06'}).context['schedule_with_gaps']
+        self.assertTrue(next_day[0]['is_carried_over'])
+        self.assertEqual([(g['is_empty'], g['duration_mins']) for g in next_day], [(False, 405), (True, 1034)])
+
+    def test_stats_count_the_whole_block_on_its_start_day(self):
+        self.sleep()
+        self.assertEqual(block_stats(self.user, self.DAY)[0]['planned_minutes'], 495)
+        self.assertEqual(week_stats(self.user, self.DAY)[0]['planned_hours'], 8.2)
+
+    def test_template_round_trip(self):
+        self.add_block(self.DAY, T(8), T(9))
+        block = self.sleep()
+        template = block.schedule.create_template_from_day('Night')
+        self.assertTrue(template.template_blocks.get(title='Sleep').ends_next_day)
+        target = datetime.date(2026, 1, 12)
+        self.assertEqual(template.apply_to_date_merge(target), (2, 0))
+        self.assertTrue(ScheduleBlock.objects.get(schedule__date=target, title='Sleep').ends_next_day)
+
+    def test_applying_on_consecutive_days_respects_the_night_before(self):
+        template = DayTemplate.objects.create(user=self.user, name='T')
+        TemplateBlock.objects.create(template=template, action=self.action, title='Sleep',
+                                     start_time=T(22), end_time=T(7), ends_next_day=True)
+        TemplateBlock.objects.create(template=template, action=self.action, title='Early',
+                                     start_time=T(6), end_time=T(6, 30))
+        self.assertEqual(template.apply_to_date_merge(self.DAY), (2, 0))
+        # next day's Early falls inside the first night's sleep
+        self.assertEqual(template.apply_to_date_merge(self.NEXT), (1, 1))
+
+    def test_template_editor_saves_the_switch(self):
+        template = DayTemplate.objects.create(user=self.user, name='T')
+        url = reverse('template_detail', args=[template.id])
+        self.client.post(url, self.block_form(start_time='22:30', end_time='06:45', ends_next_day='on'))
+        self.assertTrue(TemplateBlock.objects.get().ends_next_day)
+        self.assertContains(self.client.get(url), 'Ends the next day')
