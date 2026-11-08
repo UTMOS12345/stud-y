@@ -3,6 +3,7 @@ import json
 
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from accounts.models import User
 from schedule.models import Action, BlockSession, DaySchedule, ScheduleBlock
@@ -61,7 +62,6 @@ class PomodoroPageTests(TestCase):
         self.client.force_login(self.user)
 
     def test_counts_only_todays_sessions(self):
-        from django.utils import timezone
         now = timezone.now()
         for ended, seconds in [(now, 1500), (now, 600), (now - datetime.timedelta(days=2), 1500)]:
             BlockSession.objects.create(user=self.user, start_time=ended - datetime.timedelta(seconds=seconds),
@@ -119,3 +119,35 @@ class BlockModeTests(TestCase):
         self.assertContains(response, 'data-start="09:00" data-end="10:00"')
         self.assertContains(response, 'data-date="2026-01-05"')
         self.assertContains(response, 'id="block-mode-btn"')
+
+
+class SessionTimeTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='t', email='t@t.com', password='pw12345!x')
+        self.client.force_login(self.user)
+
+    def post(self, body):
+        return self.client.post(reverse('pomodoro_save_session'), json.dumps(body), content_type='application/json')
+
+    def test_late_upload_keeps_the_real_end_time(self):
+        ended = datetime.datetime(2026, 1, 5, 7, 0, tzinfo=datetime.timezone.utc)
+        self.assertEqual(self.post({'focused_seconds': 1500, 'ended_at': ended.timestamp() * 1000}).status_code, 201)
+        session = BlockSession.objects.get()
+        self.assertEqual(session.end_time, ended)
+        self.assertEqual(session.start_time, ended - datetime.timedelta(seconds=1500))
+
+    def test_future_end_time_becomes_now(self):
+        future = (timezone.now() + datetime.timedelta(days=3)).timestamp() * 1000
+        self.post({'focused_seconds': 600, 'ended_at': future})
+        self.assertLessEqual(BlockSession.objects.get().end_time, timezone.now())
+
+    def test_same_upload_twice_is_one_session(self):
+        ended_at = 1767600000000
+        self.assertEqual(self.post({'focused_seconds': 1500, 'ended_at': ended_at}).status_code, 201)
+        self.assertEqual(self.post({'focused_seconds': 1500, 'ended_at': ended_at}).status_code, 200)
+        self.assertEqual(BlockSession.objects.count(), 1)
+
+    def test_bad_end_times_are_rejected(self):
+        for value in ['soon', True, -5, 0, 1e30, [1]]:
+            self.assertEqual(self.post({'focused_seconds': 1500, 'ended_at': value}).status_code, 400, value)
+        self.assertFalse(BlockSession.objects.exists())

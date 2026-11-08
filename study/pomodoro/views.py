@@ -66,7 +66,9 @@ def pomodoro(request):
 @require_POST
 def save_session(request):
     """Save one finished focus session.
-    Body: {"focused_seconds": 1500, "block_id": 12}  (block_id is optional)"""
+    Body: {"focused_seconds": 1500, "block_id": 12, "ended_at": 1767600000000}
+    block_id is optional. ended_at is when the session really ended, in milliseconds
+    since 1970, because a session can reach the server long after it finished."""
     try:
         data = json.loads(request.body)
         seconds = int(data.get('focused_seconds'))
@@ -85,6 +87,21 @@ def save_session(request):
             return JsonResponse({'error': 'Block not found'}, status=404)
 
     end = timezone.now()
+    ended_at = data.get('ended_at')
+    if ended_at is not None:
+        try:
+            if isinstance(ended_at, bool) or ended_at <= 0:
+                raise ValueError
+            reported = datetime.datetime.fromtimestamp(ended_at / 1000, tz=datetime.timezone.utc)
+        except (TypeError, ValueError, OverflowError, OSError):
+            return JsonResponse({'error': 'ended_at must be a time in milliseconds'}, status=400)
+        end = min(end, reported)  # a device clock running fast can't create future sessions
+
+        # the same upload arriving twice (two tabs, a lost response) is one session
+        existing = BlockSession.objects.filter(user=request.user, end_time=end, focused_seconds=seconds).first()
+        if existing:
+            return JsonResponse({'id': existing.id, 'focused_seconds': seconds})
+
     session = BlockSession.objects.create(
         user=request.user,
         block=block,

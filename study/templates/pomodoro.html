@@ -367,7 +367,7 @@
             const savedTimeLeft = parseInt(localStorage.getItem('pomodoro_timeLeft')) || WORK_TIME;
 
             // today's totals come from the server, plus sessions still waiting to be sent
-            const waiting = pendingSessions();
+            const waiting = pendingSessions().filter(s => !s.ended_at || isToday(s.ended_at));
             sessionsCompleted = TODAY_SESSIONS + waiting.length;
             totalFocusedSeconds = TODAY_FOCUSED_SECONDS + waiting.reduce((sum, s) => sum + s.focused_seconds, 0);
             localStorage.removeItem('pomodoro_sessionsCompleted');
@@ -383,9 +383,9 @@
                     endTime = parseInt(savedEndTime);
                     start();
                 } else {
-                    // finished while the page was closed, it still counts
+                    // finished while the page was closed, it still counts, at the time it ended
                     timeLeft = durationForMode(mode);
-                    complete();
+                    complete(parseInt(savedEndTime));
                 }
             } else {
                 timeLeft = savedTimeLeft;
@@ -451,9 +451,30 @@
             if (retry) await sendPendingSessions();
         }
 
-        function recordSession(seconds) {
+        function isToday(ms) {
+            const d = new Date(ms);
+            const pad = n => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` === TODAY;
+        }
+
+        /** Count a finished stretch of focus and queue it for the server. */
+        function addFocus(seconds, endedAt) {
+            if (isToday(endedAt)) {
+                sessionsCompleted++;
+                totalFocusedSeconds += seconds;
+            }
+            recordSession(seconds, endedAt);
+            updateStats();
+        }
+
+        function recordSession(seconds, endedAt) {
             const list = pendingSessions();
-            list.push({ uid: Date.now() + '-' + Math.random(), focused_seconds: seconds, block_id: blockSelect.value || null });
+            list.push({
+                uid: Date.now() + '-' + Math.random(),
+                focused_seconds: seconds,
+                ended_at: endedAt,
+                block_id: blockSelect.value || null,
+            });
             setPendingSessions(list);
             if (flushing) {
                 // an upload is running, send this one right after it
@@ -472,7 +493,7 @@
                 timeLeft = remaining;
                 updateDisplay();
             } else {
-                complete();
+                complete(endTime);
             }
         }
 
@@ -499,12 +520,7 @@
         function saveBlockProgress() {
             if (mode !== 'block') return;
             const focused = blockTotal - timeLeft;
-            if (focused >= 60) {
-                sessionsCompleted++;
-                totalFocusedSeconds += focused;
-                recordSession(focused);
-                updateStats();
-            }
+            if (focused >= 60) addFocus(focused, Date.now());
         }
 
         /** Seconds to time for a block: what is left of it if it is running now, else its full length. */
@@ -525,19 +541,13 @@
             switchMode('block');
         }
 
-        function complete() {
+        function complete(endedAt) {
             pause();
             if (mode === 'block') {
-                sessionsCompleted++;
-                totalFocusedSeconds += blockTotal;
-                recordSession(blockTotal);
-                updateStats();
+                addFocus(blockTotal, endedAt);
                 switchMode('work');
             } else if (mode === 'work') {
-                sessionsCompleted++;
-                totalFocusedSeconds += WORK_TIME;
-                recordSession(WORK_TIME);
-                updateStats();
+                addFocus(WORK_TIME, endedAt);
                 switchMode(nextBreakMode());
             } else {
                 switchMode('work');
@@ -545,7 +555,6 @@
         }
 
         function switchMode(newMode) {
-            if (mode === 'block' && newMode !== 'block') saveBlockProgress();
             mode = newMode;
             timeLeft = durationForMode(mode);
             endTime = null;
@@ -565,9 +574,14 @@
             updateDisplay();
             saveState();
         });
-        blockModeBtn.addEventListener('click', () => { if (!isRunning) startBlockMode(); });
-        workModeBtn.addEventListener('click', () => { if (!isRunning) switchMode('work'); });
-        breakModeBtn.addEventListener('click', () => { if (!isRunning) switchMode('short_break'); });
+        blockModeBtn.addEventListener('click', () => { if (!isRunning && mode !== 'block') startBlockMode(); });
+        function leaveFor(newMode) {
+            if (isRunning) return;
+            saveBlockProgress();  // a block run left halfway keeps its time
+            switchMode(newMode);
+        }
+        workModeBtn.addEventListener('click', () => leaveFor('work'));
+        breakModeBtn.addEventListener('click', () => leaveFor('short_break'));
 
         window.addEventListener('beforeunload', saveState);
         setInterval(() => { if (isRunning) saveState(); }, 5000);
