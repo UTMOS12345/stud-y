@@ -12,6 +12,15 @@ ACTION_COLORS = [
 ]
 
 
+def next_palette_color(colors):
+    """The first palette color not in `colors` (after all twelve are taken, start again)."""
+    used = {c.upper() for c in colors}
+    for color in ACTION_COLORS:
+        if color not in used:
+            return color
+    return ACTION_COLORS[len(used) % len(ACTION_COLORS)]
+
+
 class Action(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='actions')
     name = models.CharField(max_length=100)
@@ -33,11 +42,7 @@ class Action(models.Model):
         Pass `colors` when the user's actions are already loaded."""
         if colors is None:
             colors = cls.objects.filter(user=user).values_list('color', flat=True)
-        used = {c.upper() for c in colors}
-        for color in ACTION_COLORS:
-            if color not in used:
-                return color
-        return ACTION_COLORS[len(used) % len(ACTION_COLORS)]
+        return next_palette_color(colors)
 
 MINUTES_IN_DAY = 24 * 60
 

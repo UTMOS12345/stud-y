@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'pomodoro',
     'settings',
     'schedule',
+    'habits',
 
     'django.contrib.admin',
     'django.contrib.auth',

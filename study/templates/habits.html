@@ -1,0 +1,417 @@
+{% extends "base.html" %}
+
+{% block title %}stud-y — habits{% endblock %}
+
+{% block content %}
+<div class="px-4 md:px-10 py-8 md:py-10 animate-up">
+
+    <header class="flex items-end justify-between gap-4 flex-wrap mb-8">
+        <div>
+            <p class="text-[10px] text-neutral-content tracking-[0.3em] uppercase mb-2">{{ month|date:"F Y" }}</p>
+            <h1 class="font-serif italic font-bold text-base-content leading-tight" style="font-size: 40px; letter-spacing: -1px;">
+                habits<span class="text-primary">.</span>
+            </h1>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+            <a href="?month={{ previous_month }}" class="hb-nav" aria-label="Previous month"><i data-lucide="chevron-left" class="w-4 h-4"></i></a>
+            {% if not is_this_month %}<a href="{% url 'habits' %}" class="hb-nav hb-nav-text">This month</a>{% endif %}
+            <a href="?month={{ next_month }}" class="hb-nav" aria-label="Next month"><i data-lucide="chevron-right" class="w-4 h-4"></i></a>
+            <button type="button" onclick="openHabitForm()" class="hb-new"><i data-lucide="plus" class="w-4 h-4"></i> New habit</button>
+        </div>
+    </header>
+
+    {% if rows %}
+    <div class="stats stats-vertical sm:stats-horizontal w-full mb-6 bg-base-300 border border-neutral shadow-lg">
+        <div class="stat">
+            <div class="stat-figure text-primary"><i data-lucide="list-checks" class="w-7 h-7"></i></div>
+            <div class="stat-title text-neutral-content text-[10px] uppercase tracking-[0.2em] font-bold">Done today</div>
+            <div class="stat-value text-primary text-3xl"><span id="sum-done">{{ summary.done_today }}</span><span class="text-base-content/40 text-xl"> / {{ summary.total }}</span></div>
+        </div>
+        <div class="stat">
+            <div class="stat-figure text-primary/60"><i data-lucide="percent" class="w-7 h-7"></i></div>
+            <div class="stat-title text-neutral-content text-[10px] uppercase tracking-[0.2em] font-bold">Month average</div>
+            <div class="stat-value text-base-content text-3xl"><span id="sum-average">{% if summary.month_average is not None %}{{ summary.month_average }}%{% else %}—{% endif %}</span></div>
+        </div>
+        <div class="stat">
+            <div class="stat-figure text-primary/60"><i data-lucide="flame" class="w-7 h-7"></i></div>
+            <div class="stat-title text-neutral-content text-[10px] uppercase tracking-[0.2em] font-bold">Best streak now</div>
+            <div class="stat-value text-base-content text-3xl"><span id="sum-streak">{{ summary.best_streak }}</span><span class="text-base-content/40 text-xl"> days</span></div>
+        </div>
+    </div>
+
+    <div class="hb-card">
+        <div class="hb-scroll">
+            <div class="hb-grid" style="--days: {{ days|length }};">
+                <div class="hb-corner">Habit</div>
+                {% for day in days %}
+                <div class="hb-day {% if day.is_today %}hb-day-today{% endif %} {% if day.is_weekend %}hb-day-weekend{% endif %}">
+                    <span>{{ day.letter }}</span><b>{{ day.number }}</b>
+                </div>
+                {% endfor %}
+                <div class="hb-corner hb-corner-end">Month</div>
+
+                {% for row in rows %}
+                <div class="hb-name" style="--c: {{ row.habit.color }};"
+                    data-id="{{ row.habit.id }}" data-name="{{ row.habit.name }}" data-description="{{ row.habit.description }}"
+                    data-kind="{{ row.habit.kind }}" data-color="{{ row.habit.color }}">
+                    <span class="hb-dot"></span>
+                    <span class="hb-title">
+                        <b>{{ row.habit.name }}</b>
+                        <small title="{{ row.habit.description }}">{{ row.habit.description|default:row.habit.get_kind_display }}</small>
+                    </span>
+                    <button type="button" class="hb-edit" onclick="openHabitForm(this.parentElement)" aria-label="Edit {{ row.habit.name }}">
+                        <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                    </button>
+                </div>
+                {% for cell in row.cells %}
+                <button type="button" class="hb-cell {% if cell.is_today %}hb-cell-today{% endif %}" style="--c: {{ row.habit.color }}; --fill: {{ cell.value }}%;"
+                    data-habit="{{ row.habit.id }}" data-kind="{{ row.habit.kind }}" data-date="{{ cell.date|date:'Y-m-d' }}"
+                    data-label="{{ cell.date|date:'D, d M' }}" data-value="{{ cell.value }}"
+                    data-url="{% url 'habit_entry' row.habit.id %}"
+                    {% if cell.is_future %}disabled{% endif %}></button>
+                {% endfor %}
+                <div class="hb-score" data-score-for="{{ row.habit.id }}">
+                    <b class="score">{% if row.score is not None %}{{ row.score }}%{% else %}—{% endif %}</b>
+                    <small><i data-lucide="flame" class="w-3 h-3"></i> <span class="streak">{{ row.streak }}</span></small>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-24 rounded-3xl border-2 border-dashed border-neutral">
+        <i data-lucide="calendar-check-2" class="w-10 h-10 text-primary/50 mx-auto mb-4"></i>
+        <p class="text-neutral-content mb-6">Track anything day by day: a simple check, three states, or a percent that fills the box.</p>
+        <button type="button" onclick="openHabitForm()" class="hb-new mx-auto"><i data-lucide="plus" class="w-4 h-4"></i> Create your first habit</button>
+    </div>
+    {% endif %}
+</div>
+
+{# percent picker, shared by every percent box #}
+<div id="hb-pop" class="hidden" role="dialog" aria-label="Set percent">
+    <div class="flex items-baseline justify-between mb-3">
+        <span id="hb-pop-date" class="text-[10px] uppercase tracking-[0.2em] text-neutral-content font-bold"></span>
+        <span class="text-2xl font-bold text-base-content"><span id="hb-pop-value">0</span>%</span>
+    </div>
+    <input id="hb-pop-range" type="range" min="0" max="100" step="5" class="w-full cursor-pointer" aria-label="Percent">
+    <div class="grid grid-cols-5 gap-1.5 mt-3">
+        <button type="button" data-set="0">0</button><button type="button" data-set="25">25</button><button type="button" data-set="50">50</button><button type="button" data-set="75">75</button><button type="button" data-set="100">100</button>
+    </div>
+</div>
+
+{# new / edit form #}
+<div id="habitModal" class="hidden fixed inset-0 z-[1000] flex items-center justify-center bg-base-100/90 backdrop-blur-md p-4">
+    <form id="habitForm" class="bg-base-200 border-2 border-primary/20 w-full max-w-md rounded-[2rem] p-8 shadow-xl animate-up max-h-[92vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h2 id="habit-form-title" class="text-xl font-bold text-primary uppercase tracking-[0.3em] font-mono">New_Habit</h2>
+            <button type="button" onclick="closeHabitForm()" class="text-base-content hover:text-primary transition-colors" aria-label="Close"><i data-lucide="x-circle" class="w-7 h-7"></i></button>
+        </div>
+
+        <label class="hb-label" for="habit-name">Name</label>
+        <input id="habit-name" name="name" maxlength="100" required class="hb-input mb-5" placeholder="Read 20 pages">
+
+        <label class="hb-label" for="habit-description">Description</label>
+        <textarea id="habit-description" name="description" maxlength="500" rows="2" class="hb-input mb-5" placeholder="Why it matters, what counts"></textarea>
+
+        <div id="habit-kind-field" class="mb-5">
+            <p class="hb-label">How do you check it?</p>
+            <div class="grid grid-cols-3 gap-2">
+                <label class="hb-kind"><input type="radio" name="kind" value="check" checked>
+                    <span class="hb-sample" style="--fill: 100%;"></span><b>Check</b><small>done or not</small></label>
+                <label class="hb-kind"><input type="radio" name="kind" value="three">
+                    <span class="hb-sample hb-sample-half" style="--fill: 50%;"></span><b>3 states</b><small>not, partly, done</small></label>
+                <label class="hb-kind"><input type="radio" name="kind" value="percent">
+                    <span class="hb-sample hb-sample-half" style="--fill: 70%;"></span><b>Percent</b><small>fills the box</small></label>
+            </div>
+        </div>
+        <p id="habit-kind-note" class="hidden text-xs text-neutral-content mb-5"></p>
+
+        <p class="hb-label">Color</p>
+        <div class="flex flex-wrap gap-2 mb-7" id="habit-colors">
+            {% for color in colors %}
+            <button type="button" class="hb-swatch" data-color="{{ color }}" style="background: {{ color }};" aria-label="Color {{ color }}"></button>
+            {% endfor %}
+        </div>
+        <input type="hidden" name="color" id="habit-color">
+
+        <div class="flex gap-3">
+            <button type="button" id="habit-delete" onclick="deleteHabit()" class="hidden px-5 rounded-2xl border border-error/40 text-error hover:bg-error/10 transition-all" aria-label="Delete habit">
+                <i data-lucide="trash-2" class="w-5 h-5"></i>
+            </button>
+            <button type="submit" class="flex-1 py-3.5 rounded-2xl bg-primary text-primary-content font-bold uppercase tracking-[0.2em] text-sm cursor-pointer">Save</button>
+        </div>
+    </form>
+</div>
+
+<style>
+    .hb-nav {
+        display: inline-flex; align-items: center; justify-content: center;
+        height: 2.5rem; min-width: 2.5rem;
+        border-radius: .75rem; color: var(--color-neutral-content);
+        border: 1px solid var(--color-neutral);
+    }
+    .hb-nav:hover { color: var(--color-primary); border-color: color-mix(in srgb, var(--color-primary), transparent 60%); }
+    .hb-nav-text { padding: 0 .9rem; font-size: 10px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; }
+
+    .hb-new {
+        display: inline-flex; align-items: center; gap: .45rem; height: 2.5rem; padding: 0 1.1rem; cursor: pointer;
+        border-radius: .75rem; font-size: 11px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase;
+        color: var(--color-primary-content); background: var(--color-primary);
+    }
+
+    .hb-card { background: var(--color-base-300); border: 1px solid var(--color-neutral); border-radius: 1.25rem; padding: 1rem; }
+    .hb-scroll { overflow-x: auto; }
+    .hb-grid {
+        display: grid;
+        grid-template-columns: 180px repeat(var(--days), minmax(28px, 1fr)) 62px;
+        gap: 4px;
+        align-items: center;
+        min-width: calc(250px + var(--days) * 32px);
+    }
+
+    .hb-corner, .hb-day { font-size: 10px; color: var(--color-neutral-content); }
+    .hb-corner {
+        position: sticky; left: 0; z-index: 3; background: var(--color-base-300); align-self: stretch;
+        display: flex; align-items: flex-end; padding: 0 .5rem .35rem;
+        font-weight: 700; letter-spacing: .2em; text-transform: uppercase; font-size: 9px;
+    }
+    .hb-corner-end { position: static; justify-content: center; padding-inline: 0; }
+    .hb-day { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: .25rem 0 .4rem; border-radius: .5rem; }
+    .hb-day span { opacity: .6; font-size: 9px; font-weight: 700; }
+    .hb-day b { font-size: 12px; color: var(--color-base-content); }
+    .hb-day-weekend b { color: var(--color-neutral-content); }
+    .hb-day-today { background: color-mix(in srgb, var(--color-primary), transparent 85%); }
+    .hb-day-today b, .hb-day-today span { color: var(--color-primary); opacity: 1; }
+
+    .hb-name {
+        position: sticky; left: 0; z-index: 2; background: var(--color-base-300);
+        display: flex; align-items: center; gap: .6rem; padding: 0 .5rem; min-width: 0; align-self: stretch;
+    }
+    .hb-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c); flex-shrink: 0; }
+    .hb-title { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .hb-title b, .hb-title small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hb-title b { font-size: 13px; color: var(--color-base-content); }
+    .hb-title small { font-size: 10px; color: var(--color-neutral-content); }
+    .hb-edit { cursor: pointer; color: var(--color-neutral-content); opacity: 0; flex-shrink: 0; }
+    .hb-name:hover .hb-edit, .hb-edit:focus-visible { opacity: 1; }
+    .hb-edit:hover { color: var(--color-primary); }
+    @media (hover: none) { .hb-edit { opacity: .7; } }
+
+    .hb-cell {
+        width: 100%; height: 58px; position: relative; cursor: pointer; border-radius: 8px;
+        background: linear-gradient(to top, var(--c) var(--fill), color-mix(in srgb, var(--color-base-content), transparent 92%) var(--fill));
+        transition: transform .1s;
+    }
+    .hb-cell:hover:not(:disabled) { transform: scale(1.1); z-index: 1; }
+    .hb-cell:focus-visible { outline: 2px solid var(--color-base-content); outline-offset: 1px; }
+    .hb-cell:disabled { cursor: default; background: transparent; border: 1px dashed color-mix(in srgb, var(--color-neutral-content), transparent 80%); }
+    .hb-cell-today:not(:disabled) { box-shadow: 0 0 0 1.5px var(--color-primary); }
+    .hb-cell[data-kind="percent"]::after {
+        content: attr(data-shown); position: absolute; inset: 0; display: grid; place-items: center;
+        font-size: 10px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, .9), 0 0 3px rgba(0, 0, 0, .9);
+    }
+    .hb-cell.is-full:not([data-kind="percent"])::after {
+        content: "✓"; position: absolute; inset: 0; display: grid; place-items: center;
+        font-size: 15px; font-weight: 700; color: rgba(0, 0, 0, .65);
+    }
+
+    .hb-score { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .hb-score b { font-size: 13px; color: var(--color-base-content); }
+    .hb-score small { display: inline-flex; align-items: center; gap: 2px; font-size: 10px; color: var(--color-neutral-content); }
+
+    #hb-pop {
+        position: fixed; z-index: 900; width: 230px; padding: 1rem;
+        background: var(--color-base-200); border-radius: 1rem;
+        border: 1px solid color-mix(in srgb, var(--color-primary), transparent 70%);
+        box-shadow: 0 16px 40px rgba(0, 0, 0, .4);
+    }
+    #hb-pop button {
+        cursor: pointer; font-size: 11px; font-weight: 700; padding: .35rem 0; border-radius: .5rem;
+        color: var(--color-base-content); background: color-mix(in srgb, var(--color-base-content), transparent 92%);
+    }
+    #hb-pop button:hover { color: var(--color-primary); }
+
+    .hb-label { display: block; font-size: 10px; font-weight: 900; letter-spacing: .2em; text-transform: uppercase; margin: 0 0 .5rem .25rem; color: var(--color-base-content); }
+    .hb-input { width: 100%; padding: .85rem 1rem; border-radius: .6rem; color: var(--color-primary); background: var(--color-base-300); border: 1px solid color-mix(in srgb, var(--color-neutral), transparent 50%); }
+    .hb-input:focus { outline: 1px solid color-mix(in srgb, var(--color-primary), transparent 40%); }
+    .hb-input::placeholder { color: var(--color-neutral-content); opacity: .5; }
+
+    .hb-kind { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: .8rem .3rem; cursor: pointer; text-align: center; border-radius: .9rem; border: 1px solid var(--color-neutral); }
+    .hb-kind input { position: absolute; opacity: 0; pointer-events: none; }
+    .hb-kind b { font-size: 12px; color: var(--color-base-content); margin-top: .35rem; }
+    .hb-kind small { font-size: 9px; color: var(--color-neutral-content); }
+    .hb-kind:has(input:checked) { border-color: var(--color-primary); background: color-mix(in srgb, var(--color-primary), transparent 90%); }
+    .hb-kind:has(input:focus-visible) { outline: 2px solid var(--color-base-content); }
+    .hb-sample { width: 28px; height: 28px; border-radius: 6px; display: grid; place-items: center; background: linear-gradient(to top, var(--color-primary) var(--fill), color-mix(in srgb, var(--color-base-content), transparent 90%) var(--fill)); }
+    .hb-sample:not(.hb-sample-half)::after { content: "✓"; font-weight: 700; color: rgba(0, 0, 0, .65); }
+
+    .hb-swatch { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; }
+    .hb-swatch.on { outline: 2px solid var(--color-base-content); outline-offset: 2px; }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (function () {
+        const CSRF = '{{ csrf_token }}';
+        const FALLBACK_COLOR = '{{ next_color }}';
+
+        // ── boxes ──────────────────────────────────────────────────────────
+        function paint(cell, value) {
+            cell.dataset.value = value;
+            cell.style.setProperty('--fill', value + '%');
+            cell.classList.toggle('is-full', value === 100);
+            cell.dataset.shown = value ? value : '';
+            cell.title = cell.dataset.label + (value ? ' · ' + value + '%' : '');
+        }
+        const cells = [...document.querySelectorAll('.hb-cell')];
+        cells.forEach(cell => paint(cell, Number(cell.dataset.value)));
+
+        function showNumbers(habitId, data) {
+            const score = document.querySelector(`[data-score-for="${habitId}"]`);
+            score.querySelector('.score').textContent = data.score === null ? '—' : data.score + '%';
+            score.querySelector('.streak').textContent = data.streak;
+            document.getElementById('sum-done').textContent = data.summary.done_today;
+            document.getElementById('sum-average').textContent =
+                data.summary.month_average === null ? '—' : data.summary.month_average + '%';
+            document.getElementById('sum-streak').textContent = data.summary.best_streak;
+        }
+
+        // saves run one after another, so quick clicks can't arrive out of order
+        let saving = Promise.resolve();
+        function save(cell, value) {
+            const before = Number(cell.dataset.value);
+            paint(cell, value);
+            saving = saving.then(async () => {
+                try {
+                    const response = await fetch(cell.dataset.url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+                        body: JSON.stringify({ date: cell.dataset.date, value: value }),
+                    });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.error);
+                    showNumbers(cell.dataset.habit, data);
+                } catch (e) {
+                    paint(cell, before);
+                    toast(e.message || 'Could not save, check your connection', 'error');
+                }
+            });
+        }
+
+        const NEXT = {
+            check: { 0: 100, 100: 0 },
+            three: { 0: 50, 50: 100, 100: 0 },
+        };
+
+        // ── percent picker ─────────────────────────────────────────────────
+        const pop = document.getElementById('hb-pop');
+        const range = document.getElementById('hb-pop-range');
+        const number = document.getElementById('hb-pop-value');
+        let popCell = null;
+
+        function closePop() {
+            pop.classList.add('hidden');
+            if (popCell) popCell.focus({ preventScroll: true });
+            popCell = null;
+        }
+
+        function openPop(cell) {
+            popCell = cell;
+            document.getElementById('hb-pop-date').textContent = cell.dataset.label;
+            range.value = cell.dataset.value;
+            range.style.accentColor = getComputedStyle(cell).getPropertyValue('--c');
+            number.textContent = cell.dataset.value;
+            pop.classList.remove('hidden');
+            const box = cell.getBoundingClientRect();
+            const left = Math.max(8, Math.min(box.left + box.width / 2 - pop.offsetWidth / 2, innerWidth - pop.offsetWidth - 8));
+            const below = box.bottom + 8;
+            const top = below + pop.offsetHeight > innerHeight ? box.top - pop.offsetHeight - 8 : below;
+            pop.style.left = left + 'px';
+            pop.style.top = Math.max(8, top) + 'px';
+            range.focus();
+        }
+
+        function setPercent(value) {
+            if (popCell && Number(popCell.dataset.value) !== value) save(popCell, value);
+        }
+
+        range.addEventListener('input', () => {
+            number.textContent = range.value;
+            if (popCell) popCell.style.setProperty('--fill', range.value + '%');
+        });
+        range.addEventListener('change', () => setPercent(Number(range.value)));
+        pop.querySelectorAll('[data-set]').forEach(button => button.addEventListener('click', () => {
+            setPercent(Number(button.dataset.set));
+            closePop();
+        }));
+
+        cells.forEach(cell => cell.addEventListener('click', e => {
+            e.stopPropagation();
+            if (cell.dataset.kind === 'percent') {
+                if (popCell === cell) closePop(); else openPop(cell);
+                return;
+            }
+            closePop();
+            save(cell, NEXT[cell.dataset.kind][Number(cell.dataset.value)]);
+        }));
+        document.addEventListener('click', e => { if (popCell && !pop.contains(e.target)) closePop(); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && popCell) closePop(); });
+        const scroller = document.querySelector('.hb-scroll');
+        if (scroller) scroller.addEventListener('scroll', () => { if (popCell) closePop(); });
+
+        // ── new / edit form ────────────────────────────────────────────────
+        const modal = document.getElementById('habitModal');
+        const form = document.getElementById('habitForm');
+        let editing = null;
+
+        function pickColor(color) {
+            document.getElementById('habit-color').value = color;
+            document.querySelectorAll('.hb-swatch').forEach(s => s.classList.toggle('on', s.dataset.color.toUpperCase() === color.toUpperCase()));
+        }
+        document.querySelectorAll('.hb-swatch').forEach(s => s.addEventListener('click', () => pickColor(s.dataset.color)));
+
+        window.openHabitForm = function (row) {
+            editing = row || null;
+            form.reset();
+            document.getElementById('habit-form-title').textContent = row ? 'Edit_Habit' : 'New_Habit';
+            document.getElementById('habit-name').value = row ? row.dataset.name : '';
+            document.getElementById('habit-description').value = row ? row.dataset.description : '';
+            document.getElementById('habit-kind-field').classList.toggle('hidden', !!row);
+            const note = document.getElementById('habit-kind-note');
+            note.classList.toggle('hidden', !row);
+            if (row) note.textContent = `Checked as: ${{ check: 'done or not', three: 'three states', percent: 'percent' }[row.dataset.kind]}. This can't be changed after creating.`;
+            document.getElementById('habit-delete').classList.toggle('hidden', !row);
+            pickColor(row ? row.dataset.color : FALLBACK_COLOR);
+            modal.classList.remove('hidden');
+            document.getElementById('habit-name').focus();
+        };
+
+        window.closeHabitForm = () => modal.classList.add('hidden');
+        modal.addEventListener('click', e => { if (e.target === modal) closeHabitForm(); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && !modal.classList.contains('hidden') && !document.getElementById('confirm-dialog').open) closeHabitForm(); });
+
+        form.addEventListener('submit', async e => {
+            e.preventDefault();
+            const url = editing ? `/habits/${editing.dataset.id}/edit/` : '{% url "habits" %}';
+            try {
+                const response = await fetch(url, { method: 'POST', headers: { 'X-CSRFToken': CSRF }, body: new FormData(form) });
+                const data = await response.json();
+                if (!response.ok) { toast(data.error, 'error'); return; }
+                toastAfterReload(editing ? 'Habit saved' : 'Habit created');
+                location.reload();
+            } catch (err) {
+                toast('Could not save, check your connection', 'error');
+            }
+        });
+
+        window.deleteHabit = async function () {
+            if (!editing) return;
+            if (!await askConfirm(`Delete "${editing.dataset.name}" and all its days?`, { ok: 'Delete', danger: true })) return;
+            const response = await fetch(`/habits/${editing.dataset.id}/delete/`, { method: 'POST', headers: { 'X-CSRFToken': CSRF } });
+            if (response.ok) { toastAfterReload('Habit deleted'); location.reload(); }
+            else toast('Could not delete the habit', 'error');
+        };
+    })();
+</script>
+{% endblock %}

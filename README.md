@@ -27,6 +27,7 @@ Most study apps do one thing: a to-do list, a timer, or a calendar. stud-y puts 
 - **Schedule:** plan a day with time blocks that can run past midnight (each new action gets its own color), pick days from a date selector, and save a day as a reusable template
 - **Pomodoro:** focus sessions with configurable times; pick the block you are working on (the timer takes its color), or switch to block mode to time the whole block
 - **Focus tracking:** every finished session is saved (and kept in the browser until the server has it, so going offline loses nothing)
+- **Habits:** a month calendar with a row per habit, checked as done or not, three states, or a percent that fills the box
 - **Statistics:** planned vs focused time per day, per week and per block, all-time records, a 5-week focus calendar and the hours you focus best
 - **Settings:** profile, Pomodoro times, time zone, password change and a light theme
 
@@ -101,6 +102,7 @@ Open http://127.0.0.1:8000 and sign up.
 | `dashboard` | Home page |
 | `schedule` | `DaySchedule`, `ScheduleBlock`, `DayTemplate`, `TemplateBlock`, `Action`, and `BlockSession` (one finished focus session) models; `stats.py` holds the planned vs focused numbers |
 | `pomodoro` | Pomodoro timer and the endpoint that saves sessions |
+| `habits` | `Habit` and `HabitEntry` models and the habits calendar |
 | `settings` | User settings |
 
 The front end uses Django templates with [Tailwind CSS](https://tailwindcss.com) and [daisyUI](https://daisyui.com).

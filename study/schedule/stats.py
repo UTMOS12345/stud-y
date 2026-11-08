@@ -144,6 +144,17 @@ def week_blocks(user, day):
     return rows
 
 
+def current_streak(days, today):
+    """Days in a row, up to today, found in the set `days`.
+    A streak that reached yesterday still counts while today isn't done yet."""
+    day = today if today in days else today - datetime.timedelta(days=1)
+    streak = 0
+    while day in days:
+        streak += 1
+        day -= datetime.timedelta(days=1)
+    return streak
+
+
 def focus_streak(user, today, look_back_days=366):
     """How many days in a row, up to today, have at least one focus session.
     A streak that reached yesterday still counts while today has no session yet."""
@@ -154,12 +165,7 @@ def focus_streak(user, today, look_back_days=366):
             user=user, end_time__gte=day_start(since),
         ).values_list('end_time', flat=True)
     }
-    day = today if today in days else today - datetime.timedelta(days=1)
-    streak = 0
-    while day in days:
-        streak += 1
-        day -= datetime.timedelta(days=1)
-    return streak
+    return current_streak(days, today)
 
 
 def longest_run(days):
