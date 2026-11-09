@@ -157,7 +157,7 @@ class ScheduleBlock(BlockTimes, models.Model):
         on_delete=models.CASCADE,
         related_name='blocks'
     )
-    action = models.ForeignKey(Action, on_delete=models.PROTECT, null=True, blank=True)
+    action = models.ForeignKey(Action, on_delete=models.RESTRICT, null=True, blank=True)
 
     
     title = models.CharField(max_length=200, help_text="Specific title for this session")
@@ -292,7 +292,7 @@ class TemplateBlock(BlockTimes, models.Model):
         on_delete=models.CASCADE, 
         related_name="template_blocks" 
     )
-    action = models.ForeignKey(Action, on_delete=models.PROTECT, related_name='template_blocks', null=True, blank=True)
+    action = models.ForeignKey(Action, on_delete=models.RESTRICT, related_name='template_blocks', null=True, blank=True)
     
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)

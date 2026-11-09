@@ -14,6 +14,7 @@ urlpatterns = [
     path('preferences/', views.preferences_settings, name='preferences'),
     path('security/', views.security_settings, name='security'),
     path('about/', views.about_settings, name='about'),
+    path('delete-account/', views.delete_account, name='delete_account'),
 ]
 
 

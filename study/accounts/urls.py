@@ -1,9 +1,18 @@
+from django.contrib.auth import views as auth_views
 from django.urls import path
-from .views import signup_view, login_view, logout_view
+
+from .views import ResetPasswordConfirmView, ResetPasswordView, login_view, logout_view, signup_view
 
 urlpatterns = [
     path('signup/', signup_view, name='signup'),
     path('login/',  login_view,  name='login'),
     path('logout/', logout_view, name='logout'),
-    # path('',        login_view,  name='home'),   # temporary home until dashboard exists
+    path('password-reset/', ResetPasswordView.as_view(), name='password_reset'),
+    path('password-reset/sent/',
+         auth_views.PasswordResetDoneView.as_view(template_name='accounts/password_reset_done.html'),
+         name='password_reset_done'),
+    path('password-reset/<uidb64>/<token>/', ResetPasswordConfirmView.as_view(), name='password_reset_confirm'),
+    path('password-reset/complete/',
+         auth_views.PasswordResetCompleteView.as_view(template_name='accounts/password_reset_complete.html'),
+         name='password_reset_complete'),
 ]

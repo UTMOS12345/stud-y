@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ number }} — stud-y</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; box-sizing: border-box; }
+
+        html, body { height: 100%; }
+
+        body {
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            background-color: #09100e;
+            background-image:
+                linear-gradient(rgba(28, 45, 40, .7) 2px, transparent 2px),
+                linear-gradient(90deg, rgba(28, 45, 40, .7) 2px, transparent 2px);
+            background-size: 72px 72px;
+        }
+
+        h1 { font-size: inherit; font-weight: inherit; }
+
+        .glitch {
+            position: relative;
+            display: block;
+            font-family: 'Chakra Petch', 'Share Tech Mono', ui-monospace, monospace;
+            font-weight: 700;
+            font-size: min(38vw, 62vh);
+            line-height: 1;
+            letter-spacing: -.03em;
+            color: #4dffaa;
+            text-decoration: none;
+            animation: jolt 3.4s steps(1) infinite;
+        }
+
+        .glitch::before,
+        .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .glitch::before { color: #ff2e63; animation: slice-a 2.6s steps(1) infinite; }
+        .glitch::after { color: #08d9d6; animation: slice-b 3.1s steps(1) infinite; }
+
+        @keyframes jolt {
+            0%, 100% { transform: none; }
+            42% { transform: translate(-.012em, .006em) skewX(-4deg); }
+            44% { transform: translate(.016em, -.004em) skewX(5deg); }
+            46% { transform: none; }
+            78% { transform: translateX(.01em); }
+            79% { transform: none; }
+        }
+
+        @keyframes slice-a {
+            0% { clip-path: inset(8% 0 78% 0); transform: translate(-.035em, 0); }
+            12% { clip-path: inset(62% 0 18% 0); transform: translate(.03em, 0); }
+            24% { clip-path: inset(30% 0 52% 0); transform: translate(-.05em, 0); }
+            36% { clip-path: inset(84% 0 4% 0); transform: translate(.02em, 0); }
+            48% { clip-path: inset(16% 0 66% 0); transform: translate(.05em, 0); }
+            60% { clip-path: inset(46% 0 40% 0); transform: translate(-.025em, 0); }
+            72% { clip-path: inset(72% 0 10% 0); transform: translate(.04em, 0); }
+            84% { clip-path: inset(2% 0 88% 0); transform: translate(-.04em, 0); }
+            100% { clip-path: inset(8% 0 78% 0); transform: translate(-.035em, 0); }
+        }
+
+        @keyframes slice-b {
+            0% { clip-path: inset(70% 0 12% 0); transform: translate(.04em, 0); }
+            14% { clip-path: inset(22% 0 60% 0); transform: translate(-.03em, 0); }
+            28% { clip-path: inset(52% 0 34% 0); transform: translate(.055em, 0); }
+            42% { clip-path: inset(6% 0 82% 0); transform: translate(-.045em, 0); }
+            56% { clip-path: inset(38% 0 46% 0); transform: translate(.025em, 0); }
+            70% { clip-path: inset(88% 0 2% 0); transform: translate(-.05em, 0); }
+            84% { clip-path: inset(26% 0 58% 0); transform: translate(.035em, 0); }
+            100% { clip-path: inset(70% 0 12% 0); transform: translate(.04em, 0); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .glitch, .glitch::before, .glitch::after { animation: none; }
+            .glitch::before { clip-path: inset(20% 0 55% 0); transform: translate(-.03em, 0); }
+            .glitch::after { clip-path: inset(60% 0 15% 0); transform: translate(.03em, 0); }
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        <h1><a class="glitch" href="/" data-text="{{ number }}" aria-label="{{ number }}, back to stud-y">{{ number }}</a></h1>
+    </main>
+</body>
+
+</html>

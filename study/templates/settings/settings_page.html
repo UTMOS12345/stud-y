@@ -130,8 +130,8 @@
                     </p>
                 </div>
 
-                <button type="button" class="group flex items-center gap-3 px-3 py-3 rounded-lg transition-all w-full
-                          hover:bg-error/5 border-l-2 border-transparent" onclick="toast('Coming soon', 'info')">
+                <a href="{% url 'settings:security' %}#delete-account" class="group flex items-center gap-3 px-3 py-3 rounded-lg transition-all w-full
+                          hover:bg-error/5 border-l-2 border-transparent">
                     <svg class="w-5 h-5 text-error" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2">
                         <path d="M3 6h18M8 6V4h8v2M6 6l1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-14" />
@@ -145,7 +145,7 @@
                     <svg class="w-4 h-4 text-error/40" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <polyline points="9 18 15 12 9 6" />
                     </svg>
-                </button>
+                </a>
             </div>
         </nav>
     </aside>

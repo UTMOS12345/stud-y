@@ -68,7 +68,7 @@
         </section>
 
         <!-- Danger Zone -->
-        <section class="pt-8 border-t border-error/30">
+        <section id="delete-account" class="pt-8 border-t border-error/30">
             <div class="flex items-center gap-4 mb-6">
                 <h3 class="text-[14px] text-error tracking-[0.12em] uppercase font-semibold">
                     danger zone
@@ -83,11 +83,25 @@
                 <p class="text-[12px] text-error/80 mb-4">
                     permanently delete your account and all data. this cannot be undone.
                 </p>
-                <button type="button" class="px-6 py-2 rounded-lg bg-error/20 text-error
+                <form id="delete-account-form" method="post" action="{% url 'settings:delete_account' %}" class="flex flex-wrap gap-3">
+                    {% csrf_token %}
+                    <input type="password" name="password" required autocomplete="current-password" placeholder="your password"
+                        aria-label="Your password"
+                        class="flex-1 min-w-[12rem] px-4 py-2 rounded-lg bg-base-100 border border-error/30 text-base-content text-[13px]">
+                    <button type="submit" class="px-6 py-2 rounded-lg bg-error/20 text-error cursor-pointer
                                text-[12px] font-semibold tracking-[0.05em]
-                               hover:bg-error/30 transition-colors" onclick="toast('Account deletion coming soon', 'info')">
-                    delete account
-                </button>
+                               hover:bg-error/30 transition-colors">
+                        delete account
+                    </button>
+                </form>
+                <script>
+                    document.getElementById('delete-account-form').addEventListener('submit', async function (e) {
+                        e.preventDefault();
+                        const sure = await askConfirm('Delete your account, schedule, habits and focus history for good? This cannot be undone.',
+                            { ok: 'Delete everything', danger: true });
+                        if (sure) this.submit();
+                    });
+                </script>
             </div>
         </section>
     </div>

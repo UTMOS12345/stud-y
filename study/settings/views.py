@@ -2,7 +2,9 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.exceptions import ValidationError
-from django.contrib.auth import get_user_model, update_session_auth_hash
+from django.db import transaction
+from django.views.decorators.http import require_POST
+from django.contrib.auth import get_user_model, logout, update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
 import logging
 import pytz
@@ -220,3 +222,19 @@ def security_settings(request):
 @login_required
 def about_settings(request):
     return settings_view(request, 'about')
+
+
+@login_required
+@require_POST
+def delete_account(request):
+    """Delete the account and everything in it, after checking the password."""
+    if not request.user.check_password(request.POST.get('password', '')):
+        messages.error(request, 'Wrong password, your account was not deleted.')
+        return redirect('settings:security')
+
+    user = get_user_model().objects.get(pk=request.user.pk)
+    with transaction.atomic():
+        user.delete()
+    logout(request)
+    messages.success(request, 'Your account and all its data have been deleted.')
+    return redirect('login')
