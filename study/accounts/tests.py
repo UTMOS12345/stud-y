@@ -96,6 +96,14 @@ class PomodoroSettingsTest(TestCase):
         self.assertEqual(profile.default_pomodoro_duration, 25)
 
 
+class SidebarTest(TestCase):
+    def test_help_goes_somewhere(self):
+        user = User.objects.create_user(username='t', email='t@t.com', password='pw12345!x')
+        self.client.force_login(user)
+        response = self.client.get(reverse('dashboard'))
+        self.assertContains(response, 'href="https://github.com/UTMOS12345/stud-y/issues"')
+
+
 class SettingsUrlTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='t', email='t@t.com', password='pw12345!x')

@@ -50,7 +50,6 @@
 
             const appliedTheme = themeMap[theme] || 'studyTheme';
             document.documentElement.setAttribute('data-theme', appliedTheme);
-            console.log('Theme set to:', appliedTheme);
         }
 
         // Detect system theme preference
@@ -61,7 +60,6 @@
         // Initialize theme on page load
         document.addEventListener('DOMContentLoaded', function () {
             const currentTheme = document.documentElement.getAttribute('data-theme');
-            console.log('Current theme on load:', currentTheme);
 
             // If it's 'system', update to actual system preference
             if (currentTheme === 'system') {
