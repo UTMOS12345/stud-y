@@ -1,0 +1,11 @@
+.git
+.github
+.env
+.env.*
+node_modules
+studyv
+.venv
+**/__pycache__
+**/*.pyc
+**/*.sqlite3
+study/staticfiles

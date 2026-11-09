@@ -148,12 +148,42 @@ STATICFILES_DIRS = [
 # collectstatic puts everything here for the web server
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# Production (DEBUG off): only send cookies over HTTPS
+# Set USE_HTTPS=False on a server without a domain or certificate (plain http on an IP).
+# With it on, cookies are https-only and login would not work over plain http.
+USE_HTTPS = os.getenv('USE_HTTPS', 'True') == 'True'
+
 if not DEBUG:
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'True') == 'True'
+    # The app serves its own CSS and JS
+    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+    STORAGES = {
+        'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+        'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage'},
+    }
+
+    # Shared by all server processes, so the login lockout counts across them.
+    # The table comes from `manage.py createcachetable`.
+    if 'test' not in sys.argv:
+        CACHES = {'default': {'BACKEND': 'django.core.cache.backends.db.DatabaseCache', 'LOCATION': 'django_cache'}}
+
+    if USE_HTTPS:
+        SESSION_COOKIE_SECURE = True
+        CSRF_COOKIE_SECURE = True
+        SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+        SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'True') == 'True'
+        SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', str(30 * 24 * 60 * 60)))
+        # Subdomains and the preload list are a decision for whoever owns the domain
+        SILENCED_SYSTEM_CHECKS = ['security.W005', 'security.W021']
+    else:
+        # Browsers ignore this header on plain http and log a warning about it
+        SECURE_CROSS_ORIGIN_OPENER_POLICY = None
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {'plain': {'format': '{asctime} {levelname} {name}: {message}', 'style': '{'}},
+    'handlers': {'console': {'class': 'logging.StreamHandler', 'formatter': 'plain'}},
+    'root': {'handlers': ['console'], 'level': os.getenv('LOG_LEVEL', 'INFO')},
+}
 
 AUTH_USER_MODEL = 'accounts.User'
 

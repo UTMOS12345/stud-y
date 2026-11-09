@@ -1,0 +1,30 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      SECRET_KEY: only-for-ci-q7Vn2xLp9TzRw4KcYb8MfHs3JdGa6NuE1oXiPt5Bv0
+      DEBUG: "True"
+    defaults:
+      run:
+        working-directory: study
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+      - run: pip install -r ../requirements.txt
+      - name: Migrations match the models
+        run: python manage.py makemigrations --check --dry-run
+      - name: Tests
+        run: python manage.py test
+      - name: Production settings
+        env:
+          DEBUG: "False"
+        run: python manage.py check --deploy --fail-level WARNING

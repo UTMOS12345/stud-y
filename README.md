@@ -10,6 +10,7 @@ stud-y is a Django web app that helps students plan and track their study time. 
 - [Features](#features)
 - [Install](#install)
 - [Usage](#usage)
+- [Deploy](#deploy)
 - [Project structure](#project-structure)
 - [Roadmap](#roadmap)
 - [Maintainers](#maintainers)
@@ -94,6 +95,37 @@ Open http://127.0.0.1:8000 and sign up.
 | `/settings/` | Settings |
 | `/admin/` | Django admin |
 
+## Deploy
+
+On any server with Docker:
+
+```bash
+git clone https://github.com/UTMOS12345/stud-y
+cd stud-y
+cp .env.example .env
+```
+
+Edit `.env`:
+
+| Setting | Value |
+|---|---|
+| `SECRET_KEY` | Output of `python3 -c "import secrets; print(secrets.token_urlsafe(50))"` |
+| `DB_PASSWORD` | A long random password |
+| `ALLOWED_HOSTS` | The server's IP address or domain |
+| `USE_HTTPS` | `False` on plain http without a domain, `True` behind https |
+| `EMAIL_HOST` and the rest | Your email provider. Empty means reset emails only appear in the logs |
+
+Then start it and create an admin:
+
+```bash
+docker compose up -d --build
+docker compose exec web python manage.py createsuperuser
+```
+
+The site is on port 80 (`APP_PORT` changes it). To update later: `git pull && docker compose up -d --build`. Logs: `docker compose logs -f web`.
+
+Without https, passwords travel unencrypted, so only use plain http for testing.
+
 ## Project structure
 
 | App | Role |
@@ -122,6 +154,7 @@ The front end uses Django templates with [Tailwind CSS](https://tailwindcss.com)
 - [x] Tests for the Pomodoro timer, statistics and dashboard
 - [x] Password reset by email (printed to the console until `EMAIL_HOST` is set in `.env`)
 - [x] Delete your account and all its data
+- [x] Docker setup and automatic tests on GitHub
 - [ ] Deploy a public demo
 
 ## Maintainers
