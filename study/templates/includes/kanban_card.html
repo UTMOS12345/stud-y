@@ -1,0 +1,5 @@
+<article class="kb-card" tabindex="0" role="button" data-id="{{ card.id }}" data-title="{{ card.title }}"
+    data-description="{{ card.description }}" data-color="{{ card.color }}" style="--c: {{ card.color|default:'transparent' }};">
+    <h3>{{ card.title }}</h3>
+    {% if card.description %}<p>{{ card.description }}</p>{% endif %}
+</article>

@@ -91,6 +91,21 @@
             </span>
         </a>
 
+        <!-- Board (experimental) -->
+        <a href="{% url 'kanban' %}" class="flex items-center justify-center rounded-xl transition-all"
+            id="nav-kanban" title="Board (experimental)" style="padding: 15px 0; gap:0; min-height:54px;">
+            <svg class="flex-shrink-0" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="3"></rect>
+                <path d="M8 7v7M12 7v4M16 7v9"></path>
+            </svg>
+            <span class="nav-text text-[15px] font-medium tracking-wide whitespace-nowrap" style="opacity:0; max-width:0; overflow:hidden; margin-left:0;
+                    transition: max-width 0.3s cubic-bezier(0.16,1,0.3,1),
+                             opacity 0.2s ease, margin-left 0.3s ease;">
+                Board
+            </span>
+        </a>
+
     </nav>
 
 
@@ -154,7 +169,8 @@
         dashboard: document.getElementById('nav-dashboard'),
         pomodoro: document.getElementById('nav-pomodoro'),
         schedule: document.getElementById('nav-schedule'),
-        habits: document.getElementById('nav-habits')
+        habits: document.getElementById('nav-habits'),
+        kanban: document.getElementById('nav-kanban')
     };
 
     let expanded = false;

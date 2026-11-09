@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'settings',
     'schedule',
     'habits',
+    'kanban',
 
     'django.contrib.admin',
     'django.contrib.auth',

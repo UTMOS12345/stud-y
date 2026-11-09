@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+
+{% block title %}stud-y — board{% endblock %}
+
+{% block content %}
+<div class="px-4 md:px-10 py-8 md:py-10 animate-up">
+
+    <header class="flex items-end justify-between gap-4 flex-wrap mb-8">
+        <div>
+            <span class="kb-badge"><i data-lucide="flask-conical" class="w-3 h-3"></i> Experimental</span>
+            <h1 class="font-serif italic font-bold text-base-content leading-tight mt-2" style="font-size: 40px; letter-spacing: -1px;">
+                board<span class="text-primary">.</span>
+            </h1>
+        </div>
+        <button type="button" class="kb-new" onclick="openColumnForm()"><i data-lucide="plus" class="w-4 h-4"></i> New column</button>
+    </header>
+
+    <div class="kb-board">
+        {% for column in columns %}
+        <section class="kb-col" data-id="{{ column.id }}" data-name="{{ column.name }}">
+            <div class="kb-col-head">
+                <h2>{{ column.name }}</h2>
+                <span class="kb-count"></span>
+                <button type="button" class="kb-icon" aria-label="Edit column {{ column.name }}" onclick="openColumnForm(this.closest('.kb-col'))">
+                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                </button>
+            </div>
+            <div class="kb-cards" data-column="{{ column.id }}">
+                {% for card in column.cards.all %}{% include "includes/kanban_card.html" %}{% endfor %}
+            </div>
+            <form class="kb-add" data-url="{% url 'kanban_add_card' column.id %}">
+                <input name="title" maxlength="200" placeholder="+ Add a card" aria-label="Add a card to {{ column.name }}" autocomplete="off">
+            </form>
+        </section>
+        {% endfor %}
+    </div>
+</div>
+
+{# card details #}
+<div id="cardModal" class="kb-modal hidden">
+    <form id="cardForm" class="kb-panel animate-up">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-primary uppercase tracking-[0.3em] font-mono">Edit_Card</h2>
+            <button type="button" onclick="closeModals()" class="text-base-content hover:text-primary transition-colors" aria-label="Close"><i data-lucide="x-circle" class="w-7 h-7"></i></button>
+        </div>
+        <label class="kb-label" for="card-title">Title</label>
+        <input id="card-title" name="title" maxlength="200" required class="kb-input mb-5">
+        <label class="kb-label" for="card-description">Description</label>
+        <textarea id="card-description" name="description" maxlength="2000" rows="4" class="kb-input mb-5"></textarea>
+        <label class="kb-label" for="card-column">Column</label>
+        <select id="card-column" name="column" class="kb-input mb-5">
+            {% for column in columns %}<option value="{{ column.id }}">{{ column.name }}</option>{% endfor %}
+        </select>
+        <p class="kb-label">Color</p>
+        <div class="flex flex-wrap gap-2 mb-7" id="card-colors">
+            <button type="button" class="kb-swatch kb-swatch-none" data-color="" aria-label="No color"></button>
+            {% for color in colors %}<button type="button" class="kb-swatch" data-color="{{ color }}" style="background: {{ color }};" aria-label="Color {{ color }}"></button>{% endfor %}
+        </div>
+        <input type="hidden" name="color" id="card-color">
+        <div class="flex gap-3">
+            <button type="button" onclick="deleteCard()" class="kb-danger" aria-label="Delete card"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+            <button type="submit" class="kb-save">Save</button>
+        </div>
+    </form>
+</div>
+
+{# new / rename column #}
+<div id="columnModal" class="kb-modal hidden">
+    <form id="columnForm" class="kb-panel animate-up">
+        <div class="flex justify-between items-center mb-6">
+            <h2 id="column-form-title" class="text-xl font-bold text-primary uppercase tracking-[0.3em] font-mono">New_Column</h2>
+            <button type="button" onclick="closeModals()" class="text-base-content hover:text-primary transition-colors" aria-label="Close"><i data-lucide="x-circle" class="w-7 h-7"></i></button>
+        </div>
+        <label class="kb-label" for="column-name">Name</label>
+        <input id="column-name" name="name" maxlength="40" required class="kb-input mb-7">
+        <div class="flex gap-3">
+            <button type="button" id="column-delete" onclick="deleteColumn()" class="kb-danger hidden" aria-label="Delete column"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+            <button type="submit" class="kb-save">Save</button>
+        </div>
+    </form>
+</div>
+
+<style>
+    .kb-badge {
+        display: inline-flex; align-items: center; gap: .3rem; padding: .15rem .55rem; border-radius: 999px;
+        font-size: 9px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase;
+        color: var(--color-warning, #f59e0b); border: 1px dashed currentColor;
+    }
+    .kb-new {
+        display: inline-flex; align-items: center; gap: .45rem; height: 2.5rem; padding: 0 1.1rem; cursor: pointer;
+        border-radius: .75rem; font-size: 11px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase;
+        color: var(--color-primary-content); background: var(--color-primary);
+    }
+
+    .kb-board { display: flex; align-items: flex-start; gap: 1rem; overflow-x: auto; padding-bottom: 1rem; }
+    .kb-col {
+        flex: 0 0 min(300px, 78vw); display: flex; flex-direction: column; gap: .6rem; padding: .85rem;
+        background: var(--color-base-300); border: 1px solid var(--color-neutral); border-radius: 1rem;
+    }
+    .kb-col-head { display: flex; align-items: center; gap: .5rem; padding: 0 .25rem; }
+    .kb-col-head h2 { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--color-base-content); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .kb-count { font-size: 11px; color: var(--color-neutral-content); flex: 1; }
+    .kb-icon { cursor: pointer; color: var(--color-neutral-content); }
+    .kb-icon:hover { color: var(--color-primary); }
+
+    .kb-cards { display: flex; flex-direction: column; gap: .5rem; min-height: 3.5rem; }
+    .kb-card {
+        cursor: grab; padding: .7rem .8rem; border-radius: .6rem; background: var(--color-base-200);
+        border: 1px solid color-mix(in srgb, var(--color-neutral-content), transparent 80%);
+        border-left: 3px solid var(--c); touch-action: manipulation; user-select: none;
+    }
+    .kb-card:hover { border-color: color-mix(in srgb, var(--color-primary), transparent 50%); border-left-color: var(--c); }
+    .kb-card:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 1px; }
+    .kb-card h3 { font-size: 13px; font-weight: 600; color: var(--color-base-content); overflow-wrap: anywhere; }
+    .kb-card p {
+        font-size: 11px; line-height: 1.4; margin-top: .25rem; color: var(--color-neutral-content); overflow-wrap: anywhere;
+        display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .kb-ghost { opacity: .35; }
+    .kb-drag { cursor: grabbing; transform: rotate(2deg); box-shadow: 0 12px 28px rgba(0, 0, 0, .35); }
+
+    .kb-add input {
+        width: 100%; padding: .5rem .6rem; border-radius: .5rem; font-size: 12px; background: transparent;
+        color: var(--color-base-content); border: 1px dashed color-mix(in srgb, var(--color-neutral-content), transparent 65%);
+    }
+    .kb-add input:focus { outline: none; border-style: solid; border-color: var(--color-primary); }
+    .kb-add input::placeholder { color: var(--color-neutral-content); }
+
+    .kb-modal { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 1rem; background: color-mix(in srgb, var(--color-base-100), transparent 10%); backdrop-filter: blur(8px); }
+    .kb-modal.hidden { display: none; }
+    .kb-panel { width: 100%; max-width: 28rem; max-height: 92vh; overflow-y: auto; padding: 2rem; border-radius: 2rem; background: var(--color-base-200); border: 2px solid color-mix(in srgb, var(--color-primary), transparent 80%); }
+    .kb-label { display: block; font-size: 10px; font-weight: 900; letter-spacing: .2em; text-transform: uppercase; margin: 0 0 .5rem .25rem; color: var(--color-base-content); }
+    .kb-input { width: 100%; padding: .85rem 1rem; border-radius: .6rem; color: var(--color-primary); background: var(--color-base-300); border: 1px solid color-mix(in srgb, var(--color-neutral), transparent 50%); }
+    .kb-input:focus { outline: 1px solid color-mix(in srgb, var(--color-primary), transparent 40%); }
+    .kb-swatch { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; }
+    .kb-swatch-none { border: 2px dashed var(--color-neutral-content); }
+    .kb-swatch.on { outline: 2px solid var(--color-base-content); outline-offset: 2px; }
+    .kb-save { flex: 1; padding: .85rem; cursor: pointer; border-radius: 1rem; font-size: 13px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--color-primary-content); background: var(--color-primary); }
+    .kb-danger { padding: 0 1.1rem; cursor: pointer; border-radius: 1rem; color: var(--color-error); border: 1px solid color-mix(in srgb, var(--color-error), transparent 60%); }
+    .kb-danger.hidden { display: none; }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
+<script>
+    (function () {
+        const CSRF = '{{ csrf_token }}';
+        const FAILED = 'Could not save, check your connection';
+
+        async function send(url, body) {
+            const isForm = body instanceof FormData;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: isForm || !body ? { 'X-CSRFToken': CSRF } : { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+                body: isForm || !body ? body : JSON.stringify(body),
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || FAILED);
+            return data;
+        }
+
+        function fromHtml(html) {
+            const box = document.createElement('div');
+            box.innerHTML = html.trim();
+            return box.firstElementChild;
+        }
+
+        function counts() {
+            document.querySelectorAll('.kb-col').forEach(col => {
+                col.querySelector('.kb-count').textContent = col.querySelectorAll('.kb-card').length;
+            });
+        }
+        counts();
+
+        // ── dragging ───────────────────────────────────────────────────────
+        function makeSortable(list) {
+            Sortable.create(list, {
+                group: 'board',
+                animation: 120,
+                forceFallback: true,
+                ghostClass: 'kb-ghost',
+                dragClass: 'kb-drag',
+                delay: 140,
+                delayOnTouchOnly: true,
+                onEnd: async e => {
+                    counts();
+                    if (e.from === e.to && e.oldIndex === e.newIndex) return;
+                    try {
+                        await send('{% url "kanban_move_card" %}', {
+                            card: Number(e.item.dataset.id),
+                            column: Number(e.to.dataset.column),
+                            index: e.newIndex,
+                        });
+                    } catch (err) {
+                        toastAfterReload(err.message || FAILED, 'error');
+                        location.reload();
+                    }
+                },
+            });
+        }
+        document.querySelectorAll('.kb-cards').forEach(makeSortable);
+
+        // ── adding cards ───────────────────────────────────────────────────
+        document.querySelectorAll('.kb-add').forEach(form => form.addEventListener('submit', async e => {
+            e.preventDefault();
+            const input = form.elements.title;
+            if (!input.value.trim()) return;
+            try {
+                const data = await send(form.dataset.url, new FormData(form));
+                form.previousElementSibling.appendChild(fromHtml(data.html));
+                input.value = '';
+                counts();
+            } catch (err) {
+                toast(err.message || FAILED, 'error');
+            }
+        }));
+
+        // ── card details ───────────────────────────────────────────────────
+        const cardModal = document.getElementById('cardModal');
+        const cardForm = document.getElementById('cardForm');
+        const columnModal = document.getElementById('columnModal');
+        let openCard = null;
+
+        function pickColor(color) {
+            document.getElementById('card-color').value = color;
+            document.querySelectorAll('.kb-swatch').forEach(s => s.classList.toggle('on', s.dataset.color === color));
+        }
+        document.querySelectorAll('.kb-swatch').forEach(s => s.addEventListener('click', () => pickColor(s.dataset.color)));
+
+        function showCard(card) {
+            openCard = card;
+            document.getElementById('card-title').value = card.dataset.title;
+            document.getElementById('card-description').value = card.dataset.description;
+            document.getElementById('card-column').value = card.parentElement.dataset.column;
+            pickColor(card.dataset.color);
+            cardModal.classList.remove('hidden');
+        }
+
+        // one listener for every card, new ones included
+        const board = document.querySelector('.kb-board');
+        board.addEventListener('click', e => {
+            const card = e.target.closest('.kb-card');
+            if (card) showCard(card);
+        });
+        board.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && e.target.classList.contains('kb-card')) showCard(e.target);
+        });
+
+        cardForm.addEventListener('submit', async e => {
+            e.preventDefault();
+            try {
+                const data = await send(`/kanban/cards/${openCard.dataset.id}/edit/`, new FormData(cardForm));
+                const fresh = fromHtml(data.html);
+                const target = document.querySelector(`.kb-cards[data-column="${data.column}"]`);
+                if (target === openCard.parentElement) openCard.replaceWith(fresh);
+                else { openCard.remove(); target.appendChild(fresh); }
+                counts();
+                closeModals();
+            } catch (err) {
+                toast(err.message || FAILED, 'error');
+            }
+        });
+
+        window.deleteCard = async function () {
+            if (!await askConfirm('Delete this card?', { ok: 'Delete', danger: true })) return;
+            try {
+                await send(`/kanban/cards/${openCard.dataset.id}/delete/`);
+                openCard.remove();
+                counts();
+                closeModals();
+            } catch (err) {
+                toast(err.message || FAILED, 'error');
+            }
+        };
+
+        // ── columns ────────────────────────────────────────────────────────
+        const columnForm = document.getElementById('columnForm');
+        let openColumn = null;
+
+        window.openColumnForm = function (column) {
+            openColumn = column || null;
+            document.getElementById('column-form-title').textContent = column ? 'Edit_Column' : 'New_Column';
+            document.getElementById('column-name').value = column ? column.dataset.name : '';
+            document.getElementById('column-delete').classList.toggle('hidden', !column);
+            columnModal.classList.remove('hidden');
+            document.getElementById('column-name').focus();
+        };
+
+        columnForm.addEventListener('submit', async e => {
+            e.preventDefault();
+            const url = openColumn ? `/kanban/columns/${openColumn.dataset.id}/rename/` : '{% url "kanban_add_column" %}';
+            try {
+                await send(url, new FormData(columnForm));
+                location.reload();
+            } catch (err) {
+                toast(err.message || FAILED, 'error');
+            }
+        });
+
+        window.deleteColumn = async function () {
+            const cards = openColumn.querySelectorAll('.kb-card').length;
+            const message = cards ? `Delete "${openColumn.dataset.name}" and its ${cards} card${cards === 1 ? '' : 's'}?` : `Delete "${openColumn.dataset.name}"?`;
+            if (!await askConfirm(message, { ok: 'Delete', danger: true })) return;
+            try {
+                await send(`/kanban/columns/${openColumn.dataset.id}/delete/`);
+                location.reload();
+            } catch (err) {
+                toast(err.message || FAILED, 'error');
+            }
+        };
+
+        window.closeModals = function () {
+            cardModal.classList.add('hidden');
+            columnModal.classList.add('hidden');
+        };
+        [cardModal, columnModal].forEach(modal => modal.addEventListener('click', e => { if (e.target === modal) closeModals(); }));
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && !document.getElementById('confirm-dialog').open) closeModals();
+        });
+    })();
+</script>
+{% endblock %}
